@@ -1,12 +1,27 @@
 {
-  "name": "ai-hafiza",
+  "name": "agentic-vault",
   "version": "1.0.0",
-  "description": "AI-Hafıza Obsidian Eklentisi",
+  "description": "The ultimate Obsidian plugin to automate Git sync, manage AI system prompts, and enable Issue-Driven Development directly from your vault.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "node esbuild.config.mjs production"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cadakerem/agentic-vault.git"
+  },
+  "keywords": [
+    "obsidian",
+    "obsidian-plugin",
+    "ai",
+    "git",
+    "automation",
+    "github",
+    "issue-driven-development"
+  ],
+  "author": "Kerem (@cadakerem)",
+  "license": "MIT",
   "dependencies": {
     "simple-git": "^3.27.0"
   },
