@@ -1,0 +1,10 @@
+{
+  "id": "agentic-vault",
+  "name": "Agentic Vault",
+  "version": "1.0.0",
+  "minAppVersion": "1.0.0",
+  "description": "AI kurallarını yönetmek ve Vault'u Git ile senkronize etmek için gelişmiş eklenti.",
+  "author": "Kerem (@cadakerem)",
+  "authorUrl": "https://github.com/cadakerem",
+  "isDesktopOnly": true
+}
