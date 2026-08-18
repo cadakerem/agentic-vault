@@ -3,10 +3,11 @@ import simpleGit, { SimpleGit } from 'simple-git';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { exec } from 'child_process';
+import { exec, execFile } from 'child_process';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 interface AgenticVaultSettings {
 	gitAutoPush: boolean;
@@ -114,9 +115,14 @@ export default class AgenticVaultPlugin extends Plugin {
 			} else {
 				if (!silent) new Notice('Agentic Vault: No new changes to commit.');
 			}
-		} catch (error) {
+		} catch (error: any) {
 			console.error("Agentic Vault Git Error:", error);
-			if (!silent) new Notice('Git Sync Failed! Check Developer Console.');
+			const errMsg = error.message || String(error);
+			if (errMsg.includes('CONFLICT') || errMsg.includes('merge')) {
+				new Notice('⚠️ Git Sync Failed: Merge conflict detected! Please resolve conflicts manually.');
+			} else {
+				if (!silent) new Notice('Git Sync Failed! Check Developer Console.');
+			}
 		}
 	}
 }
@@ -152,8 +158,7 @@ class CreateIssueModal extends Modal {
 		new Setting(contentEl)
 			.setName('Description')
 			.addTextArea(text => {
-				text.inputEl.style.width = '100%';
-				text.inputEl.style.height = '120px';
+				text.inputEl.addClass('av-issue-textarea');
 				text.setPlaceholder('Detailed description of the bug or feature...')
 				    .onChange(value => this.issueBody = value);
 			});
@@ -183,13 +188,10 @@ class CreateIssueModal extends Modal {
 					
 					try {
 						const vaultPath = (this.plugin.app.vault.adapter as any).getBasePath();
-						// Simple escaping to prevent command injection issues
-						const safeTitle = this.issueTitle.replace(/"/g, '\\"');
-						const safeBody = this.issueBody.replace(/"/g, '\\"');
 						
-						const cmd = `gh issue create --title "${safeTitle}" --body "${safeBody}" --label "${this.issueLabel}"`;
+						const args = ['issue', 'create', '--title', this.issueTitle, '--body', this.issueBody, '--label', this.issueLabel];
 						
-						const { stdout, stderr } = await execAsync(cmd, { cwd: vaultPath });
+						const { stdout, stderr } = await execFileAsync('gh', args, { cwd: vaultPath });
 						
 						if (stderr && !stdout) {
 							console.error(stderr);
@@ -239,21 +241,14 @@ class BrainManagerModal extends Modal {
 		});
 
 		const tabContainer = contentEl.createDiv({cls: 'av-tabs-container'});
-		tabContainer.style.display = 'flex';
-		tabContainer.style.gap = '10px';
-		tabContainer.style.marginBottom = '15px';
 
-		const btnSystem = tabContainer.createEl('button', {text: '⚙️ System Rules'});
-		const btnProject = tabContainer.createEl('button', {text: '📁 Project Rules'});
-		const btnCoding = tabContainer.createEl('button', {text: '💻 Coding Standards'});
+		const btnSystem = tabContainer.createEl('button', {text: '⚙️ System Rules', cls: 'av-tab-btn'});
+		const btnProject = tabContainer.createEl('button', {text: '📁 Project Rules', cls: 'av-tab-btn'});
+		const btnCoding = tabContainer.createEl('button', {text: '💻 Coding Standards', cls: 'av-tab-btn'});
 
 		const editorContainer = contentEl.createDiv({cls: 'av-editor-container'});
 		const textArea = editorContainer.createEl('textarea');
-		textArea.style.width = '100%';
-		textArea.style.height = '300px';
-		textArea.style.resize = 'vertical';
-		textArea.style.marginBottom = '15px';
-		textArea.style.fontFamily = 'monospace';
+		textArea.addClass('av-textarea');
 		
 		this.textAreas['editor'] = textArea;
 
@@ -262,19 +257,18 @@ class BrainManagerModal extends Modal {
 			this.currentTab = tab;
 			textArea.value = this.rules[tab];
 			
-			[btnSystem, btnProject, btnCoding].forEach(b => b.style.fontWeight = 'normal');
-			btn.style.fontWeight = 'bold';
+			[btnSystem, btnProject, btnCoding].forEach(b => b.removeClass('is-active'));
+			btn.addClass('is-active');
 		};
 
 		btnSystem.onclick = () => switchTab('system', btnSystem);
 		btnProject.onclick = () => switchTab('project', btnProject);
 		btnCoding.onclick = () => switchTab('coding', btnCoding);
 
-		btnSystem.style.fontWeight = 'bold';
+		btnSystem.addClass('is-active');
 		textArea.value = this.rules.system;
 
-		const btnSave = contentEl.createEl('button', {text: '💾 Save Brain & Sync', cls: 'mod-cta'});
-		btnSave.style.width = '100%';
+		const btnSave = contentEl.createEl('button', {text: '💾 Save Brain & Sync', cls: 'mod-cta av-save-btn'});
 		btnSave.onclick = async () => {
 			this.rules[this.currentTab] = textArea.value;
 			await this.saveRulesToFile();
@@ -330,6 +324,36 @@ class BrainManagerModal extends Modal {
 	onClose() {
 		const {contentEl} = this;
 		contentEl.empty();
+	}
+}
+
+class ConfirmModal extends Modal {
+	constructor(app: App, private message: string, private onConfirm: () => void) {
+		super(app);
+	}
+
+	onOpen() {
+		const {contentEl} = this;
+		contentEl.empty();
+		contentEl.addClass('agentic-vault-modal');
+
+		contentEl.createEl('h2', {text: 'Confirm Action'});
+		contentEl.createEl('p', {text: this.message, cls: 'av-subtitle'});
+		
+		const btnContainer = contentEl.createDiv({cls: 'av-tabs-container'});
+		
+		const btnCancel = btnContainer.createEl('button', {text: 'Cancel', cls: 'av-tab-btn'});
+		btnCancel.onclick = () => this.close();
+		
+		const btnProceed = btnContainer.createEl('button', {text: 'Proceed', cls: 'mod-cta'});
+		btnProceed.onclick = () => {
+			this.onConfirm();
+			this.close();
+		};
+	}
+
+	onClose() {
+		this.contentEl.empty();
 	}
 }
 
@@ -499,7 +523,9 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 				.setButtonText('🔗 Create Symlink')
 				.setCta()
 				.onClick(() => {
-					this.createSymlink();
+					new ConfirmModal(this.plugin.app, 'This will backup the existing OS folder (renaming it) and create a symlink. Are you sure you want to proceed?', () => {
+						this.createSymlink();
+					}).open();
 				}));
 	}
 
