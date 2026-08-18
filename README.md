@@ -40,9 +40,8 @@ Because Agentic Vault acts as a bridge between your vault, your OS, and GitHub, 
 2. **GitHub CLI (`gh`) must be authenticated** if you want to use the Issue-Driven Development features.
 
 ### Installation
-*(Pending official release to Obsidian Community Plugins)*
-1. Download the latest release from the [Releases](https://github.com/cadakerem/agentic-vault/releases) page.
-2. Extract the folder into your `<vault>/.obsidian/plugins/` directory.
+1. Download the latest release (`main.js`, `manifest.json`, `styles.css`) from the [Releases](https://github.com/cadakerem/agentic-vault/releases) page.
+2. Extract the files into your `<vault>/.obsidian/plugins/agentic-vault/` directory.
 3. Restart Obsidian and enable **Agentic Vault** in the settings.
 
 ---
