@@ -101,19 +101,26 @@ export default class AgenticVaultPlugin extends Plugin {
 	async performDynamicCommit(silent: boolean = false) {
 		if (!silent) new Notice('Agentic Vault: Git Sync Started...');
 		try {
-			await this.git.pull();
 			await this.git.add('.');
 			const status = await this.git.status();
+			
+			let committed = false;
 			if (status.staged.length > 0 || status.created.length > 0 || status.deleted.length > 0 || status.modified.length > 0) {
 				await this.git.commit(this.settings.commitMessageFormat);
+				committed = true;
 				if (!silent) new Notice('Changes committed locally.');
-				
-				if (this.settings.gitAutoPush) {
-					await this.git.push();
-					new Notice("Agentic Vault: Changes pushed to GitHub! 🚀");
-				}
 			} else {
 				if (!silent) new Notice('Agentic Vault: No new changes to commit.');
+			}
+
+			// Pull from remote (rebase to avoid ugly merge commits on auto-sync)
+			await this.git.pull(['--rebase']);
+			
+			if (this.settings.gitAutoPush) {
+				await this.git.push();
+				if (committed && !silent) {
+					new Notice("Agentic Vault: Changes pushed to GitHub! 🚀");
+				}
 			}
 		} catch (error: any) {
 			console.error("Agentic Vault Git Error:", error);

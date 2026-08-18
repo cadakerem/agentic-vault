@@ -12,6 +12,9 @@ Never worry about manually backing up your vault again. Agentic Vault comes bund
 - One-click **Initialize & Connect to GitHub** for brand new vaults.
 - Intelligent commit messages and conflict avoidance.
 
+> [!WARNING]
+> Because Agentic Vault automatically adds (`git add .`) and pushes all changes in your vault, please ensure you use a `.gitignore` file to exclude any private or sensitive notes that you do not want pushed to your remote repository.
+
 ### 2. 🧠 AI Brain Manager UI
 Stop editing system prompt markdown files manually. The Brain Manager provides a sleek, tabbed UI to manage your AI's rules directly inside Obsidian:
 - **System Rules:** Core behaviors and identity.
