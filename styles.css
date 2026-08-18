@@ -1,0 +1,42 @@
+/* styles.css */
+
+.agentic-vault-modal h2 {
+  margin-top: 0;
+}
+
+.av-subtitle {
+  color: var(--text-muted);
+  font-size: 0.9em;
+  margin-bottom: 20px;
+}
+
+.av-tabs-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.av-tab-btn {
+  font-weight: normal;
+}
+
+.av-tab-btn.is-active {
+  font-weight: bold;
+}
+
+.av-textarea {
+  width: 100%;
+  height: 300px;
+  resize: vertical;
+  margin-bottom: 15px;
+  font-family: var(--font-monospace);
+}
+
+.av-issue-textarea {
+  width: 100%;
+  height: 120px;
+}
+
+.av-save-btn {
+  width: 100%;
+}
