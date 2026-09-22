@@ -86,7 +86,10 @@ export default class AgenticVaultPlugin extends Plugin {
 	statusBarEl: HTMLElement;
 
 	onload(): void {
-		void this.initialize();
+		this.initialize().catch(err => {
+			console.error("Agentic Vault Init Error:", err);
+			new Notice("Agentic Vault failed to load: " + (err.message || String(err)), 10000);
+		});
 	}
 
 	private async initialize(): Promise<void> {
@@ -119,6 +122,7 @@ export default class AgenticVaultPlugin extends Plugin {
 
 		this.addSettingTab(new AgenticVaultSettingTab(this.app, this));
 		this.startAutoSync();
+		new Notice("✅ Agentic Vault Loaded Successfully!", 5000);
 	}
 
 	onunload(): void {
@@ -605,18 +609,6 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 	constructor(app: App, plugin: AgenticVaultPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
-	}
-
-	getSettingDefinitions() {
-		return [
-			{ id: 'gitAutoPush',          name: 'Auto Push',                    description: 'Automatically commit and push changes to GitHub.' },
-			{ id: 'syncIntervalMinutes',  name: 'Auto-Sync Interval (minutes)', description: 'How often to sync. Set to 0 to disable.' },
-			{ id: 'commitMessageFormat',  name: 'Default Commit Message',       description: 'Standard commit message for background auto-sync.' },
-			{ id: 'ruleFilePath',         name: 'Brain File Path',              description: 'Markdown file where AI rules are stored.' },
-			{ id: 'vaultBrainFolder',     name: 'Vault Brain Folder',           description: 'Folder in vault where AI configs are stored.' },
-			{ id: 'skillsFolder',         name: 'Skills Folder',                description: 'Vault folder to link to ~/.agents/skills.' },
-			{ id: 'scriptsFolder',        name: 'Scripts Folder',               description: 'Vault folder to link to ~/.agents/scripts.' },
-		];
 	}
 
 	display(): void {
