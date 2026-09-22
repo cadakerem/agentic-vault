@@ -1,9 +1,9 @@
 {
   "id": "agentic-vault",
   "name": "Agentic Vault",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "minAppVersion": "1.0.0",
-  "description": "The ultimate Obsidian plugin to automate Git sync, manage AI system prompts, and enable Issue-Driven Development directly from your vault.",
+  "description": "The ultimate tool to automate Git sync, manage AI system prompts, and enable Issue-Driven Development directly from your vault.",
   "author": "Kerem (@cadakerem)",
   "authorUrl": "https://github.com/cadakerem",
   "isDesktopOnly": true
