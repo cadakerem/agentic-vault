@@ -5917,7 +5917,10 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     this.syncIntervalId = null;
   }
   onload() {
-    void this.initialize();
+    this.initialize().catch((err) => {
+      console.error("Agentic Vault Init Error:", err);
+      new import_obsidian.Notice("Agentic Vault failed to load: " + (err.message || String(err)), 1e4);
+    });
   }
   async initialize() {
     await this.loadSettings();
@@ -5947,6 +5950,7 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     } });
     this.addSettingTab(new AgenticVaultSettingTab(this.app, this));
     this.startAutoSync();
+    new import_obsidian.Notice("\u2705 Agentic Vault Loaded Successfully!", 5e3);
   }
   onunload() {
     if (this.syncIntervalId !== null) {
@@ -6364,17 +6368,6 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
     super(app, plugin);
     this.remoteUrlInput = "";
     this.plugin = plugin;
-  }
-  getSettingDefinitions() {
-    return [
-      { id: "gitAutoPush", name: "Auto Push", description: "Automatically commit and push changes to GitHub." },
-      { id: "syncIntervalMinutes", name: "Auto-Sync Interval (minutes)", description: "How often to sync. Set to 0 to disable." },
-      { id: "commitMessageFormat", name: "Default Commit Message", description: "Standard commit message for background auto-sync." },
-      { id: "ruleFilePath", name: "Brain File Path", description: "Markdown file where AI rules are stored." },
-      { id: "vaultBrainFolder", name: "Vault Brain Folder", description: "Folder in vault where AI configs are stored." },
-      { id: "skillsFolder", name: "Skills Folder", description: "Vault folder to link to ~/.agents/skills." },
-      { id: "scriptsFolder", name: "Scripts Folder", description: "Vault folder to link to ~/.agents/scripts." }
-    ];
   }
   display() {
     const { containerEl } = this;
