@@ -5883,54 +5883,75 @@ var path = __toESM(require("path"));
 var os = __toESM(require("os"));
 var import_child_process2 = require("child_process");
 var import_util = require("util");
-var execAsync = (0, import_util.promisify)(import_child_process2.exec);
 var execFileAsync = (0, import_util.promisify)(import_child_process2.execFile);
+var DEFAULT_AI_TOOLS = [
+  { id: "gemini", name: "Antigravity / Gemini", windowsPath: ".gemini/config", unixPath: ".gemini/config", enabled: true },
+  { id: "claude", name: "Claude Code", windowsPath: ".claude", unixPath: ".claude", enabled: true },
+  { id: "cursor", name: "Cursor", windowsPath: "AppData/Roaming/Cursor/User", unixPath: ".cursor", enabled: false },
+  { id: "windsurf", name: "Windsurf", windowsPath: "AppData/Roaming/Windsurf/User", unixPath: ".windsurf", enabled: false },
+  { id: "vscode", name: "VS Code / Copilot", windowsPath: "AppData/Roaming/Code/User", unixPath: ".config/Code/User", enabled: false }
+];
 var DEFAULT_SETTINGS = {
   gitAutoPush: true,
   syncIntervalMinutes: 1,
   commitMessageFormat: "docs: update AI memory & rules (auto)",
   ruleFilePath: "AI-Brain/Rules.md",
   vaultBrainFolder: "AI-Brain",
-  systemAIFolder: "~/.gemini/config"
+  aiTools: DEFAULT_AI_TOOLS,
+  skillsFolder: "AI-Agent-System/skills",
+  scriptsFolder: "AI-Agent-System/scripts"
 };
+function getVaultPath(app) {
+  const adapter = app.vault.adapter;
+  return adapter.getBasePath();
+}
+function resolvePath(rawPath) {
+  if (rawPath.startsWith("~/") || rawPath === "~") {
+    return path.join(os.homedir(), rawPath.slice(2));
+  }
+  return rawPath;
+}
 var AgenticVaultPlugin = class extends import_obsidian.Plugin {
   constructor() {
     super(...arguments);
     this.syncIntervalId = null;
   }
-  async onload() {
+  onload() {
+    void this.initialize();
+  }
+  async initialize() {
     await this.loadSettings();
-    const vaultPath = this.app.vault.adapter.getBasePath();
+    const vaultPath = getVaultPath(this.app);
     this.git = esm_default(vaultPath);
-    const ribbonIconEl = this.addRibbonIcon("git-commit-vertical", "Force Git Sync (Agentic Vault)", (evt) => {
-      this.performDynamicCommit();
+    this.statusBarEl = this.addStatusBarItem();
+    this.statusBarEl.setText("\u27F3 Agentic Vault");
+    void this.updateStatusBar();
+    this.addRibbonIcon("git-commit-vertical", "Force Git Sync", () => {
+      void this.performDynamicCommit(false);
     });
-    ribbonIconEl.addClass("agentic-vault-ribbon-class");
-    const statusBarItemEl = this.addStatusBarItem();
-    statusBarItemEl.setText("Agentic Vault: Active");
-    this.addCommand({
-      id: "perform-dynamic-commit",
-      name: "Force Git Sync (Commit & Push)",
-      callback: () => {
-        this.performDynamicCommit();
-      }
+    (0, import_obsidian.addIcon)("laptop-2", '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>');
+    this.addRibbonIcon("laptop-2", "New Machine Setup", () => {
+      new SetupWizardModal(this.app, this).open();
     });
-    this.addCommand({
-      id: "open-brain-manager",
-      name: "Open AI Brain Manager",
-      callback: () => {
-        new BrainManagerModal(this.app, this).open();
-      }
-    });
-    this.addCommand({
-      id: "create-github-issue",
-      name: "Create GitHub Issue (IDD)",
-      callback: () => {
-        new CreateIssueModal(this.app, this).open();
-      }
-    });
+    this.addCommand({ id: "force-sync", name: "Force Git Sync (Commit & Push)", callback: () => {
+      void this.performDynamicCommit(false);
+    } });
+    this.addCommand({ id: "open-brain-manager", name: "Open AI Brain Manager", callback: () => {
+      new BrainManagerModal(this.app, this).open();
+    } });
+    this.addCommand({ id: "create-github-issue", name: "Create GitHub Issue (IDD)", callback: () => {
+      new CreateIssueModal(this.app, this).open();
+    } });
+    this.addCommand({ id: "setup-wizard", name: "New Machine Setup Wizard", callback: () => {
+      new SetupWizardModal(this.app, this).open();
+    } });
     this.addSettingTab(new AgenticVaultSettingTab(this.app, this));
     this.startAutoSync();
+  }
+  onunload() {
+    if (this.syncIntervalId !== null) {
+      window.clearInterval(this.syncIntervalId);
+    }
   }
   startAutoSync() {
     if (this.syncIntervalId !== null) {
@@ -5939,107 +5960,229 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     }
     if (this.settings.gitAutoPush && this.settings.syncIntervalMinutes > 0) {
       this.syncIntervalId = window.setInterval(() => {
-        console.log(`Agentic Vault: Running ${this.settings.syncIntervalMinutes}-minute auto-sync...`);
-        this.performDynamicCommit(true);
+        void this.performDynamicCommit(true);
       }, this.settings.syncIntervalMinutes * 60 * 1e3);
       this.registerInterval(this.syncIntervalId);
     }
   }
+  async updateStatusBar() {
+    var _a2;
+    try {
+      const status = await this.git.status();
+      const branch = (_a2 = status.current) != null ? _a2 : "unknown";
+      const ahead = status.ahead;
+      const behind = status.behind;
+      const dirty = status.files.length;
+      let text = `\u2601 ${branch}`;
+      if (ahead)
+        text += ` \u2191${ahead}`;
+      if (behind)
+        text += ` \u2193${behind}`;
+      if (dirty)
+        text += ` \u270E${dirty}`;
+      this.statusBarEl.setText(text);
+    } catch (e) {
+      this.statusBarEl.setText("\u2601 git?");
+    }
+  }
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    var _a2;
+    const saved = await this.loadData();
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
+    const savedTools = (_a2 = saved == null ? void 0 : saved.aiTools) != null ? _a2 : [];
+    this.settings.aiTools = DEFAULT_AI_TOOLS.map((def) => {
+      const found = savedTools.find((t2) => t2.id === def.id);
+      return found ? { ...def, ...found } : { ...def };
+    });
   }
   async saveSettings() {
     await this.saveData(this.settings);
   }
   async performDynamicCommit(silent = false) {
     if (!silent)
-      new import_obsidian.Notice("Agentic Vault: Git Sync Started...");
+      new import_obsidian.Notice("Agentic Vault: Syncing...");
     try {
       await this.git.add(".");
       const status = await this.git.status();
-      let committed = false;
-      if (status.staged.length > 0 || status.created.length > 0 || status.deleted.length > 0 || status.modified.length > 0) {
+      const hasChanges = status.files.length > 0;
+      if (hasChanges) {
         await this.git.commit(this.settings.commitMessageFormat);
-        committed = true;
         if (!silent)
-          new import_obsidian.Notice("Changes committed locally.");
+          new import_obsidian.Notice("\u2713 Changes committed.");
       } else {
         if (!silent)
-          new import_obsidian.Notice("Agentic Vault: No new changes to commit.");
+          new import_obsidian.Notice("Agentic Vault: Nothing to commit.");
       }
       await this.git.pull(["--rebase"]);
       if (this.settings.gitAutoPush) {
         await this.git.push();
-        if (committed && !silent) {
-          new import_obsidian.Notice("Agentic Vault: Changes pushed to GitHub! \u{1F680}");
-        }
+        if (hasChanges && !silent)
+          new import_obsidian.Notice("\u{1F680} Pushed to GitHub!");
       }
     } catch (error) {
-      console.error("Agentic Vault Git Error:", error);
-      const errMsg = error.message || String(error);
-      if (errMsg.includes("CONFLICT") || errMsg.includes("merge")) {
-        new import_obsidian.Notice("\u26A0\uFE0F Git Sync Failed: Merge conflict detected! Please resolve conflicts manually.");
+      const msg = error instanceof Error ? error.message : String(error);
+      if (msg.includes("CONFLICT") || msg.includes("merge")) {
+        new import_obsidian.Notice("\u26A0\uFE0F Merge conflict! Resolve manually.");
       } else {
         if (!silent)
-          new import_obsidian.Notice("Git Sync Failed! Check Developer Console.");
+          new import_obsidian.Notice(`Git Error: ${msg}`);
       }
+    } finally {
+      void this.updateStatusBar();
     }
   }
 };
-var CreateIssueModal = class extends import_obsidian.Modal {
+var SetupWizardModal = class extends import_obsidian.Modal {
   constructor(app, plugin) {
     super(app);
-    this.issueTitle = "";
-    this.issueBody = "";
-    this.issueLabel = "enhancement";
+    this.steps = [];
+    this.stepEls = [];
+    this.running = false;
     this.plugin = plugin;
   }
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("agentic-vault-modal");
-    contentEl.createEl("h2", { text: "\u{1F680} Create GitHub Issue" });
+    contentEl.createEl("h2", { text: "\u{1F5A5}\uFE0F New Machine Setup" });
     contentEl.createEl("p", {
-      text: "Issue-Driven Development: Instantly create tracked issues in your repository.",
+      text: "Automatically configure this computer: create symlinks for your AI tools, skills, and scripts \u2014 so everything works like your original machine.",
       cls: "av-subtitle"
     });
-    new import_obsidian.Setting(contentEl).setName("Title").addText((text) => text.setPlaceholder("Issue title...").onChange((value) => this.issueTitle = value));
-    new import_obsidian.Setting(contentEl).setName("Description").addTextArea((text) => {
-      text.inputEl.addClass("av-issue-textarea");
-      text.setPlaceholder("Detailed description of the bug or feature...").onChange((value) => this.issueBody = value);
+    this.steps = this.buildSteps();
+    const listEl = contentEl.createDiv({ cls: "av-steps-list" });
+    this.stepEls = this.steps.map((step) => {
+      const el = listEl.createDiv({ cls: "av-step av-step-pending" });
+      el.createSpan({ cls: "av-step-icon", text: "\u25CB" });
+      const info = el.createDiv({ cls: "av-step-info" });
+      info.createDiv({ cls: "av-step-label", text: step.label });
+      info.createDiv({ cls: "av-step-detail", text: step.detail });
+      return el;
     });
-    new import_obsidian.Setting(contentEl).setName("Label").addDropdown((drop) => drop.addOption("enhancement", "Enhancement / Feature").addOption("bug", "Bug / Fix").addOption("documentation", "Documentation").setValue(this.issueLabel).onChange((value) => this.issueLabel = value));
-    new import_obsidian.Setting(contentEl).addButton((btn) => btn.setButtonText("Create Issue").setCta().onClick(async () => {
-      if (!this.issueTitle) {
-        new import_obsidian.Notice("Issue Title is required!");
+    const btnRow = contentEl.createDiv({ cls: "av-tabs-container" });
+    const btnStart = btnRow.createEl("button", { text: "\u{1F680} Start Setup", cls: "mod-cta" });
+    btnStart.onclick = async () => {
+      if (this.running)
         return;
-      }
-      new import_obsidian.Notice("Creating Issue in background...");
-      btn.setDisabled(true);
-      btn.setButtonText("Creating...");
-      try {
-        const vaultPath = this.plugin.app.vault.adapter.getBasePath();
-        const args = ["issue", "create", "--title", this.issueTitle, "--body", this.issueBody, "--label", this.issueLabel];
-        const { stdout, stderr } = await execFileAsync("gh", args, { cwd: vaultPath });
-        if (stderr && !stdout) {
-          console.error(stderr);
-          new import_obsidian.Notice("Error creating issue. Check console.");
-        } else {
-          new import_obsidian.Notice(`\u2705 Issue created successfully!`);
-          this.close();
-        }
-      } catch (e) {
-        console.error(e);
-        new import_obsidian.Notice("Error! Is GitHub CLI (gh) installed and authenticated?");
-      } finally {
-        btn.setDisabled(false);
-        btn.setButtonText("Create Issue");
-      }
-    }));
+      this.running = true;
+      btnStart.setAttr("disabled", "true");
+      btnStart.setText("Running...");
+      await this.runAllSteps();
+      btnStart.removeAttribute("disabled");
+      btnStart.setText("Done \u2713");
+    };
+    btnRow.createEl("button", { text: "Close", cls: "av-tab-btn" }).onclick = () => this.close();
   }
   onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
+    this.contentEl.empty();
+  }
+  buildSteps() {
+    const vaultPath = getVaultPath(this.app);
+    const isWin = os.platform() === "win32";
+    const steps = [
+      {
+        label: "Detect Platform",
+        status: "pending",
+        detail: `Detected: ${isWin ? "Windows" : os.platform()} | Vault: ${vaultPath}`
+      }
+    ];
+    const skillsSrc = path.join(vaultPath, this.plugin.settings.skillsFolder);
+    const skillsDst = path.join(os.homedir(), ".agents", "skills");
+    steps.push({ label: "\u{1F9E0} Link Skills Folder", status: "pending", detail: `${skillsSrc} \u2192 ${skillsDst}` });
+    const scriptsSrc = path.join(vaultPath, this.plugin.settings.scriptsFolder);
+    const scriptsDst = path.join(os.homedir(), ".agents", "scripts");
+    steps.push({ label: "\u26A1 Link Scripts Folder", status: "pending", detail: `${scriptsSrc} \u2192 ${scriptsDst}` });
+    for (const tool of this.plugin.settings.aiTools) {
+      if (!tool.enabled)
+        continue;
+      const dstRel = isWin ? tool.windowsPath : tool.unixPath;
+      const dst = path.join(os.homedir(), dstRel);
+      const src = path.join(vaultPath, this.plugin.settings.vaultBrainFolder, tool.id);
+      steps.push({ label: `\u{1F916} Link ${tool.name}`, status: "pending", detail: `${src} \u2192 ${dst}` });
+    }
+    steps.push({ label: "\u{1F500} Verify Git Repository", status: "pending", detail: "Check vault is connected to GitHub" });
+    return steps;
+  }
+  setStepStatus(idx, status, detail) {
+    const el = this.stepEls[idx];
+    const icons = {
+      pending: "\u25CB",
+      running: "\u27F3",
+      done: "\u2705",
+      error: "\u274C",
+      skipped: "\u23ED"
+    };
+    el.className = `av-step av-step-${status}`;
+    el.querySelector(".av-step-icon").setText(icons[status]);
+    if (detail)
+      el.querySelector(".av-step-detail").setText(detail);
+  }
+  async runAllSteps() {
+    const vaultPath = getVaultPath(this.app);
+    const isWin = os.platform() === "win32";
+    let stepIdx = 0;
+    this.setStepStatus(stepIdx++, "done");
+    await this.runSymlinkStep(
+      stepIdx++,
+      path.join(vaultPath, this.plugin.settings.skillsFolder),
+      path.join(os.homedir(), ".agents", "skills"),
+      isWin
+    );
+    await this.runSymlinkStep(
+      stepIdx++,
+      path.join(vaultPath, this.plugin.settings.scriptsFolder),
+      path.join(os.homedir(), ".agents", "scripts"),
+      isWin
+    );
+    for (const tool of this.plugin.settings.aiTools) {
+      if (!tool.enabled)
+        continue;
+      const dstRel = isWin ? tool.windowsPath : tool.unixPath;
+      const dst = path.join(os.homedir(), dstRel);
+      const src = path.join(vaultPath, this.plugin.settings.vaultBrainFolder, tool.id);
+      await this.runSymlinkStep(stepIdx++, src, dst, isWin);
+    }
+    this.setStepStatus(stepIdx, "running");
+    try {
+      const isRepo = fs.existsSync(path.join(vaultPath, ".git"));
+      if (isRepo) {
+        const remote = await this.plugin.git.getRemotes(true);
+        const origin = remote.find((r2) => r2.name === "origin");
+        this.setStepStatus(stepIdx, "done", origin ? `Connected: ${origin.refs.fetch}` : "Local repo (no remote)");
+      } else {
+        this.setStepStatus(stepIdx, "skipped", "Vault not yet a Git repo \u2014 use Git & Sync settings to init.");
+      }
+    } catch (e) {
+      this.setStepStatus(stepIdx, "error", "Could not check git status");
+    }
+    new import_obsidian.Notice("\u2705 Machine setup complete! All symlinks are active.");
+  }
+  async runSymlinkStep(idx, src, dst, isWin) {
+    this.setStepStatus(idx, "running");
+    try {
+      if (!fs.existsSync(src)) {
+        fs.mkdirSync(src, { recursive: true });
+      }
+      if (fs.existsSync(dst)) {
+        const stat = fs.lstatSync(dst);
+        if (stat.isSymbolicLink()) {
+          fs.unlinkSync(dst);
+        } else {
+          const backup = `${dst}_backup_${Date.now()}`;
+          fs.renameSync(dst, backup);
+        }
+      }
+      const parent = path.dirname(dst);
+      if (!fs.existsSync(parent)) {
+        fs.mkdirSync(parent, { recursive: true });
+      }
+      const linkType = isWin ? "junction" : "dir";
+      fs.symlinkSync(src, dst, linkType);
+      this.setStepStatus(idx, "done", `Linked \u2713`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.setStepStatus(idx, "error", msg);
+    }
   }
 };
 var BrainManagerModal = class extends import_obsidian.Modal {
@@ -6047,17 +6190,19 @@ var BrainManagerModal = class extends import_obsidian.Modal {
     super(app);
     this.currentTab = "system";
     this.rules = { system: "", project: "", coding: "" };
-    this.textAreas = {};
     this.plugin = plugin;
   }
-  async onOpen() {
+  onOpen() {
+    void this.initialize();
+  }
+  async initialize() {
     await this.loadExistingRules();
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("agentic-vault-modal");
     contentEl.createEl("h2", { text: "\u{1F9E0} AI Brain Manager" });
     contentEl.createEl("p", {
-      text: "Define instructions for your AI agent. These rules will be saved and automatically tracked via Git.",
+      text: "Define instructions for your AI agent. Saved and synced via Git automatically.",
       cls: "av-subtitle"
     });
     const tabContainer = contentEl.createDiv({ cls: "av-tabs-container" });
@@ -6065,9 +6210,7 @@ var BrainManagerModal = class extends import_obsidian.Modal {
     const btnProject = tabContainer.createEl("button", { text: "\u{1F4C1} Project Rules", cls: "av-tab-btn" });
     const btnCoding = tabContainer.createEl("button", { text: "\u{1F4BB} Coding Standards", cls: "av-tab-btn" });
     const editorContainer = contentEl.createDiv({ cls: "av-editor-container" });
-    const textArea = editorContainer.createEl("textarea");
-    textArea.addClass("av-textarea");
-    this.textAreas["editor"] = textArea;
+    const textArea = editorContainer.createEl("textarea", { cls: "av-textarea" });
     const switchTab = (tab, btn) => {
       this.rules[this.currentTab] = textArea.value;
       this.currentTab = tab;
@@ -6080,17 +6223,16 @@ var BrainManagerModal = class extends import_obsidian.Modal {
     btnCoding.onclick = () => switchTab("coding", btnCoding);
     btnSystem.addClass("is-active");
     textArea.value = this.rules.system;
-    const btnSave = contentEl.createEl("button", { text: "\u{1F4BE} Save Brain & Sync", cls: "mod-cta av-save-btn" });
+    const btnSave = contentEl.createEl("button", { text: "\u{1F4BE} Save & Sync", cls: "mod-cta av-save-btn" });
     btnSave.onclick = async () => {
       this.rules[this.currentTab] = textArea.value;
       await this.saveRulesToFile();
       this.close();
-      this.plugin.performDynamicCommit(false);
+      void this.plugin.performDynamicCommit(false);
     };
   }
   async loadExistingRules() {
-    const filePath = this.plugin.settings.ruleFilePath;
-    const file = this.app.vault.getAbstractFileByPath(filePath);
+    const file = this.app.vault.getAbstractFileByPath(this.plugin.settings.ruleFilePath);
     if (file instanceof import_obsidian.TFile) {
       const content = await this.app.vault.read(file);
       const sysMatch = content.match(/## System Rules\n([\s\S]*?)(?=\n##|$)/);
@@ -6123,25 +6265,76 @@ ${this.rules.coding}
         await this.app.vault.modify(file, content);
       } else {
         const folders = filePath.split("/");
-        let currentPath = "";
+        let cur = "";
         for (let i2 = 0; i2 < folders.length - 1; i2++) {
-          currentPath += (currentPath === "" ? "" : "/") + folders[i2];
-          const folder = this.app.vault.getAbstractFileByPath(currentPath);
-          if (!folder) {
-            await this.app.vault.createFolder(currentPath);
+          cur += (cur ? "/" : "") + folders[i2];
+          if (!this.app.vault.getAbstractFileByPath(cur)) {
+            await this.app.vault.createFolder(cur);
           }
         }
         await this.app.vault.create(filePath, content);
       }
-      new import_obsidian.Notice("AI Brain successfully updated!");
-    } catch (error) {
-      console.error("Error saving rules:", error);
+      new import_obsidian.Notice("AI Brain updated!");
+    } catch (err) {
       new import_obsidian.Notice("Failed to save rules. Check console.");
+      console.error(err);
     }
   }
   onClose() {
+    this.contentEl.empty();
+  }
+};
+var CreateIssueModal = class extends import_obsidian.Modal {
+  constructor(app, plugin) {
+    super(app);
+    this.issueTitle = "";
+    this.issueBody = "";
+    this.issueLabel = "enhancement";
+    this.plugin = plugin;
+  }
+  onOpen() {
     const { contentEl } = this;
     contentEl.empty();
+    contentEl.addClass("agentic-vault-modal");
+    contentEl.createEl("h2", { text: "\u{1F680} Create GitHub Issue" });
+    contentEl.createEl("p", { text: "Issue-Driven Development: create tracked issues instantly.", cls: "av-subtitle" });
+    new import_obsidian.Setting(contentEl).setName("Title").addText((t2) => t2.setPlaceholder("Issue title...").onChange((v) => {
+      this.issueTitle = v;
+    }));
+    new import_obsidian.Setting(contentEl).setName("Description").addTextArea((t2) => {
+      t2.inputEl.addClass("av-issue-textarea");
+      t2.setPlaceholder("Details...").onChange((v) => {
+        this.issueBody = v;
+      });
+    });
+    new import_obsidian.Setting(contentEl).setName("Label").addDropdown((d) => d.addOption("enhancement", "Enhancement / Feature").addOption("bug", "Bug / Fix").addOption("documentation", "Documentation").setValue(this.issueLabel).onChange((v) => {
+      this.issueLabel = v;
+    }));
+    new import_obsidian.Setting(contentEl).addButton((btn) => btn.setButtonText("Create Issue").setCta().onClick(async () => {
+      if (!this.issueTitle) {
+        new import_obsidian.Notice("Title is required!");
+        return;
+      }
+      btn.setDisabled(true).setButtonText("Creating...");
+      try {
+        const vaultPath = getVaultPath(this.app);
+        const args = ["issue", "create", "--title", this.issueTitle, "--body", this.issueBody, "--label", this.issueLabel];
+        const { stdout, stderr } = await execFileAsync("gh", args, { cwd: vaultPath });
+        if (stderr && !stdout) {
+          new import_obsidian.Notice("Error creating issue. Is gh CLI authenticated?");
+        } else {
+          new import_obsidian.Notice("\u2705 Issue created!");
+          this.close();
+        }
+      } catch (e) {
+        new import_obsidian.Notice("Error! Is GitHub CLI (gh) installed and authenticated?");
+      } finally {
+        btn.setDisabled(false).setButtonText("Create Issue");
+      }
+    }));
+  }
+  onClose() {
+    this.contentEl.empty();
   }
 };
 var ConfirmModal = class extends import_obsidian.Modal {
@@ -6153,14 +6346,11 @@ var ConfirmModal = class extends import_obsidian.Modal {
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.addClass("agentic-vault-modal");
-    contentEl.createEl("h2", { text: "Confirm Action" });
+    contentEl.createEl("h2", { text: "Confirm" });
     contentEl.createEl("p", { text: this.message, cls: "av-subtitle" });
-    const btnContainer = contentEl.createDiv({ cls: "av-tabs-container" });
-    const btnCancel = btnContainer.createEl("button", { text: "Cancel", cls: "av-tab-btn" });
-    btnCancel.onclick = () => this.close();
-    const btnProceed = btnContainer.createEl("button", { text: "Proceed", cls: "mod-cta" });
-    btnProceed.onclick = () => {
+    const row = contentEl.createDiv({ cls: "av-tabs-container" });
+    row.createEl("button", { text: "Cancel", cls: "av-tab-btn" }).onclick = () => this.close();
+    row.createEl("button", { text: "Proceed", cls: "mod-cta" }).onclick = () => {
       this.onConfirm();
       this.close();
     };
@@ -6178,27 +6368,20 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    const vaultPath = this.plugin.app.vault.adapter.getBasePath();
-    const isGitInitialized = fs.existsSync(path.join(vaultPath, ".git"));
+    const vaultPath = getVaultPath(this.app);
+    const isGitRepo = fs.existsSync(path.join(vaultPath, ".git"));
     new import_obsidian.Setting(containerEl).setName("\u2699\uFE0F Git & Sync").setHeading();
-    if (!isGitInitialized) {
-      containerEl.createEl("div", {
-        text: "\u26A0\uFE0F Your Obsidian Vault is NOT a Git repository yet!",
-        attr: { style: "color: var(--text-error); font-weight: bold; margin-bottom: 15px; background: var(--background-modifier-error); padding: 10px; border-radius: 5px;" }
-      });
-    } else {
-      containerEl.createEl("div", {
-        text: "\u2705 Vault is connected to Git. You can update your remote URL below if needed.",
-        attr: { style: "color: var(--text-success); font-weight: bold; margin-bottom: 15px;" }
-      });
-    }
-    new import_obsidian.Setting(containerEl).setName("GitHub Remote URL (Optional)").setDesc(isGitInitialized ? "Update your repository URL." : "Paste your empty GitHub Repository URL to connect it automatically.").addText((text) => text.setPlaceholder("https://github.com/user/repo.git").onChange((value) => {
-      this.remoteUrlInput = value;
+    const statusDiv = containerEl.createDiv();
+    statusDiv.createEl("p", {
+      text: isGitRepo ? "\u2705 Vault is connected to Git." : "\u26A0\uFE0F Not a Git repository yet. Add a GitHub URL and click Initialize.",
+      attr: { style: `color: var(${isGitRepo ? "--text-success" : "--text-error"}); font-weight:bold; margin-bottom:10px;` }
+    });
+    new import_obsidian.Setting(containerEl).setName("GitHub Remote URL").setDesc(isGitRepo ? "Update your repository URL." : "Paste your empty GitHub repo URL to connect.").addText((t2) => t2.setPlaceholder("https://github.com/user/repo.git").onChange((v) => {
+      this.remoteUrlInput = v;
     }));
-    new import_obsidian.Setting(containerEl).setName(isGitInitialized ? "Update Remote URL" : "Initialize Repository").setDesc(isGitInitialized ? "Connects your existing local repo to the new URL." : "Creates a local Git repository and connects it to the URL above.").addButton((btn) => btn.setButtonText(isGitInitialized ? "\u{1F517} Update Remote" : "\u{1F680} Initialize & Connect").setCta().onClick(async () => {
+    new import_obsidian.Setting(containerEl).setName(isGitRepo ? "Update Remote URL" : "Initialize Repository").addButton((btn) => btn.setButtonText(isGitRepo ? "\u{1F517} Update Remote" : "\u{1F680} Initialize & Connect").setCta().onClick(async () => {
       try {
-        if (!isGitInitialized) {
-          new import_obsidian.Notice("Initializing Git Repository...");
+        if (!isGitRepo) {
           await this.plugin.git.init();
           await this.plugin.git.branch(["-M", "main"]);
         }
@@ -6208,94 +6391,101 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
           } catch (e) {
             await this.plugin.git.addRemote("origin", this.remoteUrlInput);
           }
-          new import_obsidian.Notice("Connected to Remote GitHub Repository.");
         }
-        new import_obsidian.Notice("\u2705 Git setup complete! You can now sync.");
+        new import_obsidian.Notice("\u2705 Git setup complete!");
         this.display();
-      } catch (error) {
-        console.error("Git Init Error:", error);
-        new import_obsidian.Notice("Failed to initialize Git. Check Console.");
+      } catch (err) {
+        new import_obsidian.Notice("Failed to init Git. Check console.");
+        console.error(err);
       }
     }));
     containerEl.createEl("hr");
-    new import_obsidian.Setting(containerEl).setName("AI Brain Manager").setDesc("Open the visual editor to manage your AI rules (System, Project, Coding).").addButton((btn) => btn.setButtonText("\u{1F9E0} Open Editor").setCta().onClick(() => {
+    new import_obsidian.Setting(containerEl).setName("AI Brain Manager").setDesc("Open the visual editor for your AI rules.").addButton((btn) => btn.setButtonText("\u{1F9E0} Open Editor").setCta().onClick(() => {
       new BrainManagerModal(this.app, this.plugin).open();
     }));
-    new import_obsidian.Setting(containerEl).setName("Auto Push").setDesc("Automatically commit and push changes to GitHub in the background.").addToggle((toggle) => toggle.setValue(this.plugin.settings.gitAutoPush).onChange(async (value) => {
-      this.plugin.settings.gitAutoPush = value;
+    new import_obsidian.Setting(containerEl).setName("Auto Push").setDesc("Automatically commit and push changes to GitHub.").addToggle((t2) => t2.setValue(this.plugin.settings.gitAutoPush).onChange(async (v) => {
+      this.plugin.settings.gitAutoPush = v;
       await this.plugin.saveSettings();
       this.plugin.startAutoSync();
     }));
-    new import_obsidian.Setting(containerEl).setName("Auto-Sync Interval (Minutes)").setDesc("How often should it check for changes and sync to GitHub? (Set to 0 to disable)").addText((text) => text.setPlaceholder("1").setValue(String(this.plugin.settings.syncIntervalMinutes)).onChange(async (value) => {
-      const num = parseInt(value);
-      if (!isNaN(num) && num >= 0) {
-        this.plugin.settings.syncIntervalMinutes = num;
+    new import_obsidian.Setting(containerEl).setName("Auto-Sync Interval (minutes)").setDesc("How often to sync. Set to 0 to disable.").addText((t2) => t2.setPlaceholder("1").setValue(String(this.plugin.settings.syncIntervalMinutes)).onChange(async (v) => {
+      const n = parseInt(v);
+      if (!isNaN(n) && n >= 0) {
+        this.plugin.settings.syncIntervalMinutes = n;
         await this.plugin.saveSettings();
         this.plugin.startAutoSync();
       }
     }));
-    new import_obsidian.Setting(containerEl).setName("Default Commit Message").setDesc("Standard commit message for background auto-sync.").addText((text) => text.setPlaceholder("docs: update AI memory & rules (auto)").setValue(this.plugin.settings.commitMessageFormat).onChange(async (value) => {
-      this.plugin.settings.commitMessageFormat = value;
+    new import_obsidian.Setting(containerEl).setName("Default Commit Message").addText((t2) => t2.setValue(this.plugin.settings.commitMessageFormat).onChange(async (v) => {
+      this.plugin.settings.commitMessageFormat = v;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian.Setting(containerEl).setName("Brain File Path").setDesc("The Markdown file where AI rules will be stored (e.g. AI-Brain/Rules.md)").addText((text) => text.setPlaceholder("AI-Brain/Rules.md").setValue(this.plugin.settings.ruleFilePath).onChange(async (value) => {
-      this.plugin.settings.ruleFilePath = value;
+    new import_obsidian.Setting(containerEl).setName("Brain File Path").setDesc("Markdown file where AI rules are stored (e.g. AI-Brain/Rules.md)").addText((t2) => t2.setPlaceholder("AI-Brain/Rules.md").setValue(this.plugin.settings.ruleFilePath).onChange(async (v) => {
+      this.plugin.settings.ruleFilePath = v;
       await this.plugin.saveSettings();
     }));
-    containerEl.createEl("br");
-    new import_obsidian.Setting(containerEl).setName("\u{1F517} AI System Link (Symlink)").setHeading();
+    new import_obsidian.Setting(containerEl).setName("\u{1F5A5}\uFE0F New Machine Setup").setHeading();
+    new import_obsidian.Setting(containerEl).setName("Run Setup Wizard").setDesc("Create all symlinks for skills, scripts, and AI tools on this machine.").addButton((btn) => btn.setButtonText("\u{1F680} Open Wizard").setCta().onClick(() => {
+      new SetupWizardModal(this.app, this.plugin).open();
+    }));
+    new import_obsidian.Setting(containerEl).setName("Skills Folder (in Vault)").setDesc("Will be linked to ~/.agents/skills").addText((t2) => t2.setPlaceholder("AI-Agent-System/skills").setValue(this.plugin.settings.skillsFolder).onChange(async (v) => {
+      this.plugin.settings.skillsFolder = v;
+      await this.plugin.saveSettings();
+    }));
+    new import_obsidian.Setting(containerEl).setName("Scripts Folder (in Vault)").setDesc("Will be linked to ~/.agents/scripts").addText((t2) => t2.setPlaceholder("AI-Agent-System/scripts").setValue(this.plugin.settings.scriptsFolder).onChange(async (v) => {
+      this.plugin.settings.scriptsFolder = v;
+      await this.plugin.saveSettings();
+    }));
+    new import_obsidian.Setting(containerEl).setName("\u{1F916} AI Tools to Sync").setHeading();
     containerEl.createEl("p", {
-      text: "Link your OS's AI configuration folder directly into this Obsidian vault.",
+      text: "Select which AI tools should be linked to your vault. Each tool's config folder becomes a symlink pointing to your vault.",
       cls: "av-subtitle"
     });
-    new import_obsidian.Setting(containerEl).setName("Vault Brain Folder").setDesc("The folder inside this Obsidian vault where actual files are stored.").addText((text) => text.setPlaceholder("AI-Brain").setValue(this.plugin.settings.vaultBrainFolder).onChange(async (value) => {
-      this.plugin.settings.vaultBrainFolder = value;
+    for (const tool of this.plugin.settings.aiTools) {
+      const isWin = os.platform() === "win32";
+      const dstPath = path.join("~", isWin ? tool.windowsPath : tool.unixPath);
+      new import_obsidian.Setting(containerEl).setName(tool.name).setDesc(`Links: ${dstPath}`).addToggle((t2) => t2.setValue(tool.enabled).onChange(async (v) => {
+        tool.enabled = v;
+        await this.plugin.saveSettings();
+      }));
+    }
+    new import_obsidian.Setting(containerEl).setName("\u{1F517} Custom Symlink").setHeading();
+    new import_obsidian.Setting(containerEl).setName("Vault Brain Folder").setDesc("Folder in this vault where AI configs live.").addText((t2) => t2.setPlaceholder("AI-Brain").setValue(this.plugin.settings.vaultBrainFolder).onChange(async (v) => {
+      this.plugin.settings.vaultBrainFolder = v;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian.Setting(containerEl).setName("System AI Folder").setDesc("The path on your OS where the AI expects its config (e.g. ~/.gemini/config). This will become a symlink.").addText((text) => text.setPlaceholder("~/.gemini/config").setValue(this.plugin.settings.systemAIFolder).onChange(async (value) => {
-      this.plugin.settings.systemAIFolder = value;
-      await this.plugin.saveSettings();
-    }));
-    new import_obsidian.Setting(containerEl).setName("Create Symlink (Junction)").setDesc("Will backup the existing OS folder and create a junction link to your Vault.").addButton((btn) => btn.setButtonText("\u{1F517} Create Symlink").setCta().onClick(() => {
-      new ConfirmModal(this.plugin.app, "This will backup the existing OS folder (renaming it) and create a symlink. Are you sure you want to proceed?", () => {
-        this.createSymlink();
+    new import_obsidian.Setting(containerEl).setName("Create Custom Symlink").setDesc("Manually link a specific OS path to your vault folder.").addButton((btn) => btn.setButtonText("\u{1F517} Create Link").setCta().onClick(() => {
+      new ConfirmModal(this.app, "This will backup the existing OS folder and create a symlink. Proceed?", () => {
+        this.createCustomSymlink();
       }).open();
     }));
   }
-  createSymlink() {
+  createCustomSymlink() {
     try {
-      const vaultPath = this.plugin.app.vault.adapter.getBasePath();
-      const sourceDir = path.join(vaultPath, this.plugin.settings.vaultBrainFolder);
-      let targetDir = this.plugin.settings.systemAIFolder;
-      if (targetDir.startsWith("~/") || targetDir.startsWith("~\\")) {
-        targetDir = path.join(os.homedir(), targetDir.slice(2));
-      }
-      if (!fs.existsSync(sourceDir)) {
-        fs.mkdirSync(sourceDir, { recursive: true });
-        new import_obsidian.Notice("Created Vault Brain Folder because it did not exist.");
-      }
-      if (fs.existsSync(targetDir)) {
-        const stats = fs.lstatSync(targetDir);
-        if (stats.isSymbolicLink()) {
-          fs.unlinkSync(targetDir);
-          new import_obsidian.Notice("Removed old symlink.");
+      const vaultPath = getVaultPath(this.app);
+      const src = path.join(vaultPath, this.plugin.settings.vaultBrainFolder);
+      const dst = resolvePath(this.plugin.settings.vaultBrainFolder);
+      const isWin = os.platform() === "win32";
+      if (!fs.existsSync(src))
+        fs.mkdirSync(src, { recursive: true });
+      if (fs.existsSync(dst)) {
+        const stat = fs.lstatSync(dst);
+        if (stat.isSymbolicLink()) {
+          fs.unlinkSync(dst);
         } else {
-          const backupDir = targetDir + "_backup_" + Date.now();
-          fs.renameSync(targetDir, backupDir);
-          new import_obsidian.Notice("Backed up existing System AI folder.");
+          fs.renameSync(dst, `${dst}_backup_${Date.now()}`);
         }
       } else {
-        const parentDir = path.dirname(targetDir);
-        if (!fs.existsSync(parentDir)) {
-          fs.mkdirSync(parentDir, { recursive: true });
-        }
+        const parent = path.dirname(dst);
+        if (!fs.existsSync(parent))
+          fs.mkdirSync(parent, { recursive: true });
       }
-      const type = os.platform() === "win32" ? "junction" : "dir";
-      fs.symlinkSync(sourceDir, targetDir, type);
-      new import_obsidian.Notice("\u2705 Success! OS AI system is now linked to Obsidian Vault.");
-    } catch (error) {
-      console.error("Symlink Error:", error);
-      new import_obsidian.Notice("Failed to create symlink. Check console for details.");
+      const type = isWin ? "junction" : "dir";
+      fs.symlinkSync(src, dst, type);
+      new import_obsidian.Notice("\u2705 Symlink created!");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      new import_obsidian.Notice(`Symlink failed: ${msg}`);
     }
   }
 };
