@@ -6,5 +6,6 @@
   "description": "The ultimate tool to automate Git sync, manage AI system prompts, and enable Issue-Driven Development directly from your vault.",
   "author": "Kerem (@cadakerem)",
   "authorUrl": "https://github.com/cadakerem",
+  "fundingUrl": "https://github.com/sponsors/cadakerem",
   "isDesktopOnly": true
 }
