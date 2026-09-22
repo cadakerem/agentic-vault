@@ -380,7 +380,7 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 		const vaultPath = (this.plugin.app.vault.adapter as any).getBasePath();
 		const isGitInitialized = fs.existsSync(path.join(vaultPath, '.git'));
 
-		new Setting(containerEl).setName('Agentic Vault Settings').setHeading();
+		new Setting(containerEl).setName('⚙️ Git & Sync').setHeading();
 
 		if (!isGitInitialized) {
 			containerEl.createEl('div', {
