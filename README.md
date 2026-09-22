@@ -50,7 +50,7 @@ Because Agentic Vault acts as a bridge between your vault, your OS, and GitHub, 
 ---
 
 ## 👨‍💻 Developer & Contributions
-Developed by **Kerem** ([@cadakerem](https://github.com/cadakerem)).
+Developed by **Kerem Barbaros Karnabat** ([@cadakerem](https://github.com/cadakerem)).
 Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/cadakerem/agentic-vault/issues).
 
-**License:** MIT
+**License:** [MIT](https://github.com/cadakerem/agentic-vault/blob/main/LICENSE)
