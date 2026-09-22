@@ -6180,7 +6180,7 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
     containerEl.empty();
     const vaultPath = this.plugin.app.vault.adapter.getBasePath();
     const isGitInitialized = fs.existsSync(path.join(vaultPath, ".git"));
-    new import_obsidian.Setting(containerEl).setName("Agentic Vault Settings").setHeading();
+    new import_obsidian.Setting(containerEl).setName("\u2699\uFE0F Git & Sync").setHeading();
     if (!isGitInitialized) {
       containerEl.createEl("div", {
         text: "\u26A0\uFE0F Your Obsidian Vault is NOT a Git repository yet!",
