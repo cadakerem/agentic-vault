@@ -6180,7 +6180,7 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
     containerEl.empty();
     const vaultPath = this.plugin.app.vault.adapter.getBasePath();
     const isGitInitialized = fs.existsSync(path.join(vaultPath, ".git"));
-    containerEl.createEl("h2", { text: "Agentic Vault Settings" });
+    new import_obsidian.Setting(containerEl).setName("Agentic Vault Settings").setHeading();
     if (!isGitInitialized) {
       containerEl.createEl("div", {
         text: "\u26A0\uFE0F Your Obsidian Vault is NOT a Git repository yet!",
@@ -6243,7 +6243,7 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
       await this.plugin.saveSettings();
     }));
     containerEl.createEl("br");
-    containerEl.createEl("h2", { text: "\u{1F517} AI System Link (Symlink)" });
+    new import_obsidian.Setting(containerEl).setName("\u{1F517} AI System Link (Symlink)").setHeading();
     containerEl.createEl("p", {
       text: "Link your OS's AI configuration folder directly into this Obsidian vault.",
       cls: "av-subtitle"

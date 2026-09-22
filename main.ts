@@ -380,7 +380,7 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 		const vaultPath = (this.plugin.app.vault.adapter as any).getBasePath();
 		const isGitInitialized = fs.existsSync(path.join(vaultPath, '.git'));
 
-		containerEl.createEl('h2', {text: 'Agentic Vault Settings'});
+		new Setting(containerEl).setName('Agentic Vault Settings').setHeading();
 
 		if (!isGitInitialized) {
 			containerEl.createEl('div', {
@@ -495,7 +495,7 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 				}));
 
 		containerEl.createEl('br');
-		containerEl.createEl('h2', {text: '🔗 AI System Link (Symlink)'});
+		new Setting(containerEl).setName('🔗 AI System Link (Symlink)').setHeading();
 		containerEl.createEl('p', {
 			text: "Link your OS's AI configuration folder directly into this Obsidian vault.",
 			cls: 'av-subtitle'
