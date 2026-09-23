@@ -41,11 +41,15 @@ Agentic Vault bridges the gap between your local OS-level AI tools (Antigravity,
 - Under the **Git & Sync** section, paste your GitHub Repository URL.
 - Click **Initialize & Connect**. The plugin will `git init`, set up the main branch, and connect to your remote.
 
-### 2. Connect Your AI Tools (Setup Wizard)
-- Click the **Laptop Icon (💻)** in the left ribbon to open the **New Machine Setup Wizard**.
-- Review the paths that will be created.
-- Click **Start Setup**. The plugin will automatically back up any existing local config folders and create symlinks directly to your vault. 
-- *Now, whenever you update a prompt in Obsidian, Claude/Cursor/Antigravity instantly sees it!*
+### 2. Setting Up a New Machine (Setup Wizard)
+When moving to a new computer, you can restore your entire AI ecosystem in seconds:
+1. **Clone your vault:** Open your terminal and download your existing Obsidian vault from GitHub:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/YOUR_VAULT_REPO.git ~/ObsidianVault
+   ```
+2. **Open in Obsidian:** Launch Obsidian and open the downloaded folder as a vault.
+3. **Run the Wizard:** Click the **Laptop Icon (💻)** in the left ribbon and click **Start Setup**.
+*Agentic Vault will automatically back up any existing local configs and create symlinks directly to your vault. Your AI tools will instantly remember all your rules and scripts!*
 
 ### 3. Manage Your AI Brain
 - Click the **Brain Manager** button in settings or use the Command Palette (`Ctrl+P` -> `Open AI Brain Manager`).
