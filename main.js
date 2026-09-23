@@ -9,6 +9,7 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __commonJS = (cb, mod) => function __require() {
   return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
@@ -33,6 +34,10 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var __publicField = (obj, key, value) => {
+  __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+  return value;
+};
 
 // node_modules/ms/index.js
 var require_ms = __commonJS({
@@ -5914,7 +5919,10 @@ function resolvePath(rawPath) {
 var AgenticVaultPlugin = class extends import_obsidian.Plugin {
   constructor() {
     super(...arguments);
-    this.syncIntervalId = null;
+    __publicField(this, "settings");
+    __publicField(this, "git");
+    __publicField(this, "syncIntervalId", null);
+    __publicField(this, "statusBarEl");
   }
   onload() {
     this.initialize().catch((err) => {
@@ -6039,9 +6047,10 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
 var SetupWizardModal = class extends import_obsidian.Modal {
   constructor(app, plugin) {
     super(app);
-    this.steps = [];
-    this.stepEls = [];
-    this.running = false;
+    __publicField(this, "plugin");
+    __publicField(this, "steps", []);
+    __publicField(this, "stepEls", []);
+    __publicField(this, "running", false);
     this.plugin = plugin;
   }
   onOpen() {
@@ -6192,8 +6201,9 @@ var SetupWizardModal = class extends import_obsidian.Modal {
 var BrainManagerModal = class extends import_obsidian.Modal {
   constructor(app, plugin) {
     super(app);
-    this.currentTab = "system";
-    this.rules = { system: "", project: "", coding: "" };
+    __publicField(this, "plugin");
+    __publicField(this, "currentTab", "system");
+    __publicField(this, "rules", { system: "", project: "", coding: "" });
     this.plugin = plugin;
   }
   onOpen() {
@@ -6291,9 +6301,10 @@ ${this.rules.coding}
 var CreateIssueModal = class extends import_obsidian.Modal {
   constructor(app, plugin) {
     super(app);
-    this.issueTitle = "";
-    this.issueBody = "";
-    this.issueLabel = "enhancement";
+    __publicField(this, "plugin");
+    __publicField(this, "issueTitle", "");
+    __publicField(this, "issueBody", "");
+    __publicField(this, "issueLabel", "enhancement");
     this.plugin = plugin;
   }
   onOpen() {
@@ -6366,7 +6377,8 @@ var ConfirmModal = class extends import_obsidian.Modal {
 var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
-    this.remoteUrlInput = "";
+    __publicField(this, "plugin");
+    __publicField(this, "remoteUrlInput", "");
     this.plugin = plugin;
   }
   display() {
@@ -6455,10 +6467,6 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
       }));
       if (tool.enabled) {
         const toolContainer = containerEl.createDiv({ cls: "av-tool-path-container" });
-        toolContainer.style.marginLeft = "30px";
-        toolContainer.style.marginBottom = "20px";
-        toolContainer.style.borderLeft = "2px solid var(--interactive-accent)";
-        toolContainer.style.paddingLeft = "15px";
         new import_obsidian.Setting(toolContainer).setName("Windows Path").setDesc("Relative to User Home (~/)").addText((t2) => t2.setValue(tool.windowsPath).onChange(async (v) => {
           tool.windowsPath = v;
           await this.plugin.saveSettings();
