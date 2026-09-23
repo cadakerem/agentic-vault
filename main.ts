@@ -744,11 +744,36 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 			const dstPath = path.join('~', isWin ? tool.windowsPath : tool.unixPath);
 			new Setting(containerEl)
 				.setName(tool.name)
-				.setDesc(`Links: ${dstPath}`)
+				.setDesc(`Current Link: ${dstPath}`)
 				.addToggle(t => t.setValue(tool.enabled).onChange(async v => {
 					tool.enabled = v;
 					await this.plugin.saveSettings();
+					this.display(); // Yeniden çiz ki text inputlar gelsin/gitsin
 				}));
+
+			if (tool.enabled) {
+				const toolContainer = containerEl.createDiv({ cls: 'av-tool-path-container' });
+				toolContainer.style.marginLeft = '30px';
+				toolContainer.style.marginBottom = '20px';
+				toolContainer.style.borderLeft = '2px solid var(--interactive-accent)';
+				toolContainer.style.paddingLeft = '15px';
+
+				new Setting(toolContainer)
+					.setName('Windows Path')
+					.setDesc('Relative to User Home (~/)')
+					.addText(t => t.setValue(tool.windowsPath).onChange(async v => {
+						tool.windowsPath = v;
+						await this.plugin.saveSettings();
+					}));
+
+				new Setting(toolContainer)
+					.setName('Mac/Linux Path')
+					.setDesc('Relative to User Home (~/)')
+					.addText(t => t.setValue(tool.unixPath).onChange(async v => {
+						tool.unixPath = v;
+						await this.plugin.saveSettings();
+					}));
+			}
 		}
 
 		// ── Manual Symlink ───────────────────────

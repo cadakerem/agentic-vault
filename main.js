@@ -6448,10 +6448,26 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
     for (const tool of this.plugin.settings.aiTools) {
       const isWin = os.platform() === "win32";
       const dstPath = path.join("~", isWin ? tool.windowsPath : tool.unixPath);
-      new import_obsidian.Setting(containerEl).setName(tool.name).setDesc(`Links: ${dstPath}`).addToggle((t2) => t2.setValue(tool.enabled).onChange(async (v) => {
+      new import_obsidian.Setting(containerEl).setName(tool.name).setDesc(`Current Link: ${dstPath}`).addToggle((t2) => t2.setValue(tool.enabled).onChange(async (v) => {
         tool.enabled = v;
         await this.plugin.saveSettings();
+        this.display();
       }));
+      if (tool.enabled) {
+        const toolContainer = containerEl.createDiv({ cls: "av-tool-path-container" });
+        toolContainer.style.marginLeft = "30px";
+        toolContainer.style.marginBottom = "20px";
+        toolContainer.style.borderLeft = "2px solid var(--interactive-accent)";
+        toolContainer.style.paddingLeft = "15px";
+        new import_obsidian.Setting(toolContainer).setName("Windows Path").setDesc("Relative to User Home (~/)").addText((t2) => t2.setValue(tool.windowsPath).onChange(async (v) => {
+          tool.windowsPath = v;
+          await this.plugin.saveSettings();
+        }));
+        new import_obsidian.Setting(toolContainer).setName("Mac/Linux Path").setDesc("Relative to User Home (~/)").addText((t2) => t2.setValue(tool.unixPath).onChange(async (v) => {
+          tool.unixPath = v;
+          await this.plugin.saveSettings();
+        }));
+      }
     }
     new import_obsidian.Setting(containerEl).setName("\u{1F517} Custom Symlink").setHeading();
     new import_obsidian.Setting(containerEl).setName("Vault Brain Folder").setDesc("Folder in this vault where AI configs live.").addText((t2) => t2.setPlaceholder("AI-Brain").setValue(this.plugin.settings.vaultBrainFolder).onChange(async (v) => {
