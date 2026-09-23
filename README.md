@@ -25,9 +25,15 @@ Agentic Vault bridges the gap between your local OS-level AI tools (Antigravity,
 
 ## 🛠️ How to Install
 
-*(Agentic Vault is currently pending review for the Obsidian Community Plugin marketplace).*
+Agentic Vault is officially available in the Obsidian Community Plugins directory!
 
-### Manual Installation (Until Approved)
+### Official Installation
+1. Open Obsidian **Settings** > **Community Plugins**.
+2. Turn off Safe Mode (if prompted) and click **Browse**.
+3. Search for **Agentic Vault**.
+4. Click **Install**, then **Enable**.
+
+### Manual Installation
 1. Download the latest release from the [GitHub Releases](https://github.com/cadakerem/agentic-vault/releases) page.
 2. Extract the files (`main.js`, `manifest.json`, `styles.css`) into your vault: 
    `YourVault/.obsidian/plugins/agentic-vault/`
