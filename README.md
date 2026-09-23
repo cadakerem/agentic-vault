@@ -54,6 +54,9 @@ Agentic Vault bridges the gap between your local OS-level AI tools (Antigravity,
 - Edit your System, Project, and Coding rules.
 - Click **Save & Sync**. The changes are immediately saved to markdown and pushed to GitHub.
 
+> **💡 Pro-Tip for Users:** 
+> Different AI tools look for rules in different files (e.g., `GEMINI.md` or `claude-rules.md`). You can change exactly which file the Brain Manager updates by changing the **"Brain File Path"** in the Agentic Vault settings to match your AI's expected config file!
+
 ---
 
 ## 🔒 Permissions & Security
