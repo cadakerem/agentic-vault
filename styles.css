@@ -142,3 +142,11 @@ NEW MACHINE SETUP WIZARD
 @keyframes av-spin {
 	100% { transform: rotate(360deg); }
 }
+
+/* Tool Path Container */
+.av-tool-path-container {
+    margin-left: 30px;
+    margin-bottom: 20px;
+    border-left: 2px solid var(--interactive-accent);
+    padding-left: 15px;
+}

@@ -753,10 +753,6 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 
 			if (tool.enabled) {
 				const toolContainer = containerEl.createDiv({ cls: 'av-tool-path-container' });
-				toolContainer.style.marginLeft = '30px';
-				toolContainer.style.marginBottom = '20px';
-				toolContainer.style.borderLeft = '2px solid var(--interactive-accent)';
-				toolContainer.style.paddingLeft = '15px';
 
 				new Setting(toolContainer)
 					.setName('Windows Path')
