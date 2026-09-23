@@ -17,6 +17,7 @@ Agentic Vault bridges the gap between your local OS-level AI tools (Antigravity,
   - Cursor (`AppData/Roaming/Cursor/User`)
   - Windsurf
   - VS Code / Copilot
+  *(Fully customizable: you can edit the exact Windows or Mac/Linux path for each tool in the plugin settings!)*
 - **🧠 Brain Manager:** A dedicated visual editor to manage your AI System Prompts, Project Rules, and Coding Standards. All rules are auto-tracked in Git.
 - **🚀 Issue-Driven Development:** Create GitHub Issues directly from inside Obsidian without ever opening a browser.
 
