@@ -5,7 +5,8 @@
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
-    "build": "node esbuild.config.mjs production"
+    "build": "node esbuild.config.mjs production",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -26,11 +27,14 @@
     "simple-git": "^3.27.0"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^16.11.29",
     "@typescript-eslint/eslint-plugin": "^5.29.0",
     "@typescript-eslint/parser": "^5.29.0",
     "esbuild": "0.17.3",
+    "jest": "^30.5.2",
     "obsidian": "1.6.6",
+    "ts-jest": "^29.4.12",
     "tslib": "2.4.0",
     "typescript": "4.9.5"
   }
