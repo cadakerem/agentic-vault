@@ -4,8 +4,6 @@ Turn your Obsidian vault into an automated, self-syncing, issue-driven command c
 
 Agentic Vault bridges the gap between your local OS-level AI tools (Antigravity, Claude Code, Cursor, Windsurf, etc.) and your Obsidian knowledge base. Manage your system prompts, sync everything automatically via Git, and set up new machines with a single click.
 
-![Agentic Vault Banner](https://raw.githubusercontent.com/cadakerem/agentic-vault/main/assets/banner.png) *(Note: You can add a banner image later)*
-
 ---
 
 ## ✨ Features
