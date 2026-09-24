@@ -96,7 +96,7 @@ export async function resolveRebaseConflicts(git: SimpleGit, opts: ResolveOption
 
       if (st.has3) {
         const copyRel = conflictCopyName(file, opts.device, when, (c) => copies.includes(c) || fs.existsSync(path.join(opts.vaultPath, c)));
-        const blob = await git.binaryCatFile(['blob', `:3:${file}`]); // raw bytes: safe for binary files
+        const blob = await git.binaryCatFile(['blob', `:3:${file}`]) as Buffer; // raw bytes: safe for binary files
         fs.mkdirSync(path.dirname(path.join(opts.vaultPath, copyRel)), { recursive: true });
         fs.writeFileSync(path.join(opts.vaultPath, copyRel), blob);
         copies.push(copyRel);

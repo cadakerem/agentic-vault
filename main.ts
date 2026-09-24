@@ -62,8 +62,9 @@ export default class AgenticVaultPlugin extends Plugin {
 
 	onload(): void {
 		this.initialize().catch(err => {
+			const msg = err instanceof Error ? err.message : String(err);
 			console.error("Agentic Vault Init Error:", err);
-			new Notice("Agentic Vault failed to load: " + (err.message || String(err)), 10000);
+			new Notice("Agentic Vault failed to load: " + msg, 10000);
 		});
 	}
 

@@ -169,7 +169,7 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
       if (opts.allowPublicRemote === false) {
         try {
           const { stdout } = await execFileAsync('gh', ['repo', 'view', '--json', 'isPrivate'], { cwd: opts.vaultPath });
-          const data = JSON.parse(stdout);
+          const data = JSON.parse(stdout) as { isPrivate?: boolean } | null;
           if (data && data.isPrivate === false) {
             return {
               ...result,
@@ -177,7 +177,7 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
               message: 'Push aborted: Repository is PUBLIC. Enable "Allow Public Remote" in settings if intentional.',
             };
           }
-        } catch (e) {
+        } catch {
           // gh not installed, not authenticated, or not a github remote.
         }
       }
