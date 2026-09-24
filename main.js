@@ -5892,6 +5892,90 @@ var import_util2 = require("util");
 // src/sync.ts
 var fs = __toESM(require("fs"));
 var path = __toESM(require("path"));
+
+// src/secretScan.ts
+var ALLOW_MARKER = "av-allow-secret";
+var RULES = [
+  { name: "github-token", re: /\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{22,})\b/g, confidence: "high" },
+  { name: "google-api-key", re: /\bAIza[0-9A-Za-z_-]{35}\b/g, confidence: "high" },
+  { name: "aws-access-key-id", re: /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g, confidence: "high" },
+  { name: "private-key-block", re: /-----BEGIN (?:RSA |EC |OPENSSH |DSA |PGP |ENCRYPTED )?PRIVATE KEY(?: BLOCK)?-----/g, confidence: "high" },
+  { name: "slack-token", re: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/g, confidence: "high" },
+  { name: "llm-api-key", re: /\bsk-(?:ant-|proj-)?[A-Za-z0-9_-]{20,}\b/g, confidence: "high" },
+  {
+    name: "generic-assignment",
+    re: /\b(?:api[_-]?key|secret|token|passw(?:or)?d)\b\s*[:=]\s*["']?[A-Za-z0-9_\-/+=]{20,}["']?/gi,
+    confidence: "low"
+  }
+];
+var PLACEHOLDER = /example|placeholder|your[_-]|changeme|xxxx|<[^>]+>|\$\{|\{\{/i;
+function redact(line, re) {
+  return line.replace(new RegExp(re.source, re.flags), "[REDACTED]").trim().slice(0, 120);
+}
+function scanLine(line) {
+  if (line.includes(ALLOW_MARKER))
+    return [];
+  const out = [];
+  for (const r2 of RULES) {
+    const m = new RegExp(r2.re.source, r2.re.flags).exec(line);
+    if (!m)
+      continue;
+    if (r2.confidence === "low" && PLACEHOLDER.test(m[0]))
+      continue;
+    out.push({ rule: r2.name, confidence: r2.confidence, preview: redact(line, r2.re) });
+  }
+  return out;
+}
+function scanDiff(diff) {
+  const findings = [];
+  let file = "";
+  let newLine = 0;
+  for (const raw of diff.split(/\r?\n/)) {
+    if (raw.startsWith("+++ ")) {
+      const p2 = raw.slice(4).replace(/\t.*$/, "").replace(/^"|"$/g, "");
+      file = p2 === "/dev/null" ? "" : p2.replace(/^b\//, "");
+      continue;
+    }
+    if (raw.startsWith("--- ") || raw.startsWith("diff --git"))
+      continue;
+    const hunk = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(raw);
+    if (hunk) {
+      newLine = parseInt(hunk[1], 10);
+      continue;
+    }
+    if (raw.startsWith("+")) {
+      for (const f of scanLine(raw.slice(1)))
+        findings.push({ file, line: newLine, ...f });
+      newLine++;
+    } else if (raw.startsWith(" ")) {
+      newLine++;
+    }
+  }
+  return findings;
+}
+var SENSITIVE_NAMES = [
+  /^\.env(?:\..+)?$/i,
+  /^id_(?:rsa|dsa|ecdsa|ed25519)$/,
+  /^oauth_creds\.json$/i,
+  /^credentials(?:\.json)?$/i,
+  /\.(?:pem|p12|pfx|key)$/i
+];
+var SAFE_NAMES = /^\.env\.(?:example|sample|template)$/i;
+function scanFileNames(paths) {
+  var _a2;
+  const out = [];
+  for (const p2 of paths) {
+    const base = (_a2 = p2.split(/[\\/]/).pop()) != null ? _a2 : p2;
+    if (SAFE_NAMES.test(base))
+      continue;
+    if (SENSITIVE_NAMES.some((re) => re.test(base))) {
+      out.push({ file: p2, line: 0, rule: "sensitive-filename", confidence: "high", preview: base });
+    }
+  }
+  return out;
+}
+
+// src/sync.ts
 function maskSecrets(msg) {
   return msg.replace(/https?:\/\/[^\s/@]+@/g, "https://***@");
 }
@@ -5904,6 +5988,13 @@ async function currentBranch(git) {
     return (await git.raw(["symbolic-ref", "--short", "HEAD"])).trim() || "main";
   } catch (e) {
     return "main";
+  }
+}
+async function unstageAll(git) {
+  try {
+    await git.raw(["reset", "-q"]);
+  } catch (e) {
+    await git.raw(["rm", "-r", "--cached", "-q", "--", "."]);
   }
 }
 async function hasCommits(git) {
@@ -5929,6 +6020,20 @@ async function syncVault(git, opts) {
       };
     }
     await git.add(".");
+    if (opts.scanSecrets !== false) {
+      const diff = await git.raw(["diff", "--cached", "-U0", "--no-color", "--no-ext-diff"]);
+      const names = (await git.raw(["diff", "--cached", "--name-only", "--diff-filter=AM", "-z"])).split("\0").filter(Boolean);
+      const findings = [...scanFileNames(names), ...scanDiff(diff)];
+      if (findings.length > 0) {
+        await unstageAll(git);
+        return {
+          ...result,
+          status: "secrets-found",
+          findings,
+          message: `${findings.length} potential secret(s) found. Nothing was committed or pushed.`
+        };
+      }
+    }
     if (!(await git.status()).isClean()) {
       await git.commit(opts.commitMessage);
       result.committed = true;
@@ -5961,6 +6066,23 @@ async function syncVault(git, opts) {
       throw e;
     }
     if (opts.autoPush) {
+      if (!opts.allowPublicRemote) {
+        try {
+          const { execFile: execFile2 } = require("child_process");
+          const { promisify: promisify2 } = require("util");
+          const execFileAsync2 = promisify2(execFile2);
+          const { stdout } = await execFileAsync2("gh", ["repo", "view", "--json", "isPrivate"], { cwd: opts.vaultPath });
+          const data = JSON.parse(stdout);
+          if (data && data.isPrivate === false) {
+            return {
+              ...result,
+              status: "error",
+              message: 'Push aborted: Repository is PUBLIC. Enable "Allow Public Remote" in settings if intentional.'
+            };
+          }
+        } catch (e) {
+        }
+      }
       if (hasUpstream)
         await git.push();
       else
@@ -6085,6 +6207,55 @@ function applyLink(source, target, plan, platform2 = process.platform) {
   return { backup };
 }
 
+// src/syncState.ts
+var initialSyncState = { paused: false };
+function shouldRun(state, opts) {
+  if (opts.isSyncing)
+    return false;
+  if (state.paused && !opts.manual)
+    return false;
+  return true;
+}
+var PAUSING = ["conflict", "rebase-in-progress", "secrets-found", "no-remote", "not-a-repo"];
+var isPausing = (s) => PAUSING.includes(s);
+var NOTICE_TEXT = {
+  conflict: '\u26A0\uFE0F Merge conflict. Sync paused; your local commit is kept. Use "Force Sync" after resolving.',
+  "rebase-in-progress": "\u26A0\uFE0F A rebase is in progress. Sync paused until it is finished or aborted.",
+  "secrets-found": "\u{1F6A8} Possible secret found in staged changes. Nothing was committed or pushed.",
+  "no-remote": "\u2139\uFE0F No remote configured. Changes are committed locally only.",
+  "not-a-repo": "\u2139\uFE0F This vault is not a Git repository yet. Run the setup wizard."
+};
+function nextSyncState(prev, result, ctx) {
+  var _a2, _b;
+  const now = (_a2 = ctx.now) != null ? _a2 : Date.now();
+  const { status } = result;
+  if (status === "ok") {
+    return {
+      state: { paused: false, lastOkAt: now },
+      // clears pause AND the dedupe key
+      notice: null,
+      statusText: "\u2601 synced"
+    };
+  }
+  if (isPausing(status)) {
+    const key2 = status;
+    const already2 = prev.lastNoticeKey === key2;
+    return {
+      state: { ...prev, paused: true, pauseReason: status, lastNoticeKey: key2 },
+      notice: ctx.manual || !already2 ? NOTICE_TEXT[status] : null,
+      statusText: `\u23F8 paused: ${status}`
+    };
+  }
+  const msg = ((_b = result.message) != null ? _b : "unknown error").slice(0, 100);
+  const key = `error:${msg}`;
+  const already = prev.lastNoticeKey === key;
+  return {
+    state: { ...prev, paused: false, pauseReason: void 0, lastNoticeKey: key },
+    notice: ctx.manual || !already ? `Git error: ${msg}` : null,
+    statusText: "\u26A0\uFE0F error"
+  };
+}
+
 // main.ts
 var execFileAsync = (0, import_util2.promisify)(import_child_process2.execFile);
 var DEFAULT_AI_TOOLS = [
@@ -6102,7 +6273,9 @@ var DEFAULT_SETTINGS = {
   vaultBrainFolder: "AI-Brain",
   aiTools: DEFAULT_AI_TOOLS,
   skillsFolder: "AI-Agent-System/skills",
-  scriptsFolder: "AI-Agent-System/scripts"
+  scriptsFolder: "AI-Agent-System/scripts",
+  allowPublicRemote: false,
+  syncState: initialSyncState
 };
 function getVaultPath(app) {
   if (app.vault.adapter instanceof import_obsidian.FileSystemAdapter) {
@@ -6118,7 +6291,6 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     __publicField(this, "syncIntervalId", null);
     __publicField(this, "statusBarEl");
     __publicField(this, "isSyncing", false);
-    __publicField(this, "syncPaused", false);
     __publicField(this, "lastErrorMsg", null);
   }
   onload() {
@@ -6194,19 +6366,8 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
         const lsFiles = await this.git.raw(["ls-files", "-ci", "--exclude-standard"]);
         const trackedIgnored = lsFiles.split("\n").map((l) => l.trim()).filter(Boolean);
         if (trackedIgnored.length > 0) {
-          new import_obsidian.Notice(`\u26A0\uFE0F WARNING: ${trackedIgnored.length} ignored files are still tracked by git. Run 'git rm --cached' manually.`, 1e4);
+          new import_obsidian.Notice(`\u26A0\uFE0F WARNING: ${trackedIgnored.length} ignored files are still tracked by git. Run 'git rm --cached <file>' manually. Note: This deletes the file on other devices upon pull. Rotate compromised keys immediately!`, 15e3);
           console.warn("Tracked ignored files:", trackedIgnored);
-        }
-      } catch (e) {
-      }
-      try {
-        const isRepo = fs3.existsSync(path4.join(getVaultPath(this.app), ".git"));
-        if (isRepo) {
-          const { stdout } = await execFileAsync("gh", ["repo", "view", "--json", "isPrivate"], { cwd: getVaultPath(this.app) });
-          const data = JSON.parse(stdout);
-          if (data && data.isPrivate === false) {
-            new import_obsidian.Notice("\u{1F6A8} DANGER: This is a PUBLIC GitHub repository. AI secrets may be exposed!", 15e3);
-          }
         }
       } catch (e) {
       }
@@ -6232,7 +6393,7 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
       this.registerInterval(this.syncIntervalId);
     }
   }
-  async updateStatusBar() {
+  async updateStatusBar(transitionStatus) {
     var _a2;
     try {
       const status = await this.git.status();
@@ -6241,7 +6402,9 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
       const behind = status.behind;
       const dirty = status.files.length;
       let text = `\u2601 ${branch}`;
-      if (this.syncPaused) {
+      if (transitionStatus) {
+        text += ` ${transitionStatus}`;
+      } else if (this.settings.syncState.paused) {
         text += ` \u23F8 paused`;
       } else if (this.lastErrorMsg) {
         text += ` \u26A0\uFE0F Error`;
@@ -6272,7 +6435,7 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     await this.saveData(this.settings);
   }
   async performDynamicCommit(silent = false, manual = false) {
-    if (this.isSyncing || this.syncPaused && !manual)
+    if (!shouldRun(this.settings.syncState, { manual, isSyncing: this.isSyncing }))
       return;
     this.isSyncing = true;
     try {
@@ -6280,56 +6443,30 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
       const result = await syncVault(this.git, {
         vaultPath,
         commitMessage: this.settings.commitMessageFormat,
-        autoPush: this.settings.gitAutoPush
+        autoPush: this.settings.gitAutoPush,
+        allowPublicRemote: this.settings.allowPublicRemote
       });
-      if (["conflict", "rebase-in-progress", "no-remote"].includes(result.status)) {
-        this.syncPaused = true;
-      } else if (result.status === "ok") {
-        this.syncPaused = false;
+      const transition = nextSyncState(this.settings.syncState, result, { manual });
+      this.settings.syncState = transition.state;
+      await this.saveSettings();
+      if (result.status === "secrets-found" && "findings" in result) {
+        console.error("Agentic Vault - Secrets blocked from commit:\n", result.findings);
       }
-      switch (result.status) {
-        case "not-a-repo":
-          if (!silent)
-            new import_obsidian.Notice("Not a git repository. Please initialize in settings.");
-          break;
-        case "rebase-in-progress":
-          if (!silent || this.lastErrorMsg !== result.message) {
-            new import_obsidian.Notice(`\u26A0\uFE0F ${result.message}`);
-            this.lastErrorMsg = result.message || null;
-          }
-          break;
-        case "conflict":
-          if (!silent || this.lastErrorMsg !== "conflict") {
-            new import_obsidian.Notice(`\u26A0\uFE0F ${result.message}`);
-            this.lastErrorMsg = "conflict";
-          }
-          break;
-        case "error":
-          if (!silent || this.lastErrorMsg !== result.message) {
-            const displayMsg = result.message && result.message.length > 100 ? result.message.substring(0, 100) + "..." : result.message;
-            new import_obsidian.Notice(`Git Error: ${displayMsg}`);
-            this.lastErrorMsg = result.message || null;
-          }
-          break;
-        case "no-remote":
-          if (!silent || this.lastErrorMsg !== "no-remote") {
-            new import_obsidian.Notice(`\u26A0\uFE0F ${result.message}`);
-            this.lastErrorMsg = "no-remote";
-          }
-          break;
-        case "ok":
-          this.lastErrorMsg = null;
-          if (result.pushed && !silent)
-            new import_obsidian.Notice("\u{1F680} Pushed to GitHub!");
-          else if (result.committed && !silent)
-            new import_obsidian.Notice("\u2713 Changes committed.");
-          else if (!silent)
-            new import_obsidian.Notice("Agentic Vault: Nothing to commit.");
-          break;
+      if (transition.notice && (!silent || manual)) {
+        new import_obsidian.Notice(transition.notice, 1e4);
+      } else if (result.status === "ok" && !silent) {
+        if (result.pushed)
+          new import_obsidian.Notice("\u{1F680} Pushed to GitHub!");
+        else if (result.committed)
+          new import_obsidian.Notice("\u2713 Changes committed.");
+        else
+          new import_obsidian.Notice("Agentic Vault: Nothing to commit.");
       }
+      void this.updateStatusBar(transition.statusText);
+    } catch (e) {
+      console.error(e);
     } finally {
       this.isSyncing = false;
-      void this.updateStatusBar();
     }
   }
 };
@@ -6667,6 +6804,10 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
       this.plugin.settings.gitAutoPush = v;
       await this.plugin.saveSettings();
       this.plugin.startAutoSync();
+    }));
+    new import_obsidian.Setting(containerEl).setName("Allow Public Remote").setDesc("DANGER: Allow syncing even if the GitHub repository is public. This may expose your AI secrets.").addToggle((t2) => t2.setValue(this.plugin.settings.allowPublicRemote).onChange(async (v) => {
+      this.plugin.settings.allowPublicRemote = v;
+      await this.plugin.saveSettings();
     }));
     new import_obsidian.Setting(containerEl).setName("Auto-Sync Interval (minutes)").setDesc("How often to sync. Set to 0 to disable.").addText((t2) => t2.setPlaceholder("1").setValue(String(this.plugin.settings.syncIntervalMinutes)).onChange(async (v) => {
       const n = parseInt(v);

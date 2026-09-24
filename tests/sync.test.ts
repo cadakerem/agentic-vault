@@ -12,7 +12,7 @@ beforeEach(() => {
   root = fs.mkdtempSync(path.join(os.tmpdir(), 'av-test-'));
 });
 afterEach(() => {
-  fs.rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+  fs.rmSync(root, { recursive: true, force: true });
 });
 
 // ---------- helpers ----------
@@ -247,5 +247,85 @@ describe('maskSecrets', () => {
   it('does not eat text between a URL and a later @', () => {
     const msg = 'see https://github.com/u/r.git\ncontact me@example.com';
     expect(maskSecrets(msg)).toBe(msg);
+  });
+});
+
+// ---------- 5. secret scan ----------
+const FAKE_GH = 'ghp' + '_' + 'a1B2'.repeat(9); // built at runtime: no token-shaped literal in the repo
+
+describe('secret scan in the sync flow', () => {
+  it('(j) blocks a first sync that contains a token: nothing committed, nothing pushed, index clean', async () => {
+    const remote = await makeRemote();
+    const { dir, git } = await makeVault('vault', remote);
+    write(dir, 'ok.md', 'fine');
+    write(dir, 'notes/keys.md', `my token ${FAKE_GH}`);
+
+    const res = await syncVault(git, opts(dir));
+
+    expect(res.status).toBe('secrets-found');
+    expect(res.findings?.[0]).toMatchObject({ file: 'notes/keys.md', rule: 'github-token' });
+    expect(JSON.stringify(res)).not.toContain(FAKE_GH); // result/message never carries the secret
+    expect(res.committed).toBe(false);
+    expect(res.pushed).toBe(false);
+    expect((await git.status()).staged).toEqual([]); // unstaged again (files stay on disk)
+    expect(read(dir, 'notes/keys.md')).toContain(FAKE_GH);
+    expect((await simpleGit(remote).raw(['branch', '--list'])).trim()).toBe('');
+  });
+
+  it('(k) stays blocked while the secret is there, and syncs normally once it is removed', async () => {
+    const remote = await makeRemote();
+    const { dir, git } = await makeVault('vault', remote);
+    write(dir, 'keys.md', FAKE_GH);
+    expect((await syncVault(git, opts(dir))).status).toBe('secrets-found');
+    expect((await syncVault(git, opts(dir))).status).toBe('secrets-found');
+
+    write(dir, 'keys.md', 'removed');
+    const res = await syncVault(git, opts(dir));
+
+    expect(res.status).toBe('ok');
+    expect(await remoteFile(remote, 'keys.md')).toBe('removed');
+  });
+
+  it('(l) blocks sensitive file names such as .env', async () => {
+    const remote = await makeRemote();
+    const { dir, git } = await makeVault('vault', remote);
+    write(dir, '.env', 'A=1');
+    const res = await syncVault(git, opts(dir));
+    expect(res.status).toBe('secrets-found');
+    expect(res.findings?.[0].rule).toBe('sensitive-filename');
+  });
+
+  it('(m) a hit on an already-cloned repo leaves history and remote untouched', async () => {
+    const remote = await makeRemote();
+    await seedRemote(remote, { 'a.md': 'a' });
+    const { dir, git } = await cloneVault(remote, 'vault');
+    write(dir, 'leak.md', FAKE_GH);
+    const before = (await git.log()).total;
+
+    const res = await syncVault(git, opts(dir));
+
+    expect(res.status).toBe('secrets-found');
+    expect((await git.log()).total).toBe(before);
+    expect(await remoteFiles(remote)).toEqual(['a.md']);
+  });
+
+  it('(n) removing a secret does not trigger the scanner (only added lines are scanned)', async () => {
+    const remote = await makeRemote();
+    const { dir, git } = await makeVault('vault', remote);
+    write(dir, 'keys.md', FAKE_GH);
+    expect((await syncVault(git, opts(dir, { scanSecrets: false }))).status).toBe('ok'); // simulate old leak
+    write(dir, 'keys.md', 'cleaned');
+
+    const res = await syncVault(git, opts(dir));
+
+    expect(res.status).toBe('ok');
+    expect(res.pushed).toBe(true);
+  });
+
+  it('(o) scanSecrets:false disables the check', async () => {
+    const remote = await makeRemote();
+    const { dir, git } = await makeVault('vault', remote);
+    write(dir, 'keys.md', FAKE_GH);
+    expect((await syncVault(git, opts(dir, { scanSecrets: false }))).status).toBe('ok');
   });
 });

@@ -18,6 +18,7 @@ import { promisify } from 'util';
 import { syncVault } from './src/sync';
 import { parseRules, serializeRules, isDangerousPath } from './src/util';
 import { planLink, applyLink, LinkPlan } from './src/link';
+import { SyncState, initialSyncState, shouldRun, nextSyncState } from './src/syncState';
 
 const execFileAsync = promisify(execFile);
 
@@ -42,6 +43,8 @@ interface AgenticVaultSettings {
 	aiTools: AIToolConfig[];
 	skillsFolder: string;
 	scriptsFolder: string;
+	allowPublicRemote: boolean;
+	syncState: SyncState;
 }
 
 const DEFAULT_AI_TOOLS: AIToolConfig[] = [
@@ -61,6 +64,8 @@ const DEFAULT_SETTINGS: AgenticVaultSettings = {
 	aiTools: DEFAULT_AI_TOOLS,
 	skillsFolder: 'AI-Agent-System/skills',
 	scriptsFolder: 'AI-Agent-System/scripts',
+	allowPublicRemote: false,
+	syncState: initialSyncState,
 };
 
 // ─────────────────────────────────────────────
@@ -171,24 +176,11 @@ export default class AgenticVaultPlugin extends Plugin {
 				const lsFiles = await this.git.raw(['ls-files', '-ci', '--exclude-standard']);
 				const trackedIgnored = lsFiles.split('\n').map(l => l.trim()).filter(Boolean);
 				if (trackedIgnored.length > 0) {
-					new Notice(`⚠️ WARNING: ${trackedIgnored.length} ignored files are still tracked by git. Run 'git rm --cached' manually.`, 10000);
+					new Notice(`⚠️ WARNING: ${trackedIgnored.length} ignored files are still tracked by git. Run 'git rm --cached <file>' manually. Note: This deletes the file on other devices upon pull. Rotate compromised keys immediately!`, 15000);
 					console.warn('Tracked ignored files:', trackedIgnored);
 				}
 			} catch (e) {
 				// Ignore errors from ls-files
-			}
-			// Check if repo is public
-			try {
-				const isRepo = fs.existsSync(path.join(getVaultPath(this.app), '.git'));
-				if (isRepo) {
-					const { stdout } = await execFileAsync('gh', ['repo', 'view', '--json', 'isPrivate'], { cwd: getVaultPath(this.app) });
-					const data = JSON.parse(stdout);
-					if (data && data.isPrivate === false) {
-						new Notice('🚨 DANGER: This is a PUBLIC GitHub repository. AI secrets may be exposed!', 15000);
-					}
-				}
-			} catch (e) {
-				// Ignore if gh is not installed or repo has no upstream
 			}
 		} catch (e) {
 			console.error("Failed to update .gitignore", e);
@@ -215,7 +207,7 @@ export default class AgenticVaultPlugin extends Plugin {
 		}
 	}
 
-	async updateStatusBar(): Promise<void> {
+	async updateStatusBar(transitionStatus?: string): Promise<void> {
 		try {
 			const status: StatusResult = await this.git.status();
 			const branch = status.current ?? 'unknown';
@@ -224,7 +216,10 @@ export default class AgenticVaultPlugin extends Plugin {
 			const dirty  = status.files.length;
 
 			let text = `☁ ${branch}`;
-			if (this.syncPaused) {
+			
+			if (transitionStatus) {
+				text += ` ${transitionStatus}`;
+			} else if (this.settings.syncState.paused) {
 				text += ` ⏸ paused`;
 			} else if (this.lastErrorMsg) {
 				text += ` ⚠️ Error`;
@@ -255,11 +250,10 @@ export default class AgenticVaultPlugin extends Plugin {
 	}
 
 	isSyncing = false;
-	syncPaused = false;
 	lastErrorMsg: string | null = null;
 
 	async performDynamicCommit(silent: boolean = false, manual: boolean = false): Promise<void> {
-		if (this.isSyncing || (this.syncPaused && !manual)) return;
+		if (!shouldRun(this.settings.syncState, { manual, isSyncing: this.isSyncing })) return;
 		this.isSyncing = true;
 		try {
 			const vaultPath = getVaultPath(this.app);
@@ -267,54 +261,30 @@ export default class AgenticVaultPlugin extends Plugin {
 				vaultPath,
 				commitMessage: this.settings.commitMessageFormat,
 				autoPush: this.settings.gitAutoPush,
+				allowPublicRemote: this.settings.allowPublicRemote,
 			});
 
-			// If it's a conflict or rebase issue, pause the auto-sync.
-			if (['conflict', 'rebase-in-progress', 'no-remote'].includes(result.status)) {
-				this.syncPaused = true;
-			} else if (result.status === 'ok') {
-				this.syncPaused = false;
+			const transition = nextSyncState(this.settings.syncState, result, { manual });
+			this.settings.syncState = transition.state;
+			await this.saveSettings();
+
+			if (result.status === 'secrets-found' && 'findings' in result) {
+				console.error('Agentic Vault - Secrets blocked from commit:\n', result.findings);
 			}
 
-			switch (result.status) {
-				case 'not-a-repo':
-					if (!silent) new Notice('Not a git repository. Please initialize in settings.');
-					break;
-				case 'rebase-in-progress':
-					if (!silent || this.lastErrorMsg !== result.message) {
-						new Notice(`⚠️ ${result.message}`);
-						this.lastErrorMsg = result.message || null;
-					}
-					break;
-				case 'conflict':
-					if (!silent || this.lastErrorMsg !== 'conflict') {
-						new Notice(`⚠️ ${result.message}`);
-						this.lastErrorMsg = 'conflict';
-					}
-					break;
-				case 'error':
-					if (!silent || this.lastErrorMsg !== result.message) {
-						const displayMsg = result.message && result.message.length > 100 ? result.message.substring(0, 100) + '...' : result.message;
-						new Notice(`Git Error: ${displayMsg}`);
-						this.lastErrorMsg = result.message || null;
-					}
-					break;
-				case 'no-remote':
-					if (!silent || this.lastErrorMsg !== 'no-remote') {
-						new Notice(`⚠️ ${result.message}`);
-						this.lastErrorMsg = 'no-remote';
-					}
-					break;
-				case 'ok':
-					this.lastErrorMsg = null;
-					if (result.pushed && !silent) new Notice('🚀 Pushed to GitHub!');
-					else if (result.committed && !silent) new Notice('✓ Changes committed.');
-					else if (!silent) new Notice('Agentic Vault: Nothing to commit.');
-					break;
+			if (transition.notice && (!silent || manual)) {
+				new Notice(transition.notice, 10000);
+			} else if (result.status === 'ok' && !silent) {
+				if (result.pushed) new Notice('🚀 Pushed to GitHub!');
+				else if (result.committed) new Notice('✓ Changes committed.');
+				else new Notice('Agentic Vault: Nothing to commit.');
 			}
+			
+			void this.updateStatusBar(transition.statusText);
+		} catch (e) {
+			console.error(e);
 		} finally {
 			this.isSyncing = false;
-			void this.updateStatusBar();
 		}
 	}
 }
@@ -761,6 +731,14 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 				this.plugin.settings.gitAutoPush = v;
 				await this.plugin.saveSettings();
 				this.plugin.startAutoSync();
+			}));
+
+		new Setting(containerEl)
+			.setName('Allow Public Remote')
+			.setDesc('DANGER: Allow syncing even if the GitHub repository is public. This may expose your AI secrets.')
+			.addToggle(t => t.setValue(this.plugin.settings.allowPublicRemote).onChange(async v => {
+				this.plugin.settings.allowPublicRemote = v;
+				await this.plugin.saveSettings();
 			}));
 
 		new Setting(containerEl)

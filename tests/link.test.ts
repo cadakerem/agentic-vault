@@ -15,6 +15,10 @@ beforeEach(() => {
 });
 afterEach(() => fs.rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }));
 
+// Unprivileged Windows users can create junctions, not symlinks; junctions need ABSOLUTE targets.
+const mkLink = (dest: string, at: string) =>
+  fs.symlinkSync(path.resolve(dest), at, process.platform === 'win32' ? 'junction' : 'dir');
+
 const isLinkTo = (link: string, dest: string) =>
   fs.lstatSync(link).isSymbolicLink() && fs.realpathSync(link) === fs.realpathSync(dest);
 
@@ -58,14 +62,11 @@ describe('planLink / applyLink', () => {
     expect(() => applyLink(source, target(), planLink(source, target(), home))).not.toThrow();
   });
 
-  it('a RELATIVE link to the same source also counts as noop', () => {
+  // relative links are POSIX-only (junctions must be absolute; plain symlinks need privileges on Windows)
+  it.skipIf(process.platform === 'win32')('a RELATIVE link to the same source also counts as noop', () => {
     fs.mkdirSync(source, { recursive: true });
     fs.mkdirSync(path.dirname(target()), { recursive: true });
-    if (process.platform === 'win32') {
-      fs.symlinkSync(source, target(), 'junction'); // relative junctions don't work well on Windows
-    } else {
-      fs.symlinkSync(path.relative(path.dirname(target()), source), target(), 'dir');
-    }
+    fs.symlinkSync(path.relative(path.dirname(target()), source), target(), 'dir');
     expect(planLink(source, target(), home).action).toBe('noop');
   });
 
@@ -74,7 +75,7 @@ describe('planLink / applyLink', () => {
     fs.mkdirSync(other);
     fs.writeFileSync(path.join(other, 'keep.txt'), 'keep');
     fs.mkdirSync(path.dirname(target()), { recursive: true });
-    fs.symlinkSync(other, target(), process.platform === 'win32' ? 'junction' : 'dir');
+    mkLink(other, target());
 
     const plan = planLink(source, target(), home);
     expect(plan).toMatchObject({ action: 'replace-link', currentDestination: other });

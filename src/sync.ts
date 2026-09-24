@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { SimpleGit } from 'simple-git';
+import { scanDiff, scanFileNames, Finding } from './secretScan';
 
 // NOTE: this file must NOT import 'obsidian' so vitest can load it.
 // main.ts should call syncVault() and only handle Notices / status bar.
@@ -11,6 +12,7 @@ export type SyncStatus =
   | 'rebase-in-progress'
   | 'no-remote'
   | 'not-a-repo'
+  | 'secrets-found'
   | 'error';
 
 export interface SyncOptions {
@@ -18,6 +20,8 @@ export interface SyncOptions {
   commitMessage: string;
   autoPush: boolean;
   remote?: string; // default: origin
+  scanSecrets?: boolean; // default: true
+  allowPublicRemote?: boolean;
 }
 
 export interface SyncResult {
@@ -25,6 +29,7 @@ export interface SyncResult {
   message?: string;
   committed: boolean;
   pushed: boolean;
+  findings?: Finding[];
 }
 
 export function maskSecrets(msg: string): string {
@@ -42,6 +47,14 @@ async function currentBranch(git: SimpleGit): Promise<string> {
     return (await git.raw(['symbolic-ref', '--short', 'HEAD'])).trim() || 'main';
   } catch {
     return 'main';
+  }
+}
+
+async function unstageAll(git: SimpleGit): Promise<void> {
+  try {
+    await git.raw(['reset', '-q']);
+  } catch {
+    await git.raw(['rm', '-r', '--cached', '-q', '--', '.']); // unborn branch fallback
   }
 }
 
@@ -71,6 +84,25 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
 
     // 1. commit local changes first
     await git.add('.');
+
+    // 1b. secret scan of what is about to be committed; on a hit, unstage everything and stop
+    if (opts.scanSecrets !== false) {
+      const diff = await git.raw(['diff', '--cached', '-U0', '--no-color', '--no-ext-diff']);
+      const names = (await git.raw(['diff', '--cached', '--name-only', '--diff-filter=AM', '-z']))
+        .split('\0')
+        .filter(Boolean);
+      const findings = [...scanFileNames(names), ...scanDiff(diff)];
+      if (findings.length > 0) {
+        await unstageAll(git);
+        return {
+          ...result,
+          status: 'secrets-found',
+          findings,
+          message: `${findings.length} potential secret(s) found. Nothing was committed or pushed.`,
+        };
+      }
+    }
+
     if (!(await git.status()).isClean()) {
       await git.commit(opts.commitMessage);
       result.committed = true;
@@ -110,6 +142,25 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
 
     // 4. push
     if (opts.autoPush) {
+      if (!opts.allowPublicRemote) {
+        try {
+          const { execFile } = require('child_process');
+          const { promisify } = require('util');
+          const execFileAsync = promisify(execFile);
+          const { stdout } = await execFileAsync('gh', ['repo', 'view', '--json', 'isPrivate'], { cwd: opts.vaultPath });
+          const data = JSON.parse(stdout);
+          if (data && data.isPrivate === false) {
+            return {
+              ...result,
+              status: 'error',
+              message: 'Push aborted: Repository is PUBLIC. Enable "Allow Public Remote" in settings if intentional.',
+            };
+          }
+        } catch (e) {
+          // gh not installed, not authenticated, or not a github remote.
+        }
+      }
+
       if (hasUpstream) await git.push();
       else await git.push(['-u', remote, branch]);
       result.pushed = true;
