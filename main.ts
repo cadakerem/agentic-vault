@@ -112,7 +112,7 @@ export default class AgenticVaultPlugin extends Plugin {
 
 		// Ribbon — force sync
 		this.addRibbonIcon('git-commit-vertical', 'Force Git Sync', () => {
-			void this.performDynamicCommit(false);
+			void this.performDynamicCommit(false, true);
 		});
 
 		// Ribbon — setup wizard
@@ -122,7 +122,7 @@ export default class AgenticVaultPlugin extends Plugin {
 		});
 
 		// Commands
-		this.addCommand({ id: 'force-sync',         name: 'Force Git Sync (Commit & Push)',  callback: () => { void this.performDynamicCommit(false); } });
+		this.addCommand({ id: 'force-sync',         name: 'Force Git Sync (Commit & Push)',  callback: () => { void this.performDynamicCommit(false, true); } });
 		this.addCommand({ id: 'open-brain-manager', name: 'Open AI Brain Manager',            callback: () => { new BrainManagerModal(this.app, this).open(); } });
 		this.addCommand({ id: 'create-github-issue',name: 'Create GitHub Issue (IDD)',        callback: () => { new CreateIssueModal(this.app, this).open(); } });
 		this.addCommand({ id: 'setup-wizard',        name: 'New Machine Setup Wizard',        callback: () => { new SetupWizardModal(this.app, this).open(); } });
@@ -208,7 +208,9 @@ export default class AgenticVaultPlugin extends Plugin {
 			const dirty  = status.files.length;
 
 			let text = `☁ ${branch}`;
-			if (this.lastErrorMsg) {
+			if (this.syncPaused) {
+				text += ` ⏸ paused`;
+			} else if (this.lastErrorMsg) {
 				text += ` ⚠️ Error`;
 			} else {
 				if (ahead)  text += ` ↑${ahead}`;
@@ -237,10 +239,11 @@ export default class AgenticVaultPlugin extends Plugin {
 	}
 
 	isSyncing = false;
+	syncPaused = false;
 	lastErrorMsg: string | null = null;
 
-	async performDynamicCommit(silent: boolean = false): Promise<void> {
-		if (this.isSyncing) return;
+	async performDynamicCommit(silent: boolean = false, manual: boolean = false): Promise<void> {
+		if (this.isSyncing || (this.syncPaused && !manual)) return;
 		this.isSyncing = true;
 		try {
 			const vaultPath = getVaultPath(this.app);
@@ -249,6 +252,13 @@ export default class AgenticVaultPlugin extends Plugin {
 				commitMessage: this.settings.commitMessageFormat,
 				autoPush: this.settings.gitAutoPush,
 			});
+
+			// If it's a conflict or rebase issue, pause the auto-sync.
+			if (['conflict', 'rebase-in-progress', 'no-remote'].includes(result.status)) {
+				this.syncPaused = true;
+			} else if (result.status === 'ok') {
+				this.syncPaused = false;
+			}
 
 			switch (result.status) {
 				case 'not-a-repo':
@@ -259,19 +269,13 @@ export default class AgenticVaultPlugin extends Plugin {
 						new Notice(`⚠️ ${result.message}`);
 						this.lastErrorMsg = result.message || null;
 					}
-					// Pause auto-sync if rebase is in progress
-					this.isSyncing = false;
-					void this.updateStatusBar();
-					return;
+					break;
 				case 'conflict':
 					if (!silent || this.lastErrorMsg !== 'conflict') {
 						new Notice(`⚠️ ${result.message}`);
 						this.lastErrorMsg = 'conflict';
 					}
-					// Pause auto-sync
-					this.isSyncing = false;
-					void this.updateStatusBar();
-					return;
+					break;
 				case 'error':
 					if (!silent || this.lastErrorMsg !== result.message) {
 						const displayMsg = result.message && result.message.length > 100 ? result.message.substring(0, 100) + '...' : result.message;
@@ -558,7 +562,7 @@ class BrainManagerModal extends Modal {
 			this.rules[this.currentTab] = textArea.value;
 			await this.saveRulesToFile();
 			this.close();
-			void this.plugin.performDynamicCommit(false);
+			void this.plugin.performDynamicCommit(false, true);
 		};
 	}
 

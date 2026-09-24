@@ -6055,6 +6055,7 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     __publicField(this, "syncIntervalId", null);
     __publicField(this, "statusBarEl");
     __publicField(this, "isSyncing", false);
+    __publicField(this, "syncPaused", false);
     __publicField(this, "lastErrorMsg", null);
   }
   onload() {
@@ -6072,14 +6073,14 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     this.statusBarEl.setText("\u27F3 Agentic Vault");
     void this.updateStatusBar();
     this.addRibbonIcon("git-commit-vertical", "Force Git Sync", () => {
-      void this.performDynamicCommit(false);
+      void this.performDynamicCommit(false, true);
     });
     (0, import_obsidian.addIcon)("laptop-2", '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>');
     this.addRibbonIcon("laptop-2", "New Machine Setup", () => {
       new SetupWizardModal(this.app, this).open();
     });
     this.addCommand({ id: "force-sync", name: "Force Git Sync (Commit & Push)", callback: () => {
-      void this.performDynamicCommit(false);
+      void this.performDynamicCommit(false, true);
     } });
     this.addCommand({ id: "open-brain-manager", name: "Open AI Brain Manager", callback: () => {
       new BrainManagerModal(this.app, this).open();
@@ -6165,7 +6166,9 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
       const behind = status.behind;
       const dirty = status.files.length;
       let text = `\u2601 ${branch}`;
-      if (this.lastErrorMsg) {
+      if (this.syncPaused) {
+        text += ` \u23F8 paused`;
+      } else if (this.lastErrorMsg) {
         text += ` \u26A0\uFE0F Error`;
       } else {
         if (ahead)
@@ -6193,8 +6196,8 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
   async saveSettings() {
     await this.saveData(this.settings);
   }
-  async performDynamicCommit(silent = false) {
-    if (this.isSyncing)
+  async performDynamicCommit(silent = false, manual = false) {
+    if (this.isSyncing || this.syncPaused && !manual)
       return;
     this.isSyncing = true;
     try {
@@ -6204,6 +6207,11 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
         commitMessage: this.settings.commitMessageFormat,
         autoPush: this.settings.gitAutoPush
       });
+      if (["conflict", "rebase-in-progress", "no-remote"].includes(result.status)) {
+        this.syncPaused = true;
+      } else if (result.status === "ok") {
+        this.syncPaused = false;
+      }
       switch (result.status) {
         case "not-a-repo":
           if (!silent)
@@ -6214,17 +6222,13 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
             new import_obsidian.Notice(`\u26A0\uFE0F ${result.message}`);
             this.lastErrorMsg = result.message || null;
           }
-          this.isSyncing = false;
-          void this.updateStatusBar();
-          return;
+          break;
         case "conflict":
           if (!silent || this.lastErrorMsg !== "conflict") {
             new import_obsidian.Notice(`\u26A0\uFE0F ${result.message}`);
             this.lastErrorMsg = "conflict";
           }
-          this.isSyncing = false;
-          void this.updateStatusBar();
-          return;
+          break;
         case "error":
           if (!silent || this.lastErrorMsg !== result.message) {
             const displayMsg = result.message && result.message.length > 100 ? result.message.substring(0, 100) + "..." : result.message;
@@ -6456,7 +6460,7 @@ var BrainManagerModal = class extends import_obsidian.Modal {
       this.rules[this.currentTab] = textArea.value;
       await this.saveRulesToFile();
       this.close();
-      void this.plugin.performDynamicCommit(false);
+      void this.plugin.performDynamicCommit(false, true);
     };
   }
   async loadExistingRules() {
