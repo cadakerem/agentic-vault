@@ -39,17 +39,22 @@ export interface Transition {
 
 export function nextSyncState(
   prev: SyncState,
-  result: { status: SyncStatus; message?: string },
+  result: { status: SyncStatus; message?: string; conflictCopies?: string[] },
   ctx: { manual: boolean; now?: number },
 ): Transition {
   const now = ctx.now ?? Date.now();
   const { status } = result;
 
   if (status === 'ok') {
+    const copies = result.conflictCopies ?? [];
     return {
       state: { paused: false, lastOkAt: now }, // clears pause AND the dedupe key
-      notice: null,
-      statusText: '☁ synced',
+      // a conflict copy is never silent: the user has to merge it by hand
+      notice:
+        copies.length > 0
+          ? `📄 Conflict: the remote version was applied. Your local version was saved as ${copies[0]}${copies.length > 1 ? ` (+${copies.length - 1} more)` : ''}. Compare, merge, then delete the copy.`
+          : null,
+      statusText: copies.length > 0 ? `☁ synced · ${copies.length} conflict cop${copies.length === 1 ? 'y' : 'ies'}` : '☁ synced',
     };
   }
 
