@@ -61,7 +61,11 @@ describe('planLink / applyLink', () => {
   it('a RELATIVE link to the same source also counts as noop', () => {
     fs.mkdirSync(source, { recursive: true });
     fs.mkdirSync(path.dirname(target()), { recursive: true });
-    fs.symlinkSync(path.relative(path.dirname(target()), source), target(), 'dir');
+    if (process.platform === 'win32') {
+      fs.symlinkSync(source, target(), 'junction'); // relative junctions don't work well on Windows
+    } else {
+      fs.symlinkSync(path.relative(path.dirname(target()), source), target(), 'dir');
+    }
     expect(planLink(source, target(), home).action).toBe('noop');
   });
 
@@ -70,7 +74,7 @@ describe('planLink / applyLink', () => {
     fs.mkdirSync(other);
     fs.writeFileSync(path.join(other, 'keep.txt'), 'keep');
     fs.mkdirSync(path.dirname(target()), { recursive: true });
-    fs.symlinkSync(other, target(), 'dir');
+    fs.symlinkSync(other, target(), process.platform === 'win32' ? 'junction' : 'dir');
 
     const plan = planLink(source, target(), home);
     expect(plan).toMatchObject({ action: 'replace-link', currentDestination: other });
