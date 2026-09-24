@@ -17,6 +17,7 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { syncVault } from './src/sync';
 import { parseRules, serializeRules, isDangerousPath } from './src/util';
+import { planLink, applyLink, LinkPlan } from './src/link';
 
 const execFileAsync = promisify(execFile);
 
@@ -163,16 +164,31 @@ export default class AgenticVaultPlugin extends Plugin {
 			if (changed) {
 				fs.writeFileSync(gitignorePath, content);
 				new Notice('Agentic Vault: Updated .gitignore to prevent secret leaks.');
-				// Try to untrack newly ignored files if they were already tracked
-				for (const rule of rules) {
-					if (!existingLines.has(rule)) {
-						try {
-							await this.git.raw(['rm', '-r', '--cached', '--ignore-unmatch', rule]);
-						} catch (e) {
-							// Ignored if file doesn't exist
-						}
+			}
+			
+			// Check if any ignored files are still being tracked
+			try {
+				const lsFiles = await this.git.raw(['ls-files', '-ci', '--exclude-standard']);
+				const trackedIgnored = lsFiles.split('\n').map(l => l.trim()).filter(Boolean);
+				if (trackedIgnored.length > 0) {
+					new Notice(`⚠️ WARNING: ${trackedIgnored.length} ignored files are still tracked by git. Run 'git rm --cached' manually.`, 10000);
+					console.warn('Tracked ignored files:', trackedIgnored);
+				}
+			} catch (e) {
+				// Ignore errors from ls-files
+			}
+			// Check if repo is public
+			try {
+				const isRepo = fs.existsSync(path.join(getVaultPath(this.app), '.git'));
+				if (isRepo) {
+					const { stdout } = await execFileAsync('gh', ['repo', 'view', '--json', 'isPrivate'], { cwd: getVaultPath(this.app) });
+					const data = JSON.parse(stdout);
+					if (data && data.isPrivate === false) {
+						new Notice('🚨 DANGER: This is a PUBLIC GitHub repository. AI secrets may be exposed!', 15000);
 					}
 				}
+			} catch (e) {
+				// Ignore if gh is not installed or repo has no upstream
 			}
 		} catch (e) {
 			console.error("Failed to update .gitignore", e);
@@ -311,6 +327,9 @@ interface SetupStep {
 	label: string;
 	status: 'pending' | 'running' | 'done' | 'error' | 'skipped';
 	detail: string;
+	plan?: LinkPlan;
+	src?: string;
+	dst?: string;
 }
 
 class SetupWizardModal extends Modal {
@@ -378,23 +397,30 @@ class SetupWizardModal extends Modal {
 			},
 		];
 
+		const addSymlinkStep = (label: string, src: string, dst: string) => {
+			const plan = planLink(src, dst);
+			let detail = '';
+			switch (plan.action) {
+				case 'create': detail = 'Will create new link'; break;
+				case 'noop': detail = 'Already linked correctly'; break;
+				case 'replace-link': detail = `Will replace existing link (currently -> ${plan.currentDestination})`; break;
+				case 'backup-and-create': detail = `Will backup existing folder to ${path.basename(plan.backup)}${plan.willMigrate ? ' and migrate contents' : ''}`; break;
+				case 'refuse': detail = `REFUSED: ${plan.reason}`; break;
+			}
+			steps.push({ label, status: plan.action === 'refuse' ? 'error' : 'pending', detail, plan, src, dst });
+		};
+
 		// Skills symlink
-		const skillsSrc = path.join(vaultPath, this.plugin.settings.skillsFolder);
-		const skillsDst = path.join(os.homedir(), '.agents', 'skills');
-		steps.push({ label: '🧠 Link Skills Folder', status: 'pending', detail: `${skillsSrc} → ${skillsDst}` });
+		addSymlinkStep('🧠 Link Skills Folder', path.join(vaultPath, this.plugin.settings.skillsFolder), path.join(os.homedir(), '.agents', 'skills'));
 
 		// Scripts symlink
-		const scriptsSrc = path.join(vaultPath, this.plugin.settings.scriptsFolder);
-		const scriptsDst = path.join(os.homedir(), '.agents', 'scripts');
-		steps.push({ label: '⚡ Link Scripts Folder', status: 'pending', detail: `${scriptsSrc} → ${scriptsDst}` });
+		addSymlinkStep('⚡ Link Scripts Folder', path.join(vaultPath, this.plugin.settings.scriptsFolder), path.join(os.homedir(), '.agents', 'scripts'));
 
 		// AI tools symlinks
 		for (const tool of this.plugin.settings.aiTools) {
 			if (!tool.enabled) continue;
 			const dstRel = isWin ? tool.windowsPath : tool.unixPath;
-			const dst = path.join(os.homedir(), dstRel);
-			const src = path.join(vaultPath, this.plugin.settings.vaultBrainFolder, tool.id);
-			steps.push({ label: `🤖 Link ${tool.name}`, status: 'pending', detail: `${src} → ${dst}` });
+			addSymlinkStep(`🤖 Link ${tool.name}`, path.join(vaultPath, this.plugin.settings.vaultBrainFolder, tool.id), path.join(os.homedir(), dstRel));
 		}
 
 		// Git check
@@ -421,29 +447,17 @@ class SetupWizardModal extends Modal {
 		// Step 0 — Platform detect (instant)
 		this.setStepStatus(stepIdx++, 'done');
 
-		// Step 1 — Skills
-		await this.runSymlinkStep(
-			stepIdx++,
-			path.join(vaultPath, this.plugin.settings.skillsFolder),
-			path.join(os.homedir(), '.agents', 'skills'),
-			isWin,
-		);
-
-		// Step 2 — Scripts
-		await this.runSymlinkStep(
-			stepIdx++,
-			path.join(vaultPath, this.plugin.settings.scriptsFolder),
-			path.join(os.homedir(), '.agents', 'scripts'),
-			isWin,
-		);
-
-		// AI tools
-		for (const tool of this.plugin.settings.aiTools) {
-			if (!tool.enabled) continue;
-			const dstRel = isWin ? tool.windowsPath : tool.unixPath;
-			const dst = path.join(os.homedir(), dstRel);
-			const src = path.join(vaultPath, this.plugin.settings.vaultBrainFolder, tool.id);
-			await this.runSymlinkStep(stepIdx++, src, dst, isWin);
+		// Process all symlink steps (from index 1 to steps.length - 2)
+		while (stepIdx < this.steps.length - 1) {
+			const step = this.steps[stepIdx];
+			if (step.plan && step.src && step.dst) {
+				if (step.plan.action === 'refuse') {
+					this.setStepStatus(stepIdx, 'error', step.plan.reason);
+				} else {
+					await this.runSymlinkStep(stepIdx, step.src, step.dst, step.plan);
+				}
+			}
+			stepIdx++;
 		}
 
 		// Final — Git check
@@ -464,39 +478,15 @@ class SetupWizardModal extends Modal {
 		new Notice('✅ Machine setup complete! All symlinks are active.');
 	}
 
-	private async runSymlinkStep(idx: number, src: string, dst: string, isWin: boolean): Promise<void> {
+	private async runSymlinkStep(idx: number, src: string, dst: string, plan: LinkPlan): Promise<void> {
 		this.setStepStatus(idx, 'running');
 		try {
-			if (isDangerousPath(dst)) {
-				this.setStepStatus(idx, 'error', 'Path refused for safety (root, home, or secret dir)');
+			if (plan.action === 'refuse') {
+				this.setStepStatus(idx, 'error', plan.reason);
 				return;
 			}
-
-			// Ensure source exists
-			if (!fs.existsSync(src)) {
-				fs.mkdirSync(src, { recursive: true });
-			}
-
-			// Handle existing destination
-			if (fs.existsSync(dst)) {
-				const stat = fs.lstatSync(dst);
-				if (stat.isSymbolicLink()) {
-					fs.unlinkSync(dst);
-				} else {
-					const backup = `${dst}_backup_${Date.now()}`;
-					fs.renameSync(dst, backup);
-				}
-			}
-
-			// Ensure parent dir exists
-			const parent = path.dirname(dst);
-			if (!fs.existsSync(parent)) {
-				fs.mkdirSync(parent, { recursive: true });
-			}
-
-			const linkType = isWin ? 'junction' : 'dir';
-			fs.symlinkSync(src, dst, linkType as fs.symlink.Type);
-			this.setStepStatus(idx, 'done', `Linked ✓`);
+			const result = applyLink(src, dst, plan);
+			this.setStepStatus(idx, 'done', result.backup ? `Linked (backed up to ${path.basename(result.backup)})` : 'Linked ✓');
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : String(err);
 			this.setStepStatus(idx, 'error', msg);
