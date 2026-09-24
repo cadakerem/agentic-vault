@@ -11,7 +11,9 @@ Agentic Vault bridges the gap between your local OS-level AI tools (Antigravity,
 - **💻 New Machine Setup Wizard:** Got a new laptop? Just open Obsidian, click the wizard, and it automatically creates OS-level symlinks (`junction`/`dir`) connecting your local AI agents to your vault's `AI-Brain` folder.
 - **🔄 Auto Git Sync:** Background auto-commit and push. Your vault acts as a seamless Git repository without needing terminal commands.
 - **☁️ Git Status Bar:** Live status in the bottom right corner showing your current branch, ahead/behind commits, and uncommitted changes (e.g., `☁ main ↑2 ✎3`).
-- **🤖 Universal AI Tool Support:** Natively links configurations for:
+- **🛡️ Secret Scanner:** Real-time secret scanning stops you from accidentally committing API keys and tokens to your repository. It enforces safety on public repositories while letting you customize exemptions for private ones.
+- **🔄 Smart Conflict Resolution (Dropbox-style):** If you make edits on your laptop and desktop at the same time, Agentic Vault cleanly handles Git merge conflicts by keeping the remote version and saving your local edits side-by-side as `.conflict-local` copies. No more broken Markdown files with Git markers!
+- **🌐 Universal AI Tool Support:** Natively links configurations for:
   - Antigravity / Gemini CLI (`~/.gemini/config`)
   - Claude Code (`~/.claude`)
   - Cursor (`AppData/Roaming/Cursor/User`)
