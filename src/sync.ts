@@ -1,7 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { SimpleGit } from 'simple-git';
+import * as os from 'os';
 import { scanDiff, scanFileNames, Finding } from './secretScan';
+import { resolveRebaseConflicts } from './conflict';
 
 // NOTE: this file must NOT import 'obsidian' so vitest can load it.
 // main.ts should call syncVault() and only handle Notices / status bar.
@@ -22,6 +24,10 @@ export interface SyncOptions {
   remote?: string; // default: origin
   scanSecrets?: boolean; // default: true
   allowPublicRemote?: boolean;
+  /** 'keep-local-copy' (default): remote wins, local version saved as *.conflict-local-*. 'abort': old behaviour. */
+  conflictStrategy?: 'keep-local-copy' | 'abort';
+  device?: string; // used in conflict-copy names; default: hostname
+  now?: () => Date; // injectable for tests
 }
 
 export interface SyncResult {
@@ -30,6 +36,8 @@ export interface SyncResult {
   committed: boolean;
   pushed: boolean;
   findings?: Finding[];
+  /** repo-relative paths of local versions that were saved because of a conflict (remote version was applied) */
+  conflictCopies?: string[];
 }
 
 export function maskSecrets(msg: string): string {
@@ -121,6 +129,7 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
     const hasUpstream = !!(await git.status()).tracking;
 
     // 3. pull --rebase (one shared try/catch for both paths)
+    let conflictCopies: string[] = [];
     try {
       if (hasUpstream) {
         await git.pull(['--rebase']);
@@ -129,20 +138,29 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
         if (heads.trim() !== '') await git.pull(remote, branch, ['--rebase']);
       }
     } catch (e) {
-      if (isMidRebase(opts.vaultPath)) {
+      if (!isMidRebase(opts.vaultPath)) throw e;
+      const giveUp = async (): Promise<SyncResult> => {
         await git.raw(['rebase', '--abort']).catch(() => undefined);
-        return {
-          ...result,
-          status: 'conflict',
-          message: 'Merge conflict! Rebase aborted. Resolve manually.',
-        };
+        return { ...result, status: 'conflict', message: 'Merge conflict! Rebase aborted. Resolve manually.' };
+      };
+      if (opts.conflictStrategy === 'abort') return giveUp();
+      try {
+        conflictCopies = (
+          await resolveRebaseConflicts(git, {
+            vaultPath: opts.vaultPath,
+            device: opts.device ?? os.hostname(),
+            now: opts.now?.(),
+          })
+        ).copies;
+      } catch {
+        return giveUp(); // fail safe: anything unexpected -> abort exactly like before
       }
-      throw e;
     }
+    if (conflictCopies.length > 0) result.conflictCopies = conflictCopies;
 
     // 4. push
     if (opts.autoPush) {
-      if (!opts.allowPublicRemote) {
+      if (opts.allowPublicRemote === false) {
         try {
           const { execFile } = require('child_process');
           const { promisify } = require('util');

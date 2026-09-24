@@ -19,6 +19,7 @@ import { syncVault } from './src/sync';
 import { parseRules, serializeRules, isDangerousPath } from './src/util';
 import { planLink, applyLink, LinkPlan } from './src/link';
 import { SyncState, initialSyncState, shouldRun, nextSyncState } from './src/syncState';
+import { filterConflictCopies } from './src/conflict';
 
 const execFileAsync = promisify(execFile);
 
@@ -45,6 +46,7 @@ interface AgenticVaultSettings {
 	scriptsFolder: string;
 	allowPublicRemote: boolean;
 	scanSecrets: boolean;
+	deviceName: string;
 	syncState: SyncState;
 }
 
@@ -67,6 +69,7 @@ const DEFAULT_SETTINGS: AgenticVaultSettings = {
 	scriptsFolder: 'AI-Agent-System/scripts',
 	allowPublicRemote: false,
 	scanSecrets: true,
+	deviceName: require('os').hostname(),
 	syncState: initialSyncState,
 };
 
@@ -116,7 +119,31 @@ export default class AgenticVaultPlugin extends Plugin {
 		// Status bar
 		this.statusBarEl = this.addStatusBarItem();
 		this.statusBarEl.setText('⟳ Agentic Vault');
+		
+		await this.verifyPauseState(vaultPath);
 		void this.updateStatusBar();
+	}
+
+	private async verifyPauseState(vaultPath: string): Promise<void> {
+		if (!this.settings.syncState.paused) return;
+		const r = this.settings.syncState.pauseReason;
+		if (r === 'not-a-repo') {
+			if (await this.git.checkIsRepo()) this.clearPause();
+		} else if (r === 'no-remote') {
+			if ((await this.git.getRemotes()).length > 0) this.clearPause();
+		} else if (r === 'rebase-in-progress') {
+			const fs = require('fs'), path = require('path');
+			if (!fs.existsSync(path.join(vaultPath, '.git', 'rebase-merge')) && !fs.existsSync(path.join(vaultPath, '.git', 'rebase-apply'))) this.clearPause();
+		} else if (r === 'conflict') {
+			if ((await this.git.status()).conflicted.length === 0) this.clearPause();
+		}
+	}
+
+	private clearPause(): void {
+		this.settings.syncState.paused = false;
+		this.settings.syncState.pauseReason = undefined;
+		this.settings.syncState.lastNoticeKey = undefined;
+		void this.saveSettings();
 
 		// Ribbon — force sync
 		this.addRibbonIcon('git-commit-vertical', 'Force Git Sync', () => {
@@ -216,6 +243,8 @@ export default class AgenticVaultPlugin extends Plugin {
 			const ahead  = status.ahead;
 			const behind = status.behind;
 			const dirty  = status.files.length;
+			
+			const copies = filterConflictCopies(status.files.map(f => f.path));
 
 			let text = `☁ ${branch}`;
 			
@@ -225,6 +254,8 @@ export default class AgenticVaultPlugin extends Plugin {
 				text += ` ⏸ paused`;
 			} else if (this.lastErrorMsg) {
 				text += ` ⚠️ Error`;
+			} else if (copies.length > 0) {
+				text += ` · ${copies.length} conflict cop${copies.length === 1 ? 'y' : 'ies'}`;
 			} else {
 				if (ahead)  text += ` ↑${ahead}`;
 				if (behind) text += ` ↓${behind}`;
@@ -265,6 +296,7 @@ export default class AgenticVaultPlugin extends Plugin {
 				autoPush: this.settings.gitAutoPush,
 				allowPublicRemote: this.settings.allowPublicRemote,
 				scanSecrets: this.settings.scanSecrets,
+				device: this.settings.deviceName,
 			});
 
 			const transition = nextSyncState(this.settings.syncState, result, { manual });
@@ -768,6 +800,14 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 			.setName('Default Commit Message')
 			.addText(t => t.setValue(this.plugin.settings.commitMessageFormat).onChange(async v => {
 				this.plugin.settings.commitMessageFormat = v;
+				await this.plugin.saveSettings();
+			}));
+
+		new Setting(containerEl)
+			.setName('Device Name')
+			.setDesc('Used to identify this device in conflict resolution copies (e.g. .conflict-local-[deviceName]-2024...).')
+			.addText(t => t.setPlaceholder(require('os').hostname()).setValue(this.plugin.settings.deviceName).onChange(async v => {
+				this.plugin.settings.deviceName = v || require('os').hostname();
 				await this.plugin.saveSettings();
 			}));
 
