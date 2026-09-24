@@ -77,8 +77,12 @@ Agentic Vault is built for local-first automation. Because it creates symlinks a
 
 *All source code is public, and GitHub Actions guarantees that release assets match the repository code byte-for-byte.*
 
-### ⚠️ Important: Secrets & .gitignore
-Agentic Vault automatically generates a default `.gitignore` to prevent committing Obsidian cache files and certain credentials (like `.gemini/credentials`). However, please double-check your `.gitignore` to ensure you are not accidentally committing sensitive API keys or tokens from your AI tool configuration folders to public GitHub repositories.
+### 🛡️ Two Layers of Defense: Secrets & Security
+Agentic Vault uses a two-layered security approach to prevent accidental leakage of API keys, tokens, and credentials to GitHub:
+1. **Filename-based Defense (.gitignore):** Automatically generates and enforces a `.gitignore` that blocks common sensitive file names (e.g., `.env`, `credentials`, `*oauth*`).
+2. **Content-based Defense (Secret Scanner):** Before every commit, the built-in Secret Scanner reads the actual content of the changed files. If it detects AWS keys, Slack tokens, private keys, or generic secret patterns, it instantly blocks the commit and alerts you.
+
+*(Note: The Secret Scanner cannot be disabled if you have 'Allow Public Remote' toggled off, ensuring 100% protection for private environments).*
 
 ---
 
