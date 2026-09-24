@@ -5926,6 +5926,7 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     __publicField(this, "syncIntervalId", null);
     __publicField(this, "statusBarEl");
     __publicField(this, "isSyncing", false);
+    __publicField(this, "lastErrorMsg", null);
   }
   onload() {
     this.initialize().catch((err) => {
@@ -5966,20 +5967,33 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
   }
   async ensureGitignore(vaultPath) {
     const gitignorePath = path.join(vaultPath, ".gitignore");
+    const rules = [
+      ".obsidian/workspace.json",
+      ".obsidian/workspace-mobile.json",
+      ".obsidian/core-plugins.json",
+      "node_modules/",
+      ".DS_Store",
+      "**/credentials",
+      "**/.env",
+      "**/*.key"
+    ];
     try {
-      if (!fs.existsSync(gitignorePath)) {
-        const defaultGitignore = `.obsidian/workspace.json
-.obsidian/workspace-mobile.json
-.obsidian/core-plugins.json
-node_modules/
-.DS_Store
-# Prevent accidental secret leaks
-.gemini/credentials
-`;
-        fs.writeFileSync(gitignorePath, defaultGitignore);
+      let content = "";
+      if (fs.existsSync(gitignorePath)) {
+        content = fs.readFileSync(gitignorePath, "utf8");
+      }
+      let changed = false;
+      for (const rule of rules) {
+        if (!content.includes(rule)) {
+          content += (content.endsWith("\n") || content === "" ? "" : "\n") + rule + "\n";
+          changed = true;
+        }
+      }
+      if (changed) {
+        fs.writeFileSync(gitignorePath, content);
       }
     } catch (e) {
-      console.error("Failed to create .gitignore", e);
+      console.error("Failed to create/update .gitignore", e);
     }
   }
   onunload() {
@@ -6008,12 +6022,16 @@ node_modules/
       const behind = status.behind;
       const dirty = status.files.length;
       let text = `\u2601 ${branch}`;
-      if (ahead)
-        text += ` \u2191${ahead}`;
-      if (behind)
-        text += ` \u2193${behind}`;
-      if (dirty)
-        text += ` \u270E${dirty}`;
+      if (this.lastErrorMsg) {
+        text += ` \u26A0\uFE0F Error`;
+      } else {
+        if (ahead)
+          text += ` \u2191${ahead}`;
+        if (behind)
+          text += ` \u2193${behind}`;
+        if (dirty)
+          text += ` \u270E${dirty}`;
+      }
       this.statusBarEl.setText(text);
     } catch (e) {
       this.statusBarEl.setText("\u2601 git?");
@@ -6074,15 +6092,20 @@ node_modules/
         if (hasChanges && !silent)
           new import_obsidian.Notice("\u{1F680} Pushed to GitHub!");
       }
+      this.lastErrorMsg = null;
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      if (msg.includes("CONFLICT") || msg.includes("merge")) {
-        new import_obsidian.Notice("\u26A0\uFE0F Merge conflict! Resolve manually.");
-      } else {
-        if (!silent)
+      const isConflict = msg.includes("CONFLICT") || msg.includes("merge");
+      const errorKey = isConflict ? "conflict" : msg;
+      if (!silent || this.lastErrorMsg !== errorKey) {
+        if (isConflict) {
+          new import_obsidian.Notice("\u26A0\uFE0F Merge conflict! Resolve manually.");
+        } else {
           new import_obsidian.Notice(`Git Error: ${msg}`);
-        console.error("Git Sync Error:", error);
+        }
+        this.lastErrorMsg = errorKey;
       }
+      console.error("Git Sync Error:", error);
     } finally {
       this.isSyncing = false;
       void this.updateStatusBar();
@@ -6533,11 +6556,21 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
       }).open();
     }));
   }
+  isDangerousPath(p2) {
+    const norm = path.normalize(p2).replace(/\\/g, "/");
+    if (norm === "/" || norm === "C:/" || norm === os.homedir().replace(/\\/g, "/"))
+      return true;
+    return false;
+  }
   createCustomSymlink() {
     try {
       const vaultPath = getVaultPath(this.app);
       const src = path.join(vaultPath, this.plugin.settings.vaultBrainFolder);
       const dst = resolvePath(this.plugin.settings.vaultBrainFolder);
+      if (this.isDangerousPath(dst)) {
+        new import_obsidian.Notice("Error: Cannot symlink root or home directory for safety.");
+        return;
+      }
       const isWin = os.platform() === "win32";
       if (!fs.existsSync(src))
         fs.mkdirSync(src, { recursive: true });

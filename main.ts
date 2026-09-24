@@ -132,13 +132,33 @@ export default class AgenticVaultPlugin extends Plugin {
 
 	private async ensureGitignore(vaultPath: string): Promise<void> {
 		const gitignorePath = path.join(vaultPath, '.gitignore');
+		const rules = [
+			'.obsidian/workspace.json',
+			'.obsidian/workspace-mobile.json',
+			'.obsidian/core-plugins.json',
+			'node_modules/',
+			'.DS_Store',
+			'**/credentials',
+			'**/.env',
+			'**/*.key'
+		];
 		try {
-			if (!fs.existsSync(gitignorePath)) {
-				const defaultGitignore = `.obsidian/workspace.json\n.obsidian/workspace-mobile.json\n.obsidian/core-plugins.json\nnode_modules/\n.DS_Store\n# Prevent accidental secret leaks\n.gemini/credentials\n`;
-				fs.writeFileSync(gitignorePath, defaultGitignore);
+			let content = '';
+			if (fs.existsSync(gitignorePath)) {
+				content = fs.readFileSync(gitignorePath, 'utf8');
+			}
+			let changed = false;
+			for (const rule of rules) {
+				if (!content.includes(rule)) {
+					content += (content.endsWith('\n') || content === '' ? '' : '\n') + rule + '\n';
+					changed = true;
+				}
+			}
+			if (changed) {
+				fs.writeFileSync(gitignorePath, content);
 			}
 		} catch (e) {
-			console.error("Failed to create .gitignore", e);
+			console.error("Failed to create/update .gitignore", e);
 		}
 	}
 
@@ -170,9 +190,13 @@ export default class AgenticVaultPlugin extends Plugin {
 			const dirty  = status.files.length;
 
 			let text = `☁ ${branch}`;
-			if (ahead)  text += ` ↑${ahead}`;
-			if (behind) text += ` ↓${behind}`;
-			if (dirty)  text += ` ✎${dirty}`;
+			if (this.lastErrorMsg) {
+				text += ` ⚠️ Error`;
+			} else {
+				if (ahead)  text += ` ↑${ahead}`;
+				if (behind) text += ` ↓${behind}`;
+				if (dirty)  text += ` ✎${dirty}`;
+			}
 			this.statusBarEl.setText(text);
 		} catch {
 			this.statusBarEl.setText('☁ git?');
@@ -195,6 +219,7 @@ export default class AgenticVaultPlugin extends Plugin {
 	}
 
 	isSyncing = false;
+	lastErrorMsg: string | null = null;
 
 	async performDynamicCommit(silent: boolean = false): Promise<void> {
 		if (this.isSyncing) return;
@@ -237,14 +262,21 @@ export default class AgenticVaultPlugin extends Plugin {
 				}
 				if (hasChanges && !silent) new Notice('🚀 Pushed to GitHub!');
 			}
+			this.lastErrorMsg = null;
 		} catch (error: unknown) {
 			const msg = error instanceof Error ? error.message : String(error);
-			if (msg.includes('CONFLICT') || msg.includes('merge')) {
-				new Notice('⚠️ Merge conflict! Resolve manually.');
-			} else {
-				if (!silent) new Notice(`Git Error: ${msg}`);
-				console.error("Git Sync Error:", error);
+			const isConflict = msg.includes('CONFLICT') || msg.includes('merge');
+			const errorKey = isConflict ? 'conflict' : msg;
+
+			if (!silent || this.lastErrorMsg !== errorKey) {
+				if (isConflict) {
+					new Notice('⚠️ Merge conflict! Resolve manually.');
+				} else {
+					new Notice(`Git Error: ${msg}`);
+				}
+				this.lastErrorMsg = errorKey;
 			}
+			console.error("Git Sync Error:", error);
 		} finally {
 			this.isSyncing = false;
 			void this.updateStatusBar();
@@ -835,11 +867,23 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 			}));
 	}
 
+	private isDangerousPath(p: string): boolean {
+		const norm = path.normalize(p).replace(/\\/g, '/');
+		if (norm === '/' || norm === 'C:/' || norm === os.homedir().replace(/\\/g, '/')) return true;
+		return false;
+	}
+
 	private createCustomSymlink(): void {
 		try {
 			const vaultPath = getVaultPath(this.app);
 			const src = path.join(vaultPath, this.plugin.settings.vaultBrainFolder);
 			const dst = resolvePath(this.plugin.settings.vaultBrainFolder);
+			
+			if (this.isDangerousPath(dst)) {
+				new Notice('Error: Cannot symlink root or home directory for safety.');
+				return;
+			}
+
 			const isWin = os.platform() === 'win32';
 
 			if (!fs.existsSync(src)) fs.mkdirSync(src, { recursive: true });
