@@ -15,6 +15,8 @@ import * as path from 'path';
 import * as os from 'os';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import { syncVault } from './src/sync';
+import { parseRules, serializeRules, isDangerousPath } from './src/util';
 
 const execFileAsync = promisify(execFile);
 
@@ -161,9 +163,20 @@ export default class AgenticVaultPlugin extends Plugin {
 			if (changed) {
 				fs.writeFileSync(gitignorePath, content);
 				new Notice('Agentic Vault: Updated .gitignore to prevent secret leaks.');
+				// Try to untrack newly ignored files if they were already tracked
+				for (const rule of rules) {
+					if (!existingLines.has(rule)) {
+						try {
+							await this.git.raw(['rm', '-r', '--cached', '--ignore-unmatch', rule]);
+						} catch (e) {
+							// Ignored if file doesn't exist
+						}
+					}
+				}
 			}
 		} catch (e) {
-			console.error("Failed to create/update .gitignore", e);
+			console.error("Failed to update .gitignore", e);
+			new Notice("Failed to update .gitignore. Check console.");
 		}
 	}
 
@@ -231,89 +244,54 @@ export default class AgenticVaultPlugin extends Plugin {
 		this.isSyncing = true;
 		try {
 			const vaultPath = getVaultPath(this.app);
-			const isRepo = fs.existsSync(path.join(vaultPath, '.git'));
-			if (!isRepo) {
-				if (!silent) new Notice('Not a git repository. Please initialize in settings.');
-				return;
-			}
+			const result = await syncVault(this.git, {
+				vaultPath,
+				commitMessage: this.settings.commitMessageFormat,
+				autoPush: this.settings.gitAutoPush,
+			});
 
-			const rebaseMergeExists = fs.existsSync(path.join(vaultPath, '.git', 'rebase-merge'));
-			const rebaseApplyExists = fs.existsSync(path.join(vaultPath, '.git', 'rebase-apply'));
-			if (rebaseMergeExists || rebaseApplyExists) {
-				const errMsg = 'Rebase in progress. Please resolve conflicts or abort.';
-				if (!silent || this.lastErrorMsg !== errMsg) {
-					new Notice(`⚠️ ${errMsg}`);
-					this.lastErrorMsg = errMsg;
-				}
-				this.isSyncing = false;
-				void this.updateStatusBar();
-				return;
-			}
-
-			if (!silent) new Notice('Agentic Vault: Syncing...');
-			
-			await this.git.add('.');
-			const status: StatusResult = await this.git.status();
-			const hasChanges = status.files.length > 0;
-
-			if (hasChanges) {
-				await this.git.commit(this.settings.commitMessageFormat);
-				if (!silent) new Notice('✓ Changes committed.');
-			} else {
-				if (!silent) new Notice('Agentic Vault: Nothing to commit.');
-			}
-
-			const branch = status.current || 'main';
-			const tracking = status.tracking;
-
-			try {
-				if (!tracking) {
-					const remotes = await this.git.getRemotes();
-					if (remotes.length === 0) {
-						throw new Error('No remote configured. Please set up a GitHub repository.');
+			switch (result.status) {
+				case 'not-a-repo':
+					if (!silent) new Notice('Not a git repository. Please initialize in settings.');
+					break;
+				case 'rebase-in-progress':
+					if (!silent || this.lastErrorMsg !== result.message) {
+						new Notice(`⚠️ ${result.message}`);
+						this.lastErrorMsg = result.message || null;
 					}
-					const lsRemote = await this.git.listRemote(['--heads', 'origin', branch]);
-					if (lsRemote.trim() !== '') {
-						await this.git.pull('origin', branch, ['--rebase']);
+					// Pause auto-sync if rebase is in progress
+					this.isSyncing = false;
+					void this.updateStatusBar();
+					return;
+				case 'conflict':
+					if (!silent || this.lastErrorMsg !== 'conflict') {
+						new Notice(`⚠️ ${result.message}`);
+						this.lastErrorMsg = 'conflict';
 					}
-				} else {
-					await this.git.pull(['--rebase']);
-				}
-			} catch (e) {
-				const gitDir = path.join(vaultPath, '.git');
-				const midRebase = ['rebase-merge', 'rebase-apply'].some(d => fs.existsSync(path.join(gitDir, d)));
-				if (midRebase) {
-					await this.git.raw(['rebase', '--abort']).catch(() => {});
-					throw new Error('Merge conflict! Rebase aborted. Resolve manually.');
-				}
-				throw e;
+					// Pause auto-sync
+					this.isSyncing = false;
+					void this.updateStatusBar();
+					return;
+				case 'error':
+					if (!silent || this.lastErrorMsg !== result.message) {
+						const displayMsg = result.message && result.message.length > 100 ? result.message.substring(0, 100) + '...' : result.message;
+						new Notice(`Git Error: ${displayMsg}`);
+						this.lastErrorMsg = result.message || null;
+					}
+					break;
+				case 'no-remote':
+					if (!silent || this.lastErrorMsg !== 'no-remote') {
+						new Notice(`⚠️ ${result.message}`);
+						this.lastErrorMsg = 'no-remote';
+					}
+					break;
+				case 'ok':
+					this.lastErrorMsg = null;
+					if (result.pushed && !silent) new Notice('🚀 Pushed to GitHub!');
+					else if (result.committed && !silent) new Notice('✓ Changes committed.');
+					else if (!silent) new Notice('Agentic Vault: Nothing to commit.');
+					break;
 			}
-
-			if (this.settings.gitAutoPush) {
-				if (!tracking) {
-					await this.git.push(['-u', 'origin', branch]);
-				} else {
-					await this.git.push();
-				}
-				if (hasChanges && !silent) new Notice('🚀 Pushed to GitHub!');
-			}
-			this.lastErrorMsg = null;
-		} catch (error: unknown) {
-			const msg = error instanceof Error ? error.message : String(error);
-			const maskedMsg = msg.replace(/https?:\/\/[^\s/@]+@/g, 'https://***@');
-			const isConflict = maskedMsg.includes('CONFLICT') || maskedMsg.includes('Automatic merge failed') || maskedMsg.includes('Merge conflict');
-			const errorKey = isConflict ? 'conflict' : maskedMsg;
-
-			if (!silent || this.lastErrorMsg !== errorKey) {
-				if (isConflict) {
-					new Notice('⚠️ Merge conflict! Resolve manually.');
-				} else {
-					const displayMsg = maskedMsg.length > 100 ? maskedMsg.substring(0, 100) + '...' : maskedMsg;
-					new Notice(`Git Error: ${displayMsg}`);
-				}
-				this.lastErrorMsg = errorKey;
-			}
-			console.error("Git Sync Error:", maskedMsg);
 		} finally {
 			this.isSyncing = false;
 			void this.updateStatusBar();
@@ -485,6 +463,11 @@ class SetupWizardModal extends Modal {
 	private async runSymlinkStep(idx: number, src: string, dst: string, isWin: boolean): Promise<void> {
 		this.setStepStatus(idx, 'running');
 		try {
+			if (isDangerousPath(dst)) {
+				this.setStepStatus(idx, 'error', 'Path refused for safety (root, home, or secret dir)');
+				return;
+			}
+
 			// Ensure source exists
 			if (!fs.existsSync(src)) {
 				fs.mkdirSync(src, { recursive: true });
@@ -583,18 +566,13 @@ class BrainManagerModal extends Modal {
 		const file = this.app.vault.getAbstractFileByPath(this.plugin.settings.ruleFilePath);
 		if (file instanceof TFile) {
 			const content = await this.app.vault.read(file);
-			const sysMatch  = content.match(/## System Rules\r?\n([\s\S]*?)(?=\r?\n## |$)/);
-			const projMatch = content.match(/## Project Rules\r?\n([\s\S]*?)(?=\r?\n## |$)/);
-			const codeMatch = content.match(/## Coding Standards\r?\n([\s\S]*?)(?=\r?\n## |$)/);
-			if (sysMatch)  this.rules.system  = sysMatch[1].trim();
-			if (projMatch) this.rules.project = projMatch[1].trim();
-			if (codeMatch) this.rules.coding  = codeMatch[1].trim();
+			this.rules = parseRules(content);
 		}
 	}
 
 	private async saveRulesToFile(): Promise<void> {
 		const filePath = this.plugin.settings.ruleFilePath;
-		const content  = `# AI Brain Rules\n\n## System Rules\n${this.rules.system}\n\n## Project Rules\n${this.rules.project}\n\n## Coding Standards\n${this.rules.coding}\n`;
+		const content  = serializeRules(this.rules);
 		const file     = this.app.vault.getAbstractFileByPath(filePath);
 		try {
 			if (file instanceof TFile) {
@@ -882,72 +860,6 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}));
 			}
-		}
-
-		// ── Manual Symlink ───────────────────────
-		new Setting(containerEl).setName('🔗 Custom Symlink').setHeading();
-
-		new Setting(containerEl)
-			.setName('Vault Brain Folder')
-			.setDesc('Folder in this vault where AI configs live.')
-			.addText(t => t.setPlaceholder('AI-Brain').setValue(this.plugin.settings.vaultBrainFolder).onChange(async v => {
-				this.plugin.settings.vaultBrainFolder = v;
-				await this.plugin.saveSettings();
-			}));
-
-		new Setting(containerEl)
-			.setName('Create Custom Symlink')
-			.setDesc('Manually link a specific OS path to your vault folder.')
-			.addButton(btn => btn.setButtonText('🔗 Create Link').setCta().onClick(() => {
-				new ConfirmModal(this.app, 'This will backup the existing OS folder and create a symlink. Proceed?', () => {
-					this.createCustomSymlink();
-				}).open();
-			}));
-	}
-
-	private isDangerousPath(p: string): boolean {
-		const norm = path.resolve(p);
-		const cmp = (s: string) => (process.platform === 'win32' ? s.toLowerCase() : s);
-		const home = path.resolve(os.homedir());
-		if (path.parse(norm).root === norm) return true;
-		if (cmp(norm) === cmp(home)) return true;
-		if (!cmp(norm).startsWith(cmp(home) + path.sep)) return true;
-		return false;
-	}
-
-	private createCustomSymlink(): void {
-		try {
-			const vaultPath = getVaultPath(this.app);
-			const src = path.join(vaultPath, this.plugin.settings.vaultBrainFolder);
-			const dst = resolvePath(this.plugin.settings.vaultBrainFolder);
-			
-			if (this.isDangerousPath(dst)) {
-				new Notice('Error: Cannot symlink root or home directory for safety.');
-				return;
-			}
-
-			const isWin = os.platform() === 'win32';
-
-			if (!fs.existsSync(src)) fs.mkdirSync(src, { recursive: true });
-
-			if (fs.existsSync(dst)) {
-				const stat = fs.lstatSync(dst);
-				if (stat.isSymbolicLink()) {
-					fs.unlinkSync(dst);
-				} else {
-					fs.renameSync(dst, `${dst}_backup_${Date.now()}`);
-				}
-			} else {
-				const parent = path.dirname(dst);
-				if (!fs.existsSync(parent)) fs.mkdirSync(parent, { recursive: true });
-			}
-
-			const type = isWin ? 'junction' : 'dir';
-			fs.symlinkSync(src, dst, type as fs.symlink.Type);
-			new Notice('✅ Symlink created!');
-		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : String(err);
-			new Notice(`Symlink failed: ${msg}`);
 		}
 	}
 }
