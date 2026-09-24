@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import * as os from 'os';
 import * as path from 'path';
 
