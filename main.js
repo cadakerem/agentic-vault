@@ -5967,17 +5967,18 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
   }
   async ensureGitignore(vaultPath) {
     const gitignorePath = path.join(vaultPath, ".gitignore");
+    const brain = this.settings.vaultBrainFolder || "AI-Brain";
     const rules = [
       ".obsidian/workspace.json",
       ".obsidian/workspace-mobile.json",
       "node_modules/",
       ".DS_Store",
-      "**/*oauth*",
-      "**/*token*",
-      "**/*secret*",
-      "**/credentials",
-      "**/.env",
-      "**/*.key"
+      `${brain}/**/*oauth*`,
+      `${brain}/**/*token*`,
+      `${brain}/**/*secret*`,
+      `${brain}/**/credentials`,
+      `${brain}/**/.env`,
+      `${brain}/**/*.key`
     ];
     try {
       let content = "";
@@ -5994,6 +5995,7 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
       }
       if (changed) {
         fs.writeFileSync(gitignorePath, content);
+        new import_obsidian.Notice("Agentic Vault: Updated .gitignore to prevent secret leaks.");
       }
     } catch (e) {
       console.error("Failed to create/update .gitignore", e);
@@ -6068,8 +6070,13 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
       const rebaseMergeExists = fs.existsSync(path.join(vaultPath, ".git", "rebase-merge"));
       const rebaseApplyExists = fs.existsSync(path.join(vaultPath, ".git", "rebase-apply"));
       if (rebaseMergeExists || rebaseApplyExists) {
-        if (!silent)
-          new import_obsidian.Notice("\u26A0\uFE0F Rebase in progress. Please resolve conflicts or abort.");
+        const errMsg = "Rebase in progress. Please resolve conflicts or abort.";
+        if (!silent || this.lastErrorMsg !== errMsg) {
+          new import_obsidian.Notice(`\u26A0\uFE0F ${errMsg}`);
+          this.lastErrorMsg = errMsg;
+        }
+        this.isSyncing = false;
+        void this.updateStatusBar();
         return;
       }
       if (!silent)
@@ -6087,29 +6094,28 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
       }
       const branch = status.current || "main";
       const tracking = status.tracking;
-      if (!tracking) {
-        const remotes = await this.git.getRemotes();
-        if (remotes.length > 0) {
-          try {
-            const lsRemote = await this.git.listRemote(["--heads", "origin", branch]);
-            if (lsRemote.trim() !== "") {
-              await this.git.pull("origin", branch, ["--rebase"]);
-            }
-          } catch (e) {
-            console.error("listRemote failed", e);
+      try {
+        if (!tracking) {
+          const remotes = await this.git.getRemotes();
+          if (remotes.length === 0) {
+            throw new Error("No remote configured. Please set up a GitHub repository.");
           }
-        }
-      } else {
-        try {
+          const lsRemote = await this.git.listRemote(["--heads", "origin", branch]);
+          if (lsRemote.trim() !== "") {
+            await this.git.pull("origin", branch, ["--rebase"]);
+          }
+        } else {
           await this.git.pull(["--rebase"]);
-        } catch (e) {
-          const pullErrMsg = e.message || String(e);
-          if (pullErrMsg.includes("CONFLICT") || pullErrMsg.includes("Automatic merge failed")) {
-            await this.git.raw(["rebase", "--abort"]);
-            throw new Error("Merge conflict! Rebase aborted. Resolve conflicts manually.");
-          }
-          throw e;
         }
+      } catch (e) {
+        const gitDir = path.join(vaultPath, ".git");
+        const midRebase = ["rebase-merge", "rebase-apply"].some((d) => fs.existsSync(path.join(gitDir, d)));
+        if (midRebase) {
+          await this.git.raw(["rebase", "--abort"]).catch(() => {
+          });
+          throw new Error("Merge conflict! Rebase aborted. Resolve manually.");
+        }
+        throw e;
       }
       if (this.settings.gitAutoPush) {
         if (!tracking) {
@@ -6123,14 +6129,15 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
       this.lastErrorMsg = null;
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      const maskedMsg = msg.replace(/https:\/\/.*?@/g, "https://***@");
+      const maskedMsg = msg.replace(/https?:\/\/[^\s/@]+@/g, "https://***@");
       const isConflict = maskedMsg.includes("CONFLICT") || maskedMsg.includes("Automatic merge failed") || maskedMsg.includes("Merge conflict");
       const errorKey = isConflict ? "conflict" : maskedMsg;
       if (!silent || this.lastErrorMsg !== errorKey) {
         if (isConflict) {
           new import_obsidian.Notice("\u26A0\uFE0F Merge conflict! Resolve manually.");
         } else {
-          new import_obsidian.Notice(`Git Error: ${maskedMsg.substring(0, 100)}...`);
+          const displayMsg = maskedMsg.length > 100 ? maskedMsg.substring(0, 100) + "..." : maskedMsg;
+          new import_obsidian.Notice(`Git Error: ${displayMsg}`);
         }
         this.lastErrorMsg = errorKey;
       }
