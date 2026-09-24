@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.8] - 2026-09-25
+### Fixed
+- **Settings UI Crash:** Removed experimental `getSettingDefinitions` method that was causing the settings menu to render as a blank page in certain Obsidian versions due to API mismatches.
+
 ## [1.4.7] - 2026-09-25
 ### Added
 - **Obsidian Settings Search (1.13.0+):** Implemented `getSettingDefinitions()` in `AgenticVaultSettingTab`. All plugin settings (Auto Push, Secret Scanner, Sync Interval, Device Name, etc.) now appear in Obsidian's global settings search.

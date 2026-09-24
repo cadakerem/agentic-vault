@@ -13,13 +13,6 @@ import { getVaultPath } from '../obsidian-util';
 
 // SettingDefinition is part of the Obsidian 1.13.0 declarative settings API.
 // The type is not yet in the installed obsidian package, so we define it locally.
-interface SettingDefinition {
-	id: string;
-	name: string;
-	desc?: string;
-	type?: 'toggle' | 'text' | 'number' | 'slider' | 'dropdown' | 'button' | 'heading';
-}
-
 class AgenticVaultSettingTab extends PluginSettingTab {
 	plugin: AgenticVaultPlugin;
 	remoteUrlInput = '';
@@ -27,21 +20,6 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 	constructor(app: App, plugin: AgenticVaultPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
-	}
-
-	/** Obsidian 1.13.0+: declarative settings index for settings search. */
-	getSettingDefinitions(): SettingDefinition[] {
-		return [
-			{ id: 'gitAutoPush',           name: 'Auto Push',                    desc: 'Automatically commit and push changes to GitHub.',                               type: 'toggle'  },
-			{ id: 'allowPublicRemote',     name: 'Allow Public Remote',           desc: 'Allow syncing even if the GitHub repository is public. May expose AI secrets.', type: 'toggle'  },
-			{ id: 'scanSecrets',           name: 'Enable Secret Scanner',         desc: 'Block commits if secrets (API keys, .env files) are detected.',                 type: 'toggle'  },
-			{ id: 'syncIntervalMinutes',   name: 'Auto-Sync Interval (minutes)',  desc: 'How often to automatically sync. Set to 0 to disable.',                         type: 'number'  },
-			{ id: 'commitMessageFormat',   name: 'Default Commit Message',        desc: 'Git commit message used for automatic syncs.',                                   type: 'text'    },
-			{ id: 'deviceName',            name: 'Device Name',                   desc: 'Identifies this device in conflict-resolution file copies.',                     type: 'text'    },
-			{ id: 'ruleFilePath',          name: 'Brain File Path',               desc: 'Markdown file where AI rules are stored (e.g. AI-Brain/Rules.md).',             type: 'text'    },
-			{ id: 'skillsFolder',          name: 'Skills Folder (in Vault)',      desc: 'Vault folder linked to ~/.agents/skills.',                                       type: 'text'    },
-			{ id: 'scriptsFolder',         name: 'Scripts Folder (in Vault)',     desc: 'Vault folder linked to ~/.agents/scripts.',                                      type: 'text'    },
-		];
 	}
 
 	display(): void {
