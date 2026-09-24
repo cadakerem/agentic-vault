@@ -94,7 +94,9 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
     await git.add('.');
 
     // 1b. secret scan of what is about to be committed; on a hit, unstage everything and stop
-    if (opts.scanSecrets !== false) {
+    // If public remotes are NOT allowed, we FORCE secret scanning. It can only be disabled if allowPublicRemote is true.
+    const shouldScan = opts.allowPublicRemote === false ? true : opts.scanSecrets !== false;
+    if (shouldScan) {
       const diff = await git.raw(['diff', '--cached', '-U0', '--no-color', '--no-ext-diff']);
       const names = (await git.raw(['diff', '--cached', '--name-only', '--diff-filter=AM', '-z']))
         .split('\0')
