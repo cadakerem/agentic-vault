@@ -519,7 +519,7 @@ var require_has_flag = __commonJS({
 var require_supports_color = __commonJS({
   "node_modules/supports-color/index.js"(exports, module2) {
     "use strict";
-    var os4 = require("os");
+    var os5 = require("os");
     var tty = require("tty");
     var hasFlag = require_has_flag();
     var { env } = process;
@@ -567,7 +567,7 @@ var require_supports_color = __commonJS({
         return min;
       }
       if (process.platform === "win32") {
-        const osRelease = os4.release().split(".");
+        const osRelease = os5.release().split(".");
         if (Number(osRelease[0]) >= 10 && Number(osRelease[2]) >= 10586) {
           return Number(osRelease[2]) >= 14931 ? 3 : 2;
         }
@@ -813,10 +813,10 @@ var require_src2 = __commonJS({
     var fs_1 = require("fs");
     var debug_1 = __importDefault(require_src());
     var log = debug_1.default("@kwsites/file-exists");
-    function check(path5, isFile, isDirectory) {
-      log(`checking %s`, path5);
+    function check(path6, isFile, isDirectory) {
+      log(`checking %s`, path6);
       try {
-        const stat = fs_1.statSync(path5);
+        const stat = fs_1.statSync(path6);
         if (stat.isFile() && isFile) {
           log(`[OK] path represents a file`);
           return true;
@@ -836,8 +836,8 @@ var require_src2 = __commonJS({
         throw e;
       }
     }
-    function exists2(path5, type = exports.READABLE) {
-      return check(path5, (type & exports.FILE) > 0, (type & exports.FOLDER) > 0);
+    function exists2(path6, type = exports.READABLE) {
+      return check(path6, (type & exports.FILE) > 0, (type & exports.FOLDER) > 0);
     }
     exports.exists = exists2;
     exports.FILE = 1;
@@ -1505,8 +1505,8 @@ function toLinesWithContent(input = "", trimmed2 = true, separator = "\n") {
 function forEachLineWithContent(input, callback) {
   return toLinesWithContent(input, true).map((line) => callback(line));
 }
-function folderExists(path5) {
-  return (0, import_file_exists.exists)(path5, import_file_exists.FOLDER);
+function folderExists(path6) {
+  return (0, import_file_exists.exists)(path6, import_file_exists.FOLDER);
 }
 function append(target, item) {
   if (Array.isArray(target)) {
@@ -1908,8 +1908,8 @@ function checkIsRepoRootTask() {
     commands,
     format: "utf-8",
     onError,
-    parser(path5) {
-      return /^\.(git)?$/.test(path5.trim());
+    parser(path6) {
+      return /^\.(git)?$/.test(path6.trim());
     }
   };
 }
@@ -2343,11 +2343,11 @@ function parseGrep(grep) {
   const paths = /* @__PURE__ */ new Set();
   const results = {};
   forEachLineWithContent(grep, (input) => {
-    const [path5, line, preview] = input.split(NULL);
-    paths.add(path5);
-    (results[path5] = results[path5] || []).push({
+    const [path6, line, preview] = input.split(NULL);
+    paths.add(path6);
+    (results[path6] = results[path6] || []).push({
       line: asNumber(line),
-      path: path5,
+      path: path6,
       preview
     });
   });
@@ -3111,14 +3111,14 @@ var init_hash_object = __esm({
     init_task();
   }
 });
-function parseInit(bare, path5, text) {
+function parseInit(bare, path6, text) {
   const response = String(text).trim();
   let result;
   if (result = initResponseRegex.exec(response)) {
-    return new InitSummary(bare, path5, false, result[1]);
+    return new InitSummary(bare, path6, false, result[1]);
   }
   if (result = reInitResponseRegex.exec(response)) {
-    return new InitSummary(bare, path5, true, result[1]);
+    return new InitSummary(bare, path6, true, result[1]);
   }
   let gitDir = "";
   const tokens = response.split(" ");
@@ -3129,7 +3129,7 @@ function parseInit(bare, path5, text) {
       break;
     }
   }
-  return new InitSummary(bare, path5, /^re/i.test(response), gitDir);
+  return new InitSummary(bare, path6, /^re/i.test(response), gitDir);
 }
 var InitSummary;
 var initResponseRegex;
@@ -3138,9 +3138,9 @@ var init_InitSummary = __esm({
   "src/lib/responses/InitSummary.ts"() {
     "use strict";
     InitSummary = class {
-      constructor(bare, path5, existing, gitDir) {
+      constructor(bare, path6, existing, gitDir) {
         this.bare = bare;
-        this.path = path5;
+        this.path = path6;
         this.existing = existing;
         this.gitDir = gitDir;
       }
@@ -3152,7 +3152,7 @@ var init_InitSummary = __esm({
 function hasBareCommand(command) {
   return command.includes(bareCommand);
 }
-function initTask(bare = false, path5, customArgs) {
+function initTask(bare = false, path6, customArgs) {
   const commands = ["init", ...customArgs];
   if (bare && !hasBareCommand(commands)) {
     commands.splice(1, 0, bareCommand);
@@ -3161,7 +3161,7 @@ function initTask(bare = false, path5, customArgs) {
     commands,
     format: "utf-8",
     parser(text) {
-      return parseInit(commands.includes("--bare"), path5, text);
+      return parseInit(commands.includes("--bare"), path6, text);
     }
   };
 }
@@ -3976,12 +3976,12 @@ var init_FileStatusSummary = __esm({
     "use strict";
     fromPathRegex = /^(.+)\0(.+)$/;
     FileStatusSummary = class {
-      constructor(path5, index, working_dir) {
-        this.path = path5;
+      constructor(path6, index, working_dir) {
+        this.path = path6;
         this.index = index;
         this.working_dir = working_dir;
         if (index === "R" || working_dir === "R") {
-          const detail = fromPathRegex.exec(path5) || [null, path5, path5];
+          const detail = fromPathRegex.exec(path6) || [null, path6, path6];
           this.from = detail[2] || "";
           this.path = detail[1] || "";
         }
@@ -4012,14 +4012,14 @@ function splitLine(result, lineStr) {
     default:
       return;
   }
-  function data(index, workingDir, path5) {
+  function data(index, workingDir, path6) {
     const raw = `${index}${workingDir}`;
     const handler = parsers6.get(raw);
     if (handler) {
-      handler(result, path5);
+      handler(result, path6);
     }
     if (raw !== "##" && raw !== "!!") {
-      result.files.push(new FileStatusSummary(path5, index, workingDir));
+      result.files.push(new FileStatusSummary(path6, index, workingDir));
     }
   }
 }
@@ -4370,9 +4370,9 @@ var init_simple_git_api = __esm({
           next
         );
       }
-      hashObject(path5, write) {
+      hashObject(path6, write) {
         return this._runTask(
-          hashObjectTask(path5, write === true),
+          hashObjectTask(path6, write === true),
           trailingFunctionArgument(arguments)
         );
       }
@@ -4726,8 +4726,8 @@ var init_branch = __esm({
   }
 });
 function toPath(input) {
-  const path5 = input.trim().replace(/^["']|["']$/g, "");
-  return path5 && (0, import_node_path.normalize)(path5);
+  const path6 = input.trim().replace(/^["']|["']$/g, "");
+  return path6 && (0, import_node_path.normalize)(path6);
 }
 var parseCheckIgnore;
 var init_CheckIgnore = __esm({
@@ -5012,8 +5012,8 @@ __export2(sub_module_exports, {
   subModuleTask: () => subModuleTask,
   updateSubModuleTask: () => updateSubModuleTask
 });
-function addSubModuleTask(repo, path5) {
-  return subModuleTask(["add", repo, path5]);
+function addSubModuleTask(repo, path6) {
+  return subModuleTask(["add", repo, path6]);
 }
 function initSubModuleTask(customArgs) {
   return subModuleTask(["init", ...customArgs]);
@@ -5327,8 +5327,8 @@ var require_git = __commonJS2({
       }
       return this._runTask(straightThroughStringTask2(command, this._trimmed), next);
     };
-    Git2.prototype.submoduleAdd = function(repo, path5, then) {
-      return this._runTask(addSubModuleTask2(repo, path5), trailingFunctionArgument2(arguments));
+    Git2.prototype.submoduleAdd = function(repo, path6, then) {
+      return this._runTask(addSubModuleTask2(repo, path6), trailingFunctionArgument2(arguments));
     };
     Git2.prototype.submoduleUpdate = function(args, then) {
       return this._runTask(
@@ -5883,15 +5883,16 @@ init_git_response_error();
 var esm_default = gitInstanceFactory;
 
 // main.ts
-var fs3 = __toESM(require("fs"));
-var path4 = __toESM(require("path"));
-var os3 = __toESM(require("os"));
+var fs4 = __toESM(require("fs"));
+var path5 = __toESM(require("path"));
+var os4 = __toESM(require("os"));
 var import_child_process2 = require("child_process");
 var import_util2 = require("util");
 
 // src/sync.ts
-var fs = __toESM(require("fs"));
-var path = __toESM(require("path"));
+var fs2 = __toESM(require("fs"));
+var path2 = __toESM(require("path"));
+var os = __toESM(require("os"));
 
 // src/secretScan.ts
 var ALLOW_MARKER = "av-allow-secret";
@@ -5975,13 +5976,114 @@ function scanFileNames(paths) {
   return out;
 }
 
+// src/conflict.ts
+var fs = __toESM(require("fs"));
+var path = __toESM(require("path"));
+function sanitizeDevice(name) {
+  const s = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 20);
+  return s.replace(/-+$/g, "") || "device";
+}
+function stamp(d) {
+  const p2 = (n, w = 2) => String(n).padStart(w, "0");
+  return `${d.getUTCFullYear()}${p2(d.getUTCMonth() + 1)}${p2(d.getUTCDate())}-${p2(d.getUTCHours())}${p2(d.getUTCMinutes())}${p2(d.getUTCSeconds())}`;
+}
+function conflictCopyName(rel, device, when, exists2 = () => false) {
+  const posix2 = rel.replace(/\\/g, "/");
+  const dir = path.posix.dirname(posix2);
+  const ext = path.posix.extname(posix2);
+  const base = path.posix.basename(posix2, ext);
+  for (let n = 1; n < 1e3; n++) {
+    const suffix = n === 1 ? "" : `-${n}`;
+    const file = `${base}.conflict-local-${sanitizeDevice(device)}-${stamp(when)}${suffix}${ext}`;
+    const candidate = dir === "." ? file : path.posix.join(dir, file);
+    if (!exists2(candidate))
+      return candidate;
+  }
+  throw new Error("Could not find a free conflict-copy name");
+}
+var COPY_RE = /\.conflict-local-[a-z0-9-]+-\d{8}-\d{6}(?:-\d+)?(?:\.[^./\\]+)?$/;
+var isConflictCopy = (p2) => COPY_RE.test(p2);
+var filterConflictCopies = (paths) => paths.filter(isConflictCopy);
+function parseUnmergedStages(out) {
+  var _a2;
+  const map = /* @__PURE__ */ new Map();
+  for (const rec of out.split("\0")) {
+    const m = /^\d+ [0-9a-f]+ ([123])\t([\s\S]+)$/.exec(rec);
+    if (!m)
+      continue;
+    const st = (_a2 = map.get(m[2])) != null ? _a2 : { has1: false, has2: false, has3: false };
+    st[`has${m[1]}`] = true;
+    map.set(m[2], st);
+  }
+  return map;
+}
+var midRebase = (vaultPath) => ["rebase-merge", "rebase-apply"].some((d) => fs.existsSync(path.join(vaultPath, ".git", d)));
+async function resolveRebaseConflicts(git, opts) {
+  var _a2, _b;
+  const when = (_a2 = opts.now) != null ? _a2 : new Date();
+  const copies = [];
+  let orig = "";
+  try {
+    orig = fs.readFileSync(path.join(opts.vaultPath, ".git", "rebase-merge", "orig-head"), "utf8").trim();
+  } catch (e) {
+    orig = (await git.raw(["rev-parse", "--verify", "ORIG_HEAD"]).catch(() => "")).trim();
+  }
+  if (orig)
+    await git.raw(["update-ref", `refs/av-backup/conflict-${stamp(when)}`, orig]);
+  for (let round = 0; round < ((_b = opts.maxRounds) != null ? _b : 100); round++) {
+    const unmerged = parseUnmergedStages(await git.raw(["ls-files", "-u", "-z"]));
+    const fresh = [];
+    for (const [file, st] of unmerged) {
+      if (!st.has2 && !st.has3)
+        throw new Error(`Unsupported conflict type for ${file}`);
+      if (st.has3) {
+        const copyRel = conflictCopyName(file, opts.device, when, (c3) => copies.includes(c3) || fs.existsSync(path.join(opts.vaultPath, c3)));
+        const blob = await git.binaryCatFile(["blob", `:3:${file}`]);
+        fs.mkdirSync(path.dirname(path.join(opts.vaultPath, copyRel)), { recursive: true });
+        fs.writeFileSync(path.join(opts.vaultPath, copyRel), blob);
+        copies.push(copyRel);
+        fresh.push(copyRel);
+      }
+      if (st.has2) {
+        await git.raw(["checkout", "--ours", "--", file]);
+        await git.raw(["add", "--", file]);
+      } else {
+        await git.raw(["rm", "-q", "--force", "--", file]);
+      }
+    }
+    if (fresh.length)
+      await git.raw(["add", "--", ...fresh]);
+    const hasUnmerged = async () => (await git.raw(["ls-files", "-u", "-z"])).length > 0;
+    const staged = (await git.raw(["diff", "--cached", "--name-only", "-z"])).length > 0;
+    try {
+      if (staged) {
+        await git.raw(["commit", "--no-edit"]);
+        await git.raw(["rebase", "--continue"]);
+      } else {
+        await git.raw(["rebase", "--skip"]);
+      }
+    } catch (e) {
+      if (midRebase(opts.vaultPath) && await hasUnmerged())
+        continue;
+      if (!midRebase(opts.vaultPath))
+        return { copies };
+      throw e;
+    }
+    if (!midRebase(opts.vaultPath))
+      return { copies };
+  }
+  if (!midRebase(opts.vaultPath))
+    return { copies };
+  throw new Error("Conflict resolution did not converge");
+}
+
 // src/sync.ts
 function maskSecrets(msg) {
   return msg.replace(/https?:\/\/[^\s/@]+@/g, "https://***@");
 }
 function isMidRebase(vaultPath) {
-  const gitDir = path.join(vaultPath, ".git");
-  return ["rebase-merge", "rebase-apply"].some((d) => fs.existsSync(path.join(gitDir, d)));
+  const gitDir = path2.join(vaultPath, ".git");
+  return ["rebase-merge", "rebase-apply"].some((d) => fs2.existsSync(path2.join(gitDir, d)));
 }
 async function currentBranch(git) {
   try {
@@ -6006,7 +6108,7 @@ async function hasCommits(git) {
   }
 }
 async function syncVault(git, opts) {
-  var _a2;
+  var _a2, _b, _c;
   const remote = (_a2 = opts.remote) != null ? _a2 : "origin";
   const result = { status: "ok", committed: false, pushed: false };
   try {
@@ -6046,6 +6148,7 @@ async function syncVault(git, opts) {
     }
     const branch = await currentBranch(git);
     const hasUpstream = !!(await git.status()).tracking;
+    let conflictCopies = [];
     try {
       if (hasUpstream) {
         await git.pull(["--rebase"]);
@@ -6055,18 +6158,28 @@ async function syncVault(git, opts) {
           await git.pull(remote, branch, ["--rebase"]);
       }
     } catch (e) {
-      if (isMidRebase(opts.vaultPath)) {
+      if (!isMidRebase(opts.vaultPath))
+        throw e;
+      const giveUp = async () => {
         await git.raw(["rebase", "--abort"]).catch(() => void 0);
-        return {
-          ...result,
-          status: "conflict",
-          message: "Merge conflict! Rebase aborted. Resolve manually."
-        };
+        return { ...result, status: "conflict", message: "Merge conflict! Rebase aborted. Resolve manually." };
+      };
+      if (opts.conflictStrategy === "abort")
+        return giveUp();
+      try {
+        conflictCopies = (await resolveRebaseConflicts(git, {
+          vaultPath: opts.vaultPath,
+          device: (_b = opts.device) != null ? _b : os.hostname(),
+          now: (_c = opts.now) == null ? void 0 : _c.call(opts)
+        })).copies;
+      } catch (e2) {
+        return giveUp();
       }
-      throw e;
     }
+    if (conflictCopies.length > 0)
+      result.conflictCopies = conflictCopies;
     if (opts.autoPush) {
-      if (!opts.allowPublicRemote) {
+      if (opts.allowPublicRemote === false) {
         try {
           const { execFile: execFile2 } = require("child_process");
           const { promisify: promisify2 } = require("util");
@@ -6097,8 +6210,8 @@ async function syncVault(git, opts) {
 }
 
 // src/util.ts
-var os = __toESM(require("os"));
-var path2 = __toESM(require("path"));
+var os2 = __toESM(require("os"));
+var path3 = __toESM(require("path"));
 function section(content, title) {
   const re = new RegExp(`## ${title}\\r?\\n([\\s\\S]*?)(?=\\r?\\n## |$)`);
   const m = content.match(re);
@@ -6126,17 +6239,17 @@ ${r2.coding}
 }
 var SECRET_DIRS = [".ssh", ".aws", ".gnupg", ".kube", ".docker"];
 var EXACT_ONLY_DIRS = [".config", "Documents", "Desktop", "Downloads"];
-function isDangerousPath(p2, home = os.homedir()) {
+function isDangerousPath(p2, home = os2.homedir()) {
   const cmp = (s) => process.platform === "win32" ? s.toLowerCase() : s;
-  const norm = path2.resolve(p2);
-  const h2 = path2.resolve(home);
-  if (path2.parse(norm).root === norm)
+  const norm = path3.resolve(p2);
+  const h2 = path3.resolve(home);
+  if (path3.parse(norm).root === norm)
     return true;
   if (cmp(norm) === cmp(h2))
     return true;
-  if (!cmp(norm).startsWith(cmp(h2) + path2.sep))
+  if (!cmp(norm).startsWith(cmp(h2) + path3.sep))
     return true;
-  const parts = path2.relative(h2, norm).split(path2.sep);
+  const parts = path3.relative(h2, norm).split(path3.sep);
   if (SECRET_DIRS.some((d) => cmp(d) === cmp(parts[0])))
     return true;
   if (parts.length === 1 && EXACT_ONLY_DIRS.some((d) => cmp(d) === cmp(parts[0])))
@@ -6145,39 +6258,39 @@ function isDangerousPath(p2, home = os.homedir()) {
 }
 
 // src/link.ts
-var fs2 = __toESM(require("fs"));
-var os2 = __toESM(require("os"));
-var path3 = __toESM(require("path"));
+var fs3 = __toESM(require("fs"));
+var os3 = __toESM(require("os"));
+var path4 = __toESM(require("path"));
 function safeLstat(p2) {
   try {
-    return fs2.lstatSync(p2);
+    return fs3.lstatSync(p2);
   } catch (e) {
     return null;
   }
 }
 function isEmptyOrMissing(dir) {
   try {
-    return fs2.readdirSync(dir).length === 0;
+    return fs3.readdirSync(dir).length === 0;
   } catch (e) {
     return true;
   }
 }
-function planLink(source, target, home = os2.homedir()) {
-  const s = path3.resolve(source);
-  const t2 = path3.resolve(target);
+function planLink(source, target, home = os3.homedir()) {
+  const s = path4.resolve(source);
+  const t2 = path4.resolve(target);
   if (isDangerousPath(t2, home))
     return { action: "refuse", reason: "Target folder is protected or outside your home directory." };
-  if (t2 === s || t2.startsWith(s + path3.sep) || s.startsWith(t2 + path3.sep)) {
+  if (t2 === s || t2.startsWith(s + path4.sep) || s.startsWith(t2 + path4.sep)) {
     return { action: "refuse", reason: "Source and target overlap (one is inside the other)." };
   }
   const st = safeLstat(t2);
   if (!st)
     return { action: "create" };
   if (st.isSymbolicLink()) {
-    const dest = path3.resolve(path3.dirname(t2), fs2.readlinkSync(t2));
+    const dest = path4.resolve(path4.dirname(t2), fs3.readlinkSync(t2));
     let same = false;
     try {
-      same = fs2.realpathSync(dest) === fs2.realpathSync(s);
+      same = fs3.realpathSync(dest) === fs3.realpathSync(s);
     } catch (e) {
       same = dest === s;
     }
@@ -6186,24 +6299,24 @@ function planLink(source, target, home = os2.homedir()) {
   return { action: "backup-and-create", backup: `${t2}_backup_${Date.now()}`, willMigrate: st.isDirectory() && isEmptyOrMissing(s) };
 }
 function applyLink(source, target, plan, platform2 = process.platform) {
-  const s = path3.resolve(source);
-  const t2 = path3.resolve(target);
+  const s = path4.resolve(source);
+  const t2 = path4.resolve(target);
   if (plan.action === "refuse")
     throw new Error(plan.reason);
   if (plan.action === "noop")
     return {};
-  fs2.mkdirSync(s, { recursive: true });
-  fs2.mkdirSync(path3.dirname(t2), { recursive: true });
+  fs3.mkdirSync(s, { recursive: true });
+  fs3.mkdirSync(path4.dirname(t2), { recursive: true });
   let backup;
   if (plan.action === "replace-link") {
-    fs2.unlinkSync(t2);
+    fs3.unlinkSync(t2);
   } else if (plan.action === "backup-and-create") {
     backup = plan.backup;
-    fs2.renameSync(t2, backup);
+    fs3.renameSync(t2, backup);
     if (plan.willMigrate)
-      fs2.cpSync(backup, s, { recursive: true });
+      fs3.cpSync(backup, s, { recursive: true });
   }
-  fs2.symlinkSync(s, t2, platform2 === "win32" ? "junction" : "dir");
+  fs3.symlinkSync(s, t2, platform2 === "win32" ? "junction" : "dir");
   return { backup };
 }
 
@@ -6226,15 +6339,17 @@ var NOTICE_TEXT = {
   "not-a-repo": "\u2139\uFE0F This vault is not a Git repository yet. Run the setup wizard."
 };
 function nextSyncState(prev, result, ctx) {
-  var _a2, _b;
+  var _a2, _b, _c;
   const now = (_a2 = ctx.now) != null ? _a2 : Date.now();
   const { status } = result;
   if (status === "ok") {
+    const copies = (_b = result.conflictCopies) != null ? _b : [];
     return {
       state: { paused: false, lastOkAt: now },
       // clears pause AND the dedupe key
-      notice: null,
-      statusText: "\u2601 synced"
+      // a conflict copy is never silent: the user has to merge it by hand
+      notice: copies.length > 0 ? `\u{1F4C4} Conflict: the remote version was applied. Your local version was saved as ${copies[0]}${copies.length > 1 ? ` (+${copies.length - 1} more)` : ""}. Compare, merge, then delete the copy.` : null,
+      statusText: copies.length > 0 ? `\u2601 synced \xB7 ${copies.length} conflict cop${copies.length === 1 ? "y" : "ies"}` : "\u2601 synced"
     };
   }
   if (isPausing(status)) {
@@ -6246,7 +6361,7 @@ function nextSyncState(prev, result, ctx) {
       statusText: `\u23F8 paused: ${status}`
     };
   }
-  const msg = ((_b = result.message) != null ? _b : "unknown error").slice(0, 100);
+  const msg = ((_c = result.message) != null ? _c : "unknown error").slice(0, 100);
   const key = `error:${msg}`;
   const already = prev.lastNoticeKey === key;
   return {
@@ -6275,6 +6390,8 @@ var DEFAULT_SETTINGS = {
   skillsFolder: "AI-Agent-System/skills",
   scriptsFolder: "AI-Agent-System/scripts",
   allowPublicRemote: false,
+  scanSecrets: true,
+  deviceName: require("os").hostname(),
   syncState: initialSyncState
 };
 function getVaultPath(app) {
@@ -6306,7 +6423,33 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     await this.ensureGitignore(vaultPath);
     this.statusBarEl = this.addStatusBarItem();
     this.statusBarEl.setText("\u27F3 Agentic Vault");
+    await this.verifyPauseState(vaultPath);
     void this.updateStatusBar();
+  }
+  async verifyPauseState(vaultPath) {
+    if (!this.settings.syncState.paused)
+      return;
+    const r2 = this.settings.syncState.pauseReason;
+    if (r2 === "not-a-repo") {
+      if (await this.git.checkIsRepo())
+        this.clearPause();
+    } else if (r2 === "no-remote") {
+      if ((await this.git.getRemotes()).length > 0)
+        this.clearPause();
+    } else if (r2 === "rebase-in-progress") {
+      const fs5 = require("fs"), path6 = require("path");
+      if (!fs5.existsSync(path6.join(vaultPath, ".git", "rebase-merge")) && !fs5.existsSync(path6.join(vaultPath, ".git", "rebase-apply")))
+        this.clearPause();
+    } else if (r2 === "conflict") {
+      if ((await this.git.status()).conflicted.length === 0)
+        this.clearPause();
+    }
+  }
+  clearPause() {
+    this.settings.syncState.paused = false;
+    this.settings.syncState.pauseReason = void 0;
+    this.settings.syncState.lastNoticeKey = void 0;
+    void this.saveSettings();
     this.addRibbonIcon("git-commit-vertical", "Force Git Sync", () => {
       void this.performDynamicCommit(false, true);
     });
@@ -6331,7 +6474,7 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     new import_obsidian.Notice("\u2705 Agentic Vault Loaded Successfully!", 5e3);
   }
   async ensureGitignore(vaultPath) {
-    const gitignorePath = path4.join(vaultPath, ".gitignore");
+    const gitignorePath = path5.join(vaultPath, ".gitignore");
     const brain = this.settings.vaultBrainFolder || "AI-Brain";
     const rules = [
       ".obsidian/workspace.json",
@@ -6347,8 +6490,8 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     ];
     try {
       let content = "";
-      if (fs3.existsSync(gitignorePath)) {
-        content = fs3.readFileSync(gitignorePath, "utf8");
+      if (fs4.existsSync(gitignorePath)) {
+        content = fs4.readFileSync(gitignorePath, "utf8");
       }
       const existingLines = new Set(content.split(/\r?\n/).map((l) => l.trim()));
       let changed = false;
@@ -6359,7 +6502,7 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
         }
       }
       if (changed) {
-        fs3.writeFileSync(gitignorePath, content);
+        fs4.writeFileSync(gitignorePath, content);
         new import_obsidian.Notice("Agentic Vault: Updated .gitignore to prevent secret leaks.");
       }
       try {
@@ -6401,6 +6544,7 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
       const ahead = status.ahead;
       const behind = status.behind;
       const dirty = status.files.length;
+      const copies = filterConflictCopies(status.files.map((f) => f.path));
       let text = `\u2601 ${branch}`;
       if (transitionStatus) {
         text += ` ${transitionStatus}`;
@@ -6408,6 +6552,8 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
         text += ` \u23F8 paused`;
       } else if (this.lastErrorMsg) {
         text += ` \u26A0\uFE0F Error`;
+      } else if (copies.length > 0) {
+        text += ` \xB7 ${copies.length} conflict cop${copies.length === 1 ? "y" : "ies"}`;
       } else {
         if (ahead)
           text += ` \u2191${ahead}`;
@@ -6444,7 +6590,9 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
         vaultPath,
         commitMessage: this.settings.commitMessageFormat,
         autoPush: this.settings.gitAutoPush,
-        allowPublicRemote: this.settings.allowPublicRemote
+        allowPublicRemote: this.settings.allowPublicRemote,
+        scanSecrets: this.settings.scanSecrets,
+        device: this.settings.deviceName
       });
       const transition = nextSyncState(this.settings.syncState, result, { manual });
       this.settings.syncState = transition.state;
@@ -6517,12 +6665,12 @@ var SetupWizardModal = class extends import_obsidian.Modal {
   }
   buildSteps() {
     const vaultPath = getVaultPath(this.app);
-    const isWin = os3.platform() === "win32";
+    const isWin = os4.platform() === "win32";
     const steps = [
       {
         label: "Detect Platform",
         status: "pending",
-        detail: `Detected: ${isWin ? "Windows" : os3.platform()} | Vault: ${vaultPath}`
+        detail: `Detected: ${isWin ? "Windows" : os4.platform()} | Vault: ${vaultPath}`
       }
     ];
     const addSymlinkStep = (label, src, dst) => {
@@ -6539,7 +6687,7 @@ var SetupWizardModal = class extends import_obsidian.Modal {
           detail = `Will replace existing link (currently -> ${plan.currentDestination})`;
           break;
         case "backup-and-create":
-          detail = `Will backup existing folder to ${path4.basename(plan.backup)}${plan.willMigrate ? " and migrate contents" : ""}`;
+          detail = `Will backup existing folder to ${path5.basename(plan.backup)}${plan.willMigrate ? " and migrate contents" : ""}`;
           break;
         case "refuse":
           detail = `REFUSED: ${plan.reason}`;
@@ -6547,13 +6695,13 @@ var SetupWizardModal = class extends import_obsidian.Modal {
       }
       steps.push({ label, status: plan.action === "refuse" ? "error" : "pending", detail, plan, src, dst });
     };
-    addSymlinkStep("\u{1F9E0} Link Skills Folder", path4.join(vaultPath, this.plugin.settings.skillsFolder), path4.join(os3.homedir(), ".agents", "skills"));
-    addSymlinkStep("\u26A1 Link Scripts Folder", path4.join(vaultPath, this.plugin.settings.scriptsFolder), path4.join(os3.homedir(), ".agents", "scripts"));
+    addSymlinkStep("\u{1F9E0} Link Skills Folder", path5.join(vaultPath, this.plugin.settings.skillsFolder), path5.join(os4.homedir(), ".agents", "skills"));
+    addSymlinkStep("\u26A1 Link Scripts Folder", path5.join(vaultPath, this.plugin.settings.scriptsFolder), path5.join(os4.homedir(), ".agents", "scripts"));
     for (const tool of this.plugin.settings.aiTools) {
       if (!tool.enabled)
         continue;
       const dstRel = isWin ? tool.windowsPath : tool.unixPath;
-      addSymlinkStep(`\u{1F916} Link ${tool.name}`, path4.join(vaultPath, this.plugin.settings.vaultBrainFolder, tool.id), path4.join(os3.homedir(), dstRel));
+      addSymlinkStep(`\u{1F916} Link ${tool.name}`, path5.join(vaultPath, this.plugin.settings.vaultBrainFolder, tool.id), path5.join(os4.homedir(), dstRel));
     }
     steps.push({ label: "\u{1F500} Verify Git Repository", status: "pending", detail: "Check vault is connected to GitHub" });
     return steps;
@@ -6574,7 +6722,7 @@ var SetupWizardModal = class extends import_obsidian.Modal {
   }
   async runAllSteps() {
     const vaultPath = getVaultPath(this.app);
-    const isWin = os3.platform() === "win32";
+    const isWin = os4.platform() === "win32";
     let stepIdx = 0;
     this.setStepStatus(stepIdx++, "done");
     while (stepIdx < this.steps.length - 1) {
@@ -6590,7 +6738,7 @@ var SetupWizardModal = class extends import_obsidian.Modal {
     }
     this.setStepStatus(stepIdx, "running");
     try {
-      const isRepo = fs3.existsSync(path4.join(vaultPath, ".git"));
+      const isRepo = fs4.existsSync(path5.join(vaultPath, ".git"));
       if (isRepo) {
         const remote = await this.plugin.git.getRemotes(true);
         const origin = remote.find((r2) => r2.name === "origin");
@@ -6611,7 +6759,7 @@ var SetupWizardModal = class extends import_obsidian.Modal {
         return;
       }
       const result = applyLink(src, dst, plan);
-      this.setStepStatus(idx, "done", result.backup ? `Linked (backed up to ${path4.basename(result.backup)})` : "Linked \u2713");
+      this.setStepStatus(idx, "done", result.backup ? `Linked (backed up to ${path5.basename(result.backup)})` : "Linked \u2713");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       this.setStepStatus(idx, "error", msg);
@@ -6766,7 +6914,7 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
     const vaultPath = getVaultPath(this.app);
-    const isGitRepo = fs3.existsSync(path4.join(vaultPath, ".git"));
+    const isGitRepo = fs4.existsSync(path5.join(vaultPath, ".git"));
     new import_obsidian.Setting(containerEl).setName("\u2699\uFE0F Git & Sync").setHeading();
     const statusDiv = containerEl.createDiv();
     statusDiv.createEl("p", {
@@ -6809,6 +6957,10 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
       this.plugin.settings.allowPublicRemote = v;
       await this.plugin.saveSettings();
     }));
+    new import_obsidian.Setting(containerEl).setName("Enable Secret Scanner").setDesc("Block commits if secrets (API keys, .env, id_rsa) are detected in staged changes.").addToggle((t2) => t2.setValue(this.plugin.settings.scanSecrets).onChange(async (v) => {
+      this.plugin.settings.scanSecrets = v;
+      await this.plugin.saveSettings();
+    }));
     new import_obsidian.Setting(containerEl).setName("Auto-Sync Interval (minutes)").setDesc("How often to sync. Set to 0 to disable.").addText((t2) => t2.setPlaceholder("1").setValue(String(this.plugin.settings.syncIntervalMinutes)).onChange(async (v) => {
       const n = parseInt(v);
       if (!isNaN(n) && n >= 0) {
@@ -6819,6 +6971,10 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
     }));
     new import_obsidian.Setting(containerEl).setName("Default Commit Message").addText((t2) => t2.setValue(this.plugin.settings.commitMessageFormat).onChange(async (v) => {
       this.plugin.settings.commitMessageFormat = v;
+      await this.plugin.saveSettings();
+    }));
+    new import_obsidian.Setting(containerEl).setName("Device Name").setDesc("Used to identify this device in conflict resolution copies (e.g. .conflict-local-[deviceName]-2024...).").addText((t2) => t2.setPlaceholder(require("os").hostname()).setValue(this.plugin.settings.deviceName).onChange(async (v) => {
+      this.plugin.settings.deviceName = v || require("os").hostname();
       await this.plugin.saveSettings();
     }));
     new import_obsidian.Setting(containerEl).setName("Brain File Path").setDesc("Markdown file where AI rules are stored (e.g. AI-Brain/Rules.md)").addText((t2) => t2.setPlaceholder("AI-Brain/Rules.md").setValue(this.plugin.settings.ruleFilePath).onChange(async (v) => {
@@ -6843,8 +6999,8 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
       cls: "av-subtitle"
     });
     for (const tool of this.plugin.settings.aiTools) {
-      const isWin = os3.platform() === "win32";
-      const dstPath = path4.join("~", isWin ? tool.windowsPath : tool.unixPath);
+      const isWin = os4.platform() === "win32";
+      const dstPath = path5.join("~", isWin ? tool.windowsPath : tool.unixPath);
       new import_obsidian.Setting(containerEl).setName(tool.name).setDesc(`Current Link: ${dstPath}`).addToggle((t2) => t2.setValue(tool.enabled).onChange(async (v) => {
         tool.enabled = v;
         await this.plugin.saveSettings();
