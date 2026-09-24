@@ -1,24 +1,12 @@
 import {
-	App,
-	Notice,
-	Plugin,
-	PluginSettingTab,
-	Setting,
-	Modal,
-	TFile,
-	addIcon,
-	FileSystemAdapter,
+	Notice, Plugin, addIcon
 } from 'obsidian';
 import simpleGit, { SimpleGit, StatusResult } from 'simple-git';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { execFile } from 'child_process';
-import { promisify } from 'util';
 import { syncVault } from './src/sync';
-import { parseRules, serializeRules, isDangerousPath } from './src/util';
-import { planLink, applyLink, LinkPlan } from './src/link';
-import { SyncState, initialSyncState, shouldRun, nextSyncState } from './src/syncState';
+import { initialSyncState, shouldRun, nextSyncState } from './src/syncState';
 import { filterConflictCopies } from './src/conflict';
 import { SetupWizardModal } from './src/modals/SetupWizardModal';
 import { BrainManagerModal } from './src/modals/BrainManagerModal';
@@ -26,7 +14,6 @@ import { CreateIssueModal } from './src/modals/CreateIssueModal';
 import { AgenticVaultSettingTab } from './src/settings/AgenticVaultSettingTab';
 
 
-const execFileAsync = promisify(execFile);
 
 // ─────────────────────────────────────────────
 // Types & Interfaces
@@ -53,7 +40,7 @@ const DEFAULT_SETTINGS: AgenticVaultSettings = {
 	scriptsFolder: 'AI-Agent-System/scripts',
 	allowPublicRemote: false,
 	scanSecrets: true,
-	deviceName: require('os').hostname(),
+	deviceName: os.hostname(),
 	syncState: initialSyncState,
 };
 
@@ -111,7 +98,6 @@ export default class AgenticVaultPlugin extends Plugin {
 		} else if (r === 'no-remote') {
 			if ((await this.git.getRemotes()).length > 0) this.clearPause();
 		} else if (r === 'rebase-in-progress') {
-			const fs = require('fs'), path = require('path');
 			if (!fs.existsSync(path.join(vaultPath, '.git', 'rebase-merge')) && !fs.existsSync(path.join(vaultPath, '.git', 'rebase-apply'))) this.clearPause();
 		} else if (r === 'conflict') {
 			if ((await this.git.status()).conflicted.length === 0) this.clearPause();
@@ -150,8 +136,8 @@ export default class AgenticVaultPlugin extends Plugin {
 		const gitignorePath = path.join(vaultPath, '.gitignore');
 		const brain = this.settings.vaultBrainFolder || 'AI-Brain';
 		const rules = [
-			'.obsidian/workspace.json',
-			'.obsidian/workspace-mobile.json',
+			'/workspace.json',
+			'/workspace-mobile.json',
 			'node_modules/',
 			'.DS_Store',
 			`${brain}/**/*oauth*`,

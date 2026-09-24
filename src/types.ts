@@ -18,5 +18,5 @@ export interface AgenticVaultSettings {
 	allowPublicRemote: boolean;
 	scanSecrets: boolean;
 	deviceName: string;
-	syncState: any;
+	syncState: Record<string, unknown>;
 }

@@ -74,8 +74,6 @@ class SetupWizardModal extends Modal {
 
 	private buildSteps(): SetupStep[] {
 		const vaultPath = getVaultPath(this.app);
-		const isWin = os.platform() === 'win32';
-
 		const steps: SetupStep[] = [
 			{
 				label: 'Detect Platform',
@@ -128,7 +126,6 @@ class SetupWizardModal extends Modal {
 
 	private async runAllSteps(): Promise<void> {
 		const vaultPath = getVaultPath(this.app);
-		const isWin = os.platform() === 'win32';
 		let stepIdx = 0;
 
 		// Step 0 — Platform detect (instant)
