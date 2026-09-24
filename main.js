@@ -52,7 +52,7 @@ var require_ms = __commonJS({
       options = options || {};
       var type = typeof val;
       if (type === "string" && val.length > 0) {
-        return parse(val);
+        return parse2(val);
       } else if (type === "number" && isFinite(val)) {
         return options.long ? fmtLong(val) : fmtShort(val);
       }
@@ -60,7 +60,7 @@ var require_ms = __commonJS({
         "val is not a non-empty string or a valid number. val=" + JSON.stringify(val)
       );
     };
-    function parse(str) {
+    function parse2(str) {
       str = String(str);
       if (str.length > 100) {
         return;
@@ -1810,7 +1810,7 @@ function parseStringResponse(result, parsers12, texts, trim = true) {
         }
         return lines[i2 + offset];
       };
-      parsers12.some(({ parse }) => parse(line, result));
+      parsers12.some(({ parse: parse2 }) => parse2(line, result));
     }
   });
   return result;
@@ -5970,9 +5970,11 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     const rules = [
       ".obsidian/workspace.json",
       ".obsidian/workspace-mobile.json",
-      ".obsidian/core-plugins.json",
       "node_modules/",
       ".DS_Store",
+      "**/*oauth*",
+      "**/*token*",
+      "**/*secret*",
       "**/credentials",
       "**/.env",
       "**/*.key"
@@ -5982,9 +5984,10 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
       if (fs.existsSync(gitignorePath)) {
         content = fs.readFileSync(gitignorePath, "utf8");
       }
+      const existingLines = new Set(content.split(/\r?\n/).map((l) => l.trim()));
       let changed = false;
       for (const rule of rules) {
-        if (!content.includes(rule)) {
+        if (!existingLines.has(rule)) {
           content += (content.endsWith("\n") || content === "" ? "" : "\n") + rule + "\n";
           changed = true;
         }
@@ -6062,6 +6065,13 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
           new import_obsidian.Notice("Not a git repository. Please initialize in settings.");
         return;
       }
+      const rebaseMergeExists = fs.existsSync(path.join(vaultPath, ".git", "rebase-merge"));
+      const rebaseApplyExists = fs.existsSync(path.join(vaultPath, ".git", "rebase-apply"));
+      if (rebaseMergeExists || rebaseApplyExists) {
+        if (!silent)
+          new import_obsidian.Notice("\u26A0\uFE0F Rebase in progress. Please resolve conflicts or abort.");
+        return;
+      }
       if (!silent)
         new import_obsidian.Notice("Agentic Vault: Syncing...");
       await this.git.add(".");
@@ -6075,17 +6085,35 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
         if (!silent)
           new import_obsidian.Notice("Agentic Vault: Nothing to commit.");
       }
-      try {
-        await this.git.pull(["--rebase"]);
-      } catch (e) {
-        if (!e.message.includes("remote")) {
+      const branch = status.current || "main";
+      const tracking = status.tracking;
+      if (!tracking) {
+        const remotes = await this.git.getRemotes();
+        if (remotes.length > 0) {
+          try {
+            const lsRemote = await this.git.listRemote(["--heads", "origin", branch]);
+            if (lsRemote.trim() !== "") {
+              await this.git.pull("origin", branch, ["--rebase"]);
+            }
+          } catch (e) {
+            console.error("listRemote failed", e);
+          }
+        }
+      } else {
+        try {
+          await this.git.pull(["--rebase"]);
+        } catch (e) {
+          const pullErrMsg = e.message || String(e);
+          if (pullErrMsg.includes("CONFLICT") || pullErrMsg.includes("Automatic merge failed")) {
+            await this.git.raw(["rebase", "--abort"]);
+            throw new Error("Merge conflict! Rebase aborted. Resolve conflicts manually.");
+          }
           throw e;
         }
       }
       if (this.settings.gitAutoPush) {
-        const statusAfterPull = await this.git.status();
-        if (statusAfterPull.tracking === null) {
-          await this.git.push(["-u", "origin", statusAfterPull.current || "main"]);
+        if (!tracking) {
+          await this.git.push(["-u", "origin", branch]);
         } else {
           await this.git.push();
         }
@@ -6095,17 +6123,18 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
       this.lastErrorMsg = null;
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      const isConflict = msg.includes("CONFLICT") || msg.includes("merge");
-      const errorKey = isConflict ? "conflict" : msg;
+      const maskedMsg = msg.replace(/https:\/\/.*?@/g, "https://***@");
+      const isConflict = maskedMsg.includes("CONFLICT") || maskedMsg.includes("Automatic merge failed") || maskedMsg.includes("Merge conflict");
+      const errorKey = isConflict ? "conflict" : maskedMsg;
       if (!silent || this.lastErrorMsg !== errorKey) {
         if (isConflict) {
           new import_obsidian.Notice("\u26A0\uFE0F Merge conflict! Resolve manually.");
         } else {
-          new import_obsidian.Notice(`Git Error: ${msg}`);
+          new import_obsidian.Notice(`Git Error: ${maskedMsg.substring(0, 100)}...`);
         }
         this.lastErrorMsg = errorKey;
       }
-      console.error("Git Sync Error:", error);
+      console.error("Git Sync Error:", maskedMsg);
     } finally {
       this.isSyncing = false;
       void this.updateStatusBar();
@@ -6317,9 +6346,9 @@ var BrainManagerModal = class extends import_obsidian.Modal {
     const file = this.app.vault.getAbstractFileByPath(this.plugin.settings.ruleFilePath);
     if (file instanceof import_obsidian.TFile) {
       const content = await this.app.vault.read(file);
-      const sysMatch = content.match(/## System Rules\n([\s\S]*?)(?=\n## |$)/);
-      const projMatch = content.match(/## Project Rules\n([\s\S]*?)(?=\n## |$)/);
-      const codeMatch = content.match(/## Coding Standards\n([\s\S]*?)(?=\n## |$)/);
+      const sysMatch = content.match(/## System Rules\r?\n([\s\S]*?)(?=\r?\n## |$)/);
+      const projMatch = content.match(/## Project Rules\r?\n([\s\S]*?)(?=\r?\n## |$)/);
+      const codeMatch = content.match(/## Coding Standards\r?\n([\s\S]*?)(?=\r?\n## |$)/);
       if (sysMatch)
         this.rules.system = sysMatch[1].trim();
       if (projMatch)
@@ -6410,7 +6439,8 @@ var CreateIssueModal = class extends import_obsidian.Modal {
           this.close();
         }
       } catch (err) {
-        new import_obsidian.Notice(`Error: ${err.message || "Is GitHub CLI (gh) installed and authenticated?"}`);
+        const errMsg = err.stderr || err.message || "Is GitHub CLI (gh) installed and authenticated?";
+        new import_obsidian.Notice(`Error: ${errMsg}`);
       } finally {
         btn.setDisabled(false).setButtonText("Create Issue");
       }
@@ -6557,8 +6587,14 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
     }));
   }
   isDangerousPath(p2) {
-    const norm = path.normalize(p2).replace(/\\/g, "/");
-    if (norm === "/" || norm === "C:/" || norm === os.homedir().replace(/\\/g, "/"))
+    const norm = path.resolve(p2);
+    const cmp = (s) => process.platform === "win32" ? s.toLowerCase() : s;
+    const home = path.resolve(os.homedir());
+    if (path.parse(norm).root === norm)
+      return true;
+    if (cmp(norm) === cmp(home))
+      return true;
+    if (!cmp(norm).startsWith(cmp(home) + path.sep))
       return true;
     return false;
   }

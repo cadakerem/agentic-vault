@@ -135,9 +135,11 @@ export default class AgenticVaultPlugin extends Plugin {
 		const rules = [
 			'.obsidian/workspace.json',
 			'.obsidian/workspace-mobile.json',
-			'.obsidian/core-plugins.json',
 			'node_modules/',
 			'.DS_Store',
+			'**/*oauth*',
+			'**/*token*',
+			'**/*secret*',
 			'**/credentials',
 			'**/.env',
 			'**/*.key'
@@ -147,9 +149,10 @@ export default class AgenticVaultPlugin extends Plugin {
 			if (fs.existsSync(gitignorePath)) {
 				content = fs.readFileSync(gitignorePath, 'utf8');
 			}
+			const existingLines = new Set(content.split(/\r?\n/).map(l => l.trim()));
 			let changed = false;
 			for (const rule of rules) {
-				if (!content.includes(rule)) {
+				if (!existingLines.has(rule)) {
 					content += (content.endsWith('\n') || content === '' ? '' : '\n') + rule + '\n';
 					changed = true;
 				}
@@ -232,6 +235,13 @@ export default class AgenticVaultPlugin extends Plugin {
 				return;
 			}
 
+			const rebaseMergeExists = fs.existsSync(path.join(vaultPath, '.git', 'rebase-merge'));
+			const rebaseApplyExists = fs.existsSync(path.join(vaultPath, '.git', 'rebase-apply'));
+			if (rebaseMergeExists || rebaseApplyExists) {
+				if (!silent) new Notice('⚠️ Rebase in progress. Please resolve conflicts or abort.');
+				return;
+			}
+
 			if (!silent) new Notice('Agentic Vault: Syncing...');
 			
 			await this.git.add('.');
@@ -245,18 +255,37 @@ export default class AgenticVaultPlugin extends Plugin {
 				if (!silent) new Notice('Agentic Vault: Nothing to commit.');
 			}
 
-			try {
-				await this.git.pull(['--rebase']);
-			} catch (e: any) {
-				if (!e.message.includes('remote')) {
+			const branch = status.current || 'main';
+			const tracking = status.tracking;
+
+			if (!tracking) {
+				const remotes = await this.git.getRemotes();
+				if (remotes.length > 0) {
+					try {
+						const lsRemote = await this.git.listRemote(['--heads', 'origin', branch]);
+						if (lsRemote.trim() !== '') {
+							await this.git.pull('origin', branch, ['--rebase']);
+						}
+					} catch(e) {
+						console.error("listRemote failed", e);
+					}
+				}
+			} else {
+				try {
+					await this.git.pull(['--rebase']);
+				} catch (e: any) {
+					const pullErrMsg = e.message || String(e);
+					if (pullErrMsg.includes('CONFLICT') || pullErrMsg.includes('Automatic merge failed')) {
+						await this.git.raw(['rebase', '--abort']);
+						throw new Error('Merge conflict! Rebase aborted. Resolve conflicts manually.');
+					}
 					throw e;
 				}
 			}
 
 			if (this.settings.gitAutoPush) {
-				const statusAfterPull = await this.git.status();
-				if (statusAfterPull.tracking === null) {
-					await this.git.push(['-u', 'origin', statusAfterPull.current || 'main']);
+				if (!tracking) {
+					await this.git.push(['-u', 'origin', branch]);
 				} else {
 					await this.git.push();
 				}
@@ -265,18 +294,19 @@ export default class AgenticVaultPlugin extends Plugin {
 			this.lastErrorMsg = null;
 		} catch (error: unknown) {
 			const msg = error instanceof Error ? error.message : String(error);
-			const isConflict = msg.includes('CONFLICT') || msg.includes('merge');
-			const errorKey = isConflict ? 'conflict' : msg;
+			const maskedMsg = msg.replace(/https:\/\/.*?@/g, 'https://***@');
+			const isConflict = maskedMsg.includes('CONFLICT') || maskedMsg.includes('Automatic merge failed') || maskedMsg.includes('Merge conflict');
+			const errorKey = isConflict ? 'conflict' : maskedMsg;
 
 			if (!silent || this.lastErrorMsg !== errorKey) {
 				if (isConflict) {
 					new Notice('⚠️ Merge conflict! Resolve manually.');
 				} else {
-					new Notice(`Git Error: ${msg}`);
+					new Notice(`Git Error: ${maskedMsg.substring(0, 100)}...`);
 				}
 				this.lastErrorMsg = errorKey;
 			}
-			console.error("Git Sync Error:", error);
+			console.error("Git Sync Error:", maskedMsg);
 		} finally {
 			this.isSyncing = false;
 			void this.updateStatusBar();
@@ -546,9 +576,9 @@ class BrainManagerModal extends Modal {
 		const file = this.app.vault.getAbstractFileByPath(this.plugin.settings.ruleFilePath);
 		if (file instanceof TFile) {
 			const content = await this.app.vault.read(file);
-			const sysMatch  = content.match(/## System Rules\n([\s\S]*?)(?=\n## |$)/);
-			const projMatch = content.match(/## Project Rules\n([\s\S]*?)(?=\n## |$)/);
-			const codeMatch = content.match(/## Coding Standards\n([\s\S]*?)(?=\n## |$)/);
+			const sysMatch  = content.match(/## System Rules\r?\n([\s\S]*?)(?=\r?\n## |$)/);
+			const projMatch = content.match(/## Project Rules\r?\n([\s\S]*?)(?=\r?\n## |$)/);
+			const codeMatch = content.match(/## Coding Standards\r?\n([\s\S]*?)(?=\r?\n## |$)/);
 			if (sysMatch)  this.rules.system  = sysMatch[1].trim();
 			if (projMatch) this.rules.project = projMatch[1].trim();
 			if (codeMatch) this.rules.coding  = codeMatch[1].trim();
@@ -638,7 +668,8 @@ class CreateIssueModal extends Modal {
 						this.close();
 					}
 				} catch (err: any) {
-					new Notice(`Error: ${err.message || 'Is GitHub CLI (gh) installed and authenticated?'}`);
+					const errMsg = err.stderr || err.message || 'Is GitHub CLI (gh) installed and authenticated?';
+					new Notice(`Error: ${errMsg}`);
 				} finally {
 					btn.setDisabled(false).setButtonText('Create Issue');
 				}
@@ -868,8 +899,12 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 	}
 
 	private isDangerousPath(p: string): boolean {
-		const norm = path.normalize(p).replace(/\\/g, '/');
-		if (norm === '/' || norm === 'C:/' || norm === os.homedir().replace(/\\/g, '/')) return true;
+		const norm = path.resolve(p);
+		const cmp = (s: string) => (process.platform === 'win32' ? s.toLowerCase() : s);
+		const home = path.resolve(os.homedir());
+		if (path.parse(norm).root === norm) return true;
+		if (cmp(norm) === cmp(home)) return true;
+		if (!cmp(norm).startsWith(cmp(home) + path.sep)) return true;
 		return false;
 	}
 
