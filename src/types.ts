@@ -1,3 +1,5 @@
+import { SyncState } from './syncState';
+
 export interface AIToolConfig {
 	id: string;
 	name: string;
@@ -18,5 +20,5 @@ export interface AgenticVaultSettings {
 	allowPublicRemote: boolean;
 	scanSecrets: boolean;
 	deviceName: string;
-	syncState: Record<string, unknown>;
+	syncState: SyncState;
 }

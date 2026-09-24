@@ -73,6 +73,7 @@ class SetupWizardModal extends Modal {
 	}
 
 	private buildSteps(): SetupStep[] {
+		const isWin = os.platform() === 'win32';
 		const vaultPath = getVaultPath(this.app);
 		const steps: SetupStep[] = [
 			{
