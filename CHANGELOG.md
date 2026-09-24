@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.7] - 2026-09-25
+### Added
+- **Obsidian Settings Search (1.13.0+):** Implemented `getSettingDefinitions()` in `AgenticVaultSettingTab`. All plugin settings (Auto Push, Secret Scanner, Sync Interval, Device Name, etc.) now appear in Obsidian's global settings search.
+
 ## [1.4.6] - 2026-09-25
 ### Fixed
 - **Type safety:** Fixed `@typescript-eslint/no-unsafe-member-access` on `err.message` in `main.ts` — now uses `instanceof Error` guard.
