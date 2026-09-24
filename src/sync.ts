@@ -2,8 +2,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { SimpleGit } from 'simple-git';
 import * as os from 'os';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import { scanDiff, scanFileNames, Finding } from './secretScan';
 import { resolveRebaseConflicts } from './conflict';
+
+const execFileAsync = promisify(execFile);
 
 // NOTE: this file must NOT import 'obsidian' so vitest can load it.
 // main.ts should call syncVault() and only handle Notices / status bar.
@@ -164,9 +168,6 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
     if (opts.autoPush) {
       if (opts.allowPublicRemote === false) {
         try {
-          const { execFile } = require('child_process');
-          const { promisify } = require('util');
-          const execFileAsync = promisify(execFile);
           const { stdout } = await execFileAsync('gh', ['repo', 'view', '--json', 'isPrivate'], { cwd: opts.vaultPath });
           const data = JSON.parse(stdout);
           if (data && data.isPrivate === false) {
