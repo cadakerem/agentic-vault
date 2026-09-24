@@ -44,6 +44,7 @@ interface AgenticVaultSettings {
 	skillsFolder: string;
 	scriptsFolder: string;
 	allowPublicRemote: boolean;
+	scanSecrets: boolean;
 	syncState: SyncState;
 }
 
@@ -65,6 +66,7 @@ const DEFAULT_SETTINGS: AgenticVaultSettings = {
 	skillsFolder: 'AI-Agent-System/skills',
 	scriptsFolder: 'AI-Agent-System/scripts',
 	allowPublicRemote: false,
+	scanSecrets: true,
 	syncState: initialSyncState,
 };
 
@@ -262,6 +264,7 @@ export default class AgenticVaultPlugin extends Plugin {
 				commitMessage: this.settings.commitMessageFormat,
 				autoPush: this.settings.gitAutoPush,
 				allowPublicRemote: this.settings.allowPublicRemote,
+				scanSecrets: this.settings.scanSecrets,
 			});
 
 			const transition = nextSyncState(this.settings.syncState, result, { manual });
@@ -738,6 +741,14 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 			.setDesc('DANGER: Allow syncing even if the GitHub repository is public. This may expose your AI secrets.')
 			.addToggle(t => t.setValue(this.plugin.settings.allowPublicRemote).onChange(async v => {
 				this.plugin.settings.allowPublicRemote = v;
+				await this.plugin.saveSettings();
+			}));
+
+		new Setting(containerEl)
+			.setName('Enable Secret Scanner')
+			.setDesc('Block commits if secrets (API keys, .env, id_rsa) are detected in staged changes.')
+			.addToggle(t => t.setValue(this.plugin.settings.scanSecrets).onChange(async v => {
+				this.plugin.settings.scanSecrets = v;
 				await this.plugin.saveSettings();
 			}));
 
