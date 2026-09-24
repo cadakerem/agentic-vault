@@ -23,7 +23,6 @@ import { filterConflictCopies } from './src/conflict';
 import { SetupWizardModal } from './src/modals/SetupWizardModal';
 import { BrainManagerModal } from './src/modals/BrainManagerModal';
 import { CreateIssueModal } from './src/modals/CreateIssueModal';
-import { ConfirmModal } from './src/modals/ConfirmModal';
 import { AgenticVaultSettingTab } from './src/settings/AgenticVaultSettingTab';
 
 
