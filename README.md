@@ -75,6 +75,9 @@ Agentic Vault is built for local-first automation. Because it creates symlinks a
 
 *All source code is public, and GitHub Actions guarantees that release assets match the repository code byte-for-byte.*
 
+### ⚠️ Important: Secrets & .gitignore
+Agentic Vault automatically generates a default `.gitignore` to prevent committing Obsidian cache files and certain credentials (like `.gemini/credentials`). However, please double-check your `.gitignore` to ensure you are not accidentally committing sensitive API keys or tokens from your AI tool configuration folders to public GitHub repositories.
+
 ---
 
 ## 🧑‍💻 Developer & Contributions

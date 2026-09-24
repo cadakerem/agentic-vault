@@ -7,6 +7,7 @@ import {
 	Modal,
 	TFile,
 	addIcon,
+	FileSystemAdapter,
 } from 'obsidian';
 import simpleGit, { SimpleGit, StatusResult } from 'simple-git';
 import * as fs from 'fs';
@@ -64,8 +65,10 @@ const DEFAULT_SETTINGS: AgenticVaultSettings = {
 // ─────────────────────────────────────────────
 
 function getVaultPath(app: App): string {
-	const adapter = app.vault.adapter as unknown as { getBasePath: () => string };
-	return adapter.getBasePath();
+	if (app.vault.adapter instanceof FileSystemAdapter) {
+		return app.vault.adapter.getBasePath();
+	}
+	throw new Error("Agentic Vault requires a local file system (desktop).");
 }
 
 function resolvePath(rawPath: string): string {
@@ -97,6 +100,8 @@ export default class AgenticVaultPlugin extends Plugin {
 
 		const vaultPath = getVaultPath(this.app);
 		this.git = simpleGit(vaultPath);
+		
+		await this.ensureGitignore(vaultPath);
 
 		// Status bar
 		this.statusBarEl = this.addStatusBarItem();
@@ -123,6 +128,18 @@ export default class AgenticVaultPlugin extends Plugin {
 		this.addSettingTab(new AgenticVaultSettingTab(this.app, this));
 		this.startAutoSync();
 		new Notice("✅ Agentic Vault Loaded Successfully!", 5000);
+	}
+
+	private async ensureGitignore(vaultPath: string): Promise<void> {
+		const gitignorePath = path.join(vaultPath, '.gitignore');
+		try {
+			if (!fs.existsSync(gitignorePath)) {
+				const defaultGitignore = `.obsidian/workspace.json\n.obsidian/workspace-mobile.json\n.obsidian/core-plugins.json\nnode_modules/\n.DS_Store\n# Prevent accidental secret leaks\n.gemini/credentials\n`;
+				fs.writeFileSync(gitignorePath, defaultGitignore);
+			}
+		} catch (e) {
+			console.error("Failed to create .gitignore", e);
+		}
 	}
 
 	onunload(): void {
@@ -177,9 +194,21 @@ export default class AgenticVaultPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
+	isSyncing = false;
+
 	async performDynamicCommit(silent: boolean = false): Promise<void> {
-		if (!silent) new Notice('Agentic Vault: Syncing...');
+		if (this.isSyncing) return;
+		this.isSyncing = true;
 		try {
+			const vaultPath = getVaultPath(this.app);
+			const isRepo = fs.existsSync(path.join(vaultPath, '.git'));
+			if (!isRepo) {
+				if (!silent) new Notice('Not a git repository. Please initialize in settings.');
+				return;
+			}
+
+			if (!silent) new Notice('Agentic Vault: Syncing...');
+			
 			await this.git.add('.');
 			const status: StatusResult = await this.git.status();
 			const hasChanges = status.files.length > 0;
@@ -191,10 +220,21 @@ export default class AgenticVaultPlugin extends Plugin {
 				if (!silent) new Notice('Agentic Vault: Nothing to commit.');
 			}
 
-			await this.git.pull(['--rebase']);
+			try {
+				await this.git.pull(['--rebase']);
+			} catch (e: any) {
+				if (!e.message.includes('remote')) {
+					throw e;
+				}
+			}
 
 			if (this.settings.gitAutoPush) {
-				await this.git.push();
+				const statusAfterPull = await this.git.status();
+				if (statusAfterPull.tracking === null) {
+					await this.git.push(['-u', 'origin', statusAfterPull.current || 'main']);
+				} else {
+					await this.git.push();
+				}
 				if (hasChanges && !silent) new Notice('🚀 Pushed to GitHub!');
 			}
 		} catch (error: unknown) {
@@ -203,8 +243,10 @@ export default class AgenticVaultPlugin extends Plugin {
 				new Notice('⚠️ Merge conflict! Resolve manually.');
 			} else {
 				if (!silent) new Notice(`Git Error: ${msg}`);
+				console.error("Git Sync Error:", error);
 			}
 		} finally {
+			this.isSyncing = false;
 			void this.updateStatusBar();
 		}
 	}
@@ -472,9 +514,9 @@ class BrainManagerModal extends Modal {
 		const file = this.app.vault.getAbstractFileByPath(this.plugin.settings.ruleFilePath);
 		if (file instanceof TFile) {
 			const content = await this.app.vault.read(file);
-			const sysMatch  = content.match(/## System Rules\n([\s\S]*?)(?=\n##|$)/);
-			const projMatch = content.match(/## Project Rules\n([\s\S]*?)(?=\n##|$)/);
-			const codeMatch = content.match(/## Coding Standards\n([\s\S]*?)(?=\n##|$)/);
+			const sysMatch  = content.match(/## System Rules\n([\s\S]*?)(?=\n## |$)/);
+			const projMatch = content.match(/## Project Rules\n([\s\S]*?)(?=\n## |$)/);
+			const codeMatch = content.match(/## Coding Standards\n([\s\S]*?)(?=\n## |$)/);
 			if (sysMatch)  this.rules.system  = sysMatch[1].trim();
 			if (projMatch) this.rules.project = projMatch[1].trim();
 			if (codeMatch) this.rules.coding  = codeMatch[1].trim();
@@ -558,13 +600,13 @@ class CreateIssueModal extends Modal {
 					const args = ['issue', 'create', '--title', this.issueTitle, '--body', this.issueBody, '--label', this.issueLabel];
 					const { stdout, stderr } = await execFileAsync('gh', args, { cwd: vaultPath });
 					if (stderr && !stdout) {
-						new Notice('Error creating issue. Is gh CLI authenticated?');
+						new Notice(`Error: ${stderr}`);
 					} else {
 						new Notice('✅ Issue created!');
 						this.close();
 					}
-				} catch {
-					new Notice('Error! Is GitHub CLI (gh) installed and authenticated?');
+				} catch (err: any) {
+					new Notice(`Error: ${err.message || 'Is GitHub CLI (gh) installed and authenticated?'}`);
 				} finally {
 					btn.setDisabled(false).setButtonText('Create Issue');
 				}
@@ -643,7 +685,7 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 					try {
 						if (!isGitRepo) {
 							await this.plugin.git.init();
-							await this.plugin.git.branch(['-M', 'main']);
+							await this.plugin.git.checkoutLocalBranch('main');
 						}
 						if (this.remoteUrlInput) {
 							try {
