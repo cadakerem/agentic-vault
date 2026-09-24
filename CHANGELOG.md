@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.6] - 2026-09-25
+### Fixed
+- **Type safety:** Fixed `@typescript-eslint/no-unsafe-member-access` on `err.message` in `main.ts` — now uses `instanceof Error` guard.
+- **Type safety:** Fixed `@typescript-eslint/no-unsafe-assignment` on `JSON.parse()` result in `src/sync.ts` — cast to `{ isPrivate?: boolean } | null`.
+- **Type safety:** Fixed `@typescript-eslint/no-unsafe-assignment` and `no-unsafe-argument` on `binaryCatFile()` result in `src/conflict.ts` — cast to `Buffer`.
+- **Lint:** Fixed unused `catch (e)` → `catch {}` in `src/sync.ts`.
+
 ## [1.4.5] - 2026-09-25
 ### Fixed
 - **Critical init bug:** Ribbon icons, commands, settings tab, and auto-sync were accidentally placed inside `clearPause()` instead of `initialize()`. On a fresh install where `syncState.paused = false`, `clearPause()` is never called — making the entire plugin UI invisible to the user. Moved all registration to `initialize()`.
