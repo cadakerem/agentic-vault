@@ -286,10 +286,10 @@ describe('secret scan in the sync flow', () => {
     expect(await remoteFile(remote, 'keys.md')).toBe('removed');
   });
 
-  it('(l) blocks sensitive file names such as .env', async () => {
+  it('(l) blocks sensitive file names such as id_rsa', async () => {
     const remote = await makeRemote();
     const { dir, git } = await makeVault('vault', remote);
-    write(dir, '.env', 'A=1');
+    write(dir, 'id_rsa', 'A=1');
     const res = await syncVault(git, opts(dir));
     expect(res.status).toBe('secrets-found');
     expect(res.findings?.[0].rule).toBe('sensitive-filename');
