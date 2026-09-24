@@ -50,13 +50,6 @@ const DEFAULT_SETTINGS: AgenticVaultSettings = {
 
 import { getVaultPath } from './src/obsidian-util';
 
-function resolvePath(rawPath: string): string {
-	if (rawPath.startsWith('~/') || rawPath === '~') {
-		return path.join(os.homedir(), rawPath.slice(2));
-	}
-	return rawPath;
-}
-
 // ─────────────────────────────────────────────
 // Main Plugin
 // ─────────────────────────────────────────────
@@ -85,7 +78,28 @@ export default class AgenticVaultPlugin extends Plugin {
 		// Status bar
 		this.statusBarEl = this.addStatusBarItem();
 		this.statusBarEl.setText('⟳ Agentic Vault');
-		
+
+		// Ribbon — force sync
+		this.addRibbonIcon('git-commit-vertical', 'Force Git Sync', () => {
+			void this.performDynamicCommit(false, true);
+		});
+
+		// Ribbon — setup wizard
+		addIcon('laptop-2', '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>');
+		this.addRibbonIcon('laptop-2', 'New Machine Setup', () => {
+			new SetupWizardModal(this.app, this).open();
+		});
+
+		// Commands
+		this.addCommand({ id: 'force-sync',         name: 'Force Git Sync (Commit & Push)',  callback: () => { void this.performDynamicCommit(false, true); } });
+		this.addCommand({ id: 'open-brain-manager', name: 'Open AI Brain Manager',            callback: () => { new BrainManagerModal(this.app, this).open(); } });
+		this.addCommand({ id: 'create-github-issue',name: 'Create GitHub Issue (IDD)',        callback: () => { new CreateIssueModal(this.app, this).open(); } });
+		this.addCommand({ id: 'setup-wizard',        name: 'New Machine Setup Wizard',        callback: () => { new SetupWizardModal(this.app, this).open(); } });
+
+		this.addSettingTab(new AgenticVaultSettingTab(this.app, this));
+		this.startAutoSync();
+		new Notice("✅ Agentic Vault Loaded Successfully!", 5000);
+
 		await this.verifyPauseState(vaultPath);
 		void this.updateStatusBar();
 	}
@@ -109,28 +123,8 @@ export default class AgenticVaultPlugin extends Plugin {
 		this.settings.syncState.pauseReason = undefined;
 		this.settings.syncState.lastNoticeKey = undefined;
 		void this.saveSettings();
-
-		// Ribbon — force sync
-		this.addRibbonIcon('git-commit-vertical', 'Force Git Sync', () => {
-			void this.performDynamicCommit(false, true);
-		});
-
-		// Ribbon — setup wizard
-		addIcon('laptop-2', '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>');
-		this.addRibbonIcon('laptop-2', 'New Machine Setup', () => {
-			new SetupWizardModal(this.app, this).open();
-		});
-
-		// Commands
-		this.addCommand({ id: 'force-sync',         name: 'Force Git Sync (Commit & Push)',  callback: () => { void this.performDynamicCommit(false, true); } });
-		this.addCommand({ id: 'open-brain-manager', name: 'Open AI Brain Manager',            callback: () => { new BrainManagerModal(this.app, this).open(); } });
-		this.addCommand({ id: 'create-github-issue',name: 'Create GitHub Issue (IDD)',        callback: () => { new CreateIssueModal(this.app, this).open(); } });
-		this.addCommand({ id: 'setup-wizard',        name: 'New Machine Setup Wizard',        callback: () => { new SetupWizardModal(this.app, this).open(); } });
-
-		this.addSettingTab(new AgenticVaultSettingTab(this.app, this));
-		this.startAutoSync();
-		new Notice("✅ Agentic Vault Loaded Successfully!", 5000);
 	}
+
 
 	private async ensureGitignore(vaultPath: string): Promise<void> {
 		const gitignorePath = path.join(vaultPath, '.gitignore');
@@ -173,7 +167,7 @@ export default class AgenticVaultPlugin extends Plugin {
 					new Notice(`⚠️ WARNING: ${trackedIgnored.length} ignored files are still tracked by git. Run 'git rm --cached <file>' manually. Note: This deletes the file on other devices upon pull. Rotate compromised keys immediately!`, 15000);
 					console.warn('Tracked ignored files:', trackedIgnored);
 				}
-			} catch (e) {
+			} catch {
 				// Ignore errors from ls-files
 			}
 		} catch (e) {

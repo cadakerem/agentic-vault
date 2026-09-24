@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.5] - 2026-09-25
+### Fixed
+- **Critical init bug:** Ribbon icons, commands, settings tab, and auto-sync were accidentally placed inside `clearPause()` instead of `initialize()`. On a fresh install where `syncState.paused = false`, `clearPause()` is never called — making the entire plugin UI invisible to the user. Moved all registration to `initialize()`.
+- **Dead code removal:** Removed unused `resolvePath()` function from `main.ts`.
+- **Lint:** Fixed unused `catch (e)` → `catch {}` where the error variable was never read.
+- **Lint:** Converted `require()` style imports in `src/sync.ts` to proper ES6 `import` statements.
+- **Type safety:** Fixed `syncState: Record<string, unknown>` regression in `src/types.ts` — restored to `syncState: SyncState`.
+
 ## [1.4.4] - 2026-09-24
 ### Refactored
 - **Modular Architecture:** Extracted massive UI modals and settings from `main.ts` into separate files under `src/modals/` and `src/settings/`, reducing the main entrypoint to 300 lines for better maintainability.
