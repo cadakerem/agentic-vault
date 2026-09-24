@@ -519,7 +519,7 @@ var require_has_flag = __commonJS({
 var require_supports_color = __commonJS({
   "node_modules/supports-color/index.js"(exports, module2) {
     "use strict";
-    var os2 = require("os");
+    var os3 = require("os");
     var tty = require("tty");
     var hasFlag = require_has_flag();
     var { env } = process;
@@ -567,7 +567,7 @@ var require_supports_color = __commonJS({
         return min;
       }
       if (process.platform === "win32") {
-        const osRelease = os2.release().split(".");
+        const osRelease = os3.release().split(".");
         if (Number(osRelease[0]) >= 10 && Number(osRelease[2]) >= 10586) {
           return Number(osRelease[2]) >= 14931 ? 3 : 2;
         }
@@ -813,10 +813,10 @@ var require_src2 = __commonJS({
     var fs_1 = require("fs");
     var debug_1 = __importDefault(require_src());
     var log = debug_1.default("@kwsites/file-exists");
-    function check(path2, isFile, isDirectory) {
-      log(`checking %s`, path2);
+    function check(path4, isFile, isDirectory) {
+      log(`checking %s`, path4);
       try {
-        const stat = fs_1.statSync(path2);
+        const stat = fs_1.statSync(path4);
         if (stat.isFile() && isFile) {
           log(`[OK] path represents a file`);
           return true;
@@ -836,8 +836,8 @@ var require_src2 = __commonJS({
         throw e;
       }
     }
-    function exists2(path2, type = exports.READABLE) {
-      return check(path2, (type & exports.FILE) > 0, (type & exports.FOLDER) > 0);
+    function exists2(path4, type = exports.READABLE) {
+      return check(path4, (type & exports.FILE) > 0, (type & exports.FOLDER) > 0);
     }
     exports.exists = exists2;
     exports.FILE = 1;
@@ -1505,8 +1505,8 @@ function toLinesWithContent(input = "", trimmed2 = true, separator = "\n") {
 function forEachLineWithContent(input, callback) {
   return toLinesWithContent(input, true).map((line) => callback(line));
 }
-function folderExists(path2) {
-  return (0, import_file_exists.exists)(path2, import_file_exists.FOLDER);
+function folderExists(path4) {
+  return (0, import_file_exists.exists)(path4, import_file_exists.FOLDER);
 }
 function append(target, item) {
   if (Array.isArray(target)) {
@@ -1908,8 +1908,8 @@ function checkIsRepoRootTask() {
     commands,
     format: "utf-8",
     onError,
-    parser(path2) {
-      return /^\.(git)?$/.test(path2.trim());
+    parser(path4) {
+      return /^\.(git)?$/.test(path4.trim());
     }
   };
 }
@@ -2343,11 +2343,11 @@ function parseGrep(grep) {
   const paths = /* @__PURE__ */ new Set();
   const results = {};
   forEachLineWithContent(grep, (input) => {
-    const [path2, line, preview] = input.split(NULL);
-    paths.add(path2);
-    (results[path2] = results[path2] || []).push({
+    const [path4, line, preview] = input.split(NULL);
+    paths.add(path4);
+    (results[path4] = results[path4] || []).push({
       line: asNumber(line),
-      path: path2,
+      path: path4,
       preview
     });
   });
@@ -3111,14 +3111,14 @@ var init_hash_object = __esm({
     init_task();
   }
 });
-function parseInit(bare, path2, text) {
+function parseInit(bare, path4, text) {
   const response = String(text).trim();
   let result;
   if (result = initResponseRegex.exec(response)) {
-    return new InitSummary(bare, path2, false, result[1]);
+    return new InitSummary(bare, path4, false, result[1]);
   }
   if (result = reInitResponseRegex.exec(response)) {
-    return new InitSummary(bare, path2, true, result[1]);
+    return new InitSummary(bare, path4, true, result[1]);
   }
   let gitDir = "";
   const tokens = response.split(" ");
@@ -3129,7 +3129,7 @@ function parseInit(bare, path2, text) {
       break;
     }
   }
-  return new InitSummary(bare, path2, /^re/i.test(response), gitDir);
+  return new InitSummary(bare, path4, /^re/i.test(response), gitDir);
 }
 var InitSummary;
 var initResponseRegex;
@@ -3138,9 +3138,9 @@ var init_InitSummary = __esm({
   "src/lib/responses/InitSummary.ts"() {
     "use strict";
     InitSummary = class {
-      constructor(bare, path2, existing, gitDir) {
+      constructor(bare, path4, existing, gitDir) {
         this.bare = bare;
-        this.path = path2;
+        this.path = path4;
         this.existing = existing;
         this.gitDir = gitDir;
       }
@@ -3152,7 +3152,7 @@ var init_InitSummary = __esm({
 function hasBareCommand(command) {
   return command.includes(bareCommand);
 }
-function initTask(bare = false, path2, customArgs) {
+function initTask(bare = false, path4, customArgs) {
   const commands = ["init", ...customArgs];
   if (bare && !hasBareCommand(commands)) {
     commands.splice(1, 0, bareCommand);
@@ -3161,7 +3161,7 @@ function initTask(bare = false, path2, customArgs) {
     commands,
     format: "utf-8",
     parser(text) {
-      return parseInit(commands.includes("--bare"), path2, text);
+      return parseInit(commands.includes("--bare"), path4, text);
     }
   };
 }
@@ -3976,12 +3976,12 @@ var init_FileStatusSummary = __esm({
     "use strict";
     fromPathRegex = /^(.+)\0(.+)$/;
     FileStatusSummary = class {
-      constructor(path2, index, working_dir) {
-        this.path = path2;
+      constructor(path4, index, working_dir) {
+        this.path = path4;
         this.index = index;
         this.working_dir = working_dir;
         if (index === "R" || working_dir === "R") {
-          const detail = fromPathRegex.exec(path2) || [null, path2, path2];
+          const detail = fromPathRegex.exec(path4) || [null, path4, path4];
           this.from = detail[2] || "";
           this.path = detail[1] || "";
         }
@@ -4012,14 +4012,14 @@ function splitLine(result, lineStr) {
     default:
       return;
   }
-  function data(index, workingDir, path2) {
+  function data(index, workingDir, path4) {
     const raw = `${index}${workingDir}`;
     const handler = parsers6.get(raw);
     if (handler) {
-      handler(result, path2);
+      handler(result, path4);
     }
     if (raw !== "##" && raw !== "!!") {
-      result.files.push(new FileStatusSummary(path2, index, workingDir));
+      result.files.push(new FileStatusSummary(path4, index, workingDir));
     }
   }
 }
@@ -4370,9 +4370,9 @@ var init_simple_git_api = __esm({
           next
         );
       }
-      hashObject(path2, write) {
+      hashObject(path4, write) {
         return this._runTask(
-          hashObjectTask(path2, write === true),
+          hashObjectTask(path4, write === true),
           trailingFunctionArgument(arguments)
         );
       }
@@ -4726,8 +4726,8 @@ var init_branch = __esm({
   }
 });
 function toPath(input) {
-  const path2 = input.trim().replace(/^["']|["']$/g, "");
-  return path2 && (0, import_node_path.normalize)(path2);
+  const path4 = input.trim().replace(/^["']|["']$/g, "");
+  return path4 && (0, import_node_path.normalize)(path4);
 }
 var parseCheckIgnore;
 var init_CheckIgnore = __esm({
@@ -5012,8 +5012,8 @@ __export2(sub_module_exports, {
   subModuleTask: () => subModuleTask,
   updateSubModuleTask: () => updateSubModuleTask
 });
-function addSubModuleTask(repo, path2) {
-  return subModuleTask(["add", repo, path2]);
+function addSubModuleTask(repo, path4) {
+  return subModuleTask(["add", repo, path4]);
 }
 function initSubModuleTask(customArgs) {
   return subModuleTask(["init", ...customArgs]);
@@ -5327,8 +5327,8 @@ var require_git = __commonJS2({
       }
       return this._runTask(straightThroughStringTask2(command, this._trimmed), next);
     };
-    Git2.prototype.submoduleAdd = function(repo, path2, then) {
-      return this._runTask(addSubModuleTask2(repo, path2), trailingFunctionArgument2(arguments));
+    Git2.prototype.submoduleAdd = function(repo, path4, then) {
+      return this._runTask(addSubModuleTask2(repo, path4), trailingFunctionArgument2(arguments));
     };
     Git2.prototype.submoduleUpdate = function(args, then) {
       return this._runTask(
@@ -5883,11 +5883,146 @@ init_git_response_error();
 var esm_default = gitInstanceFactory;
 
 // main.ts
-var fs = __toESM(require("fs"));
-var path = __toESM(require("path"));
-var os = __toESM(require("os"));
+var fs2 = __toESM(require("fs"));
+var path3 = __toESM(require("path"));
+var os2 = __toESM(require("os"));
 var import_child_process2 = require("child_process");
 var import_util = require("util");
+
+// src/sync.ts
+var fs = __toESM(require("fs"));
+var path = __toESM(require("path"));
+function maskSecrets(msg) {
+  return msg.replace(/https?:\/\/[^\s/@]+@/g, "https://***@");
+}
+function isMidRebase(vaultPath) {
+  const gitDir = path.join(vaultPath, ".git");
+  return ["rebase-merge", "rebase-apply"].some((d) => fs.existsSync(path.join(gitDir, d)));
+}
+async function currentBranch(git) {
+  try {
+    return (await git.raw(["symbolic-ref", "--short", "HEAD"])).trim() || "main";
+  } catch (e) {
+    return "main";
+  }
+}
+async function hasCommits(git) {
+  try {
+    await git.raw(["rev-parse", "--verify", "HEAD"]);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+async function syncVault(git, opts) {
+  var _a2;
+  const remote = (_a2 = opts.remote) != null ? _a2 : "origin";
+  const result = { status: "ok", committed: false, pushed: false };
+  try {
+    if (!await git.checkIsRepo())
+      return { ...result, status: "not-a-repo" };
+    if (isMidRebase(opts.vaultPath)) {
+      return {
+        ...result,
+        status: "rebase-in-progress",
+        message: "Rebase in progress. Resolve conflicts or abort."
+      };
+    }
+    await git.add(".");
+    if (!(await git.status()).isClean()) {
+      await git.commit(opts.commitMessage);
+      result.committed = true;
+    }
+    if (!await hasCommits(git))
+      return result;
+    const remotes = await git.getRemotes();
+    if (!remotes.some((r2) => r2.name === remote)) {
+      return { ...result, status: "no-remote", message: "No remote configured." };
+    }
+    const branch = await currentBranch(git);
+    const hasUpstream = !!(await git.status()).tracking;
+    try {
+      if (hasUpstream) {
+        await git.pull(["--rebase"]);
+      } else {
+        const heads = await git.listRemote(["--heads", remote, branch]);
+        if (heads.trim() !== "")
+          await git.pull(remote, branch, ["--rebase"]);
+      }
+    } catch (e) {
+      if (isMidRebase(opts.vaultPath)) {
+        await git.raw(["rebase", "--abort"]).catch(() => void 0);
+        return {
+          ...result,
+          status: "conflict",
+          message: "Merge conflict! Rebase aborted. Resolve manually."
+        };
+      }
+      throw e;
+    }
+    if (opts.autoPush) {
+      if (hasUpstream)
+        await git.push();
+      else
+        await git.push(["-u", remote, branch]);
+      result.pushed = true;
+    }
+    return result;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ...result, status: "error", message: maskSecrets(msg) };
+  }
+}
+
+// src/util.ts
+var os = __toESM(require("os"));
+var path2 = __toESM(require("path"));
+function section(content, title) {
+  const re = new RegExp(`## ${title}\\r?\\n([\\s\\S]*?)(?=\\r?\\n## |$)`);
+  const m = content.match(re);
+  return m ? m[1].trim() : "";
+}
+function parseRules(content) {
+  return {
+    system: section(content, "System Rules"),
+    project: section(content, "Project Rules"),
+    coding: section(content, "Coding Standards")
+  };
+}
+function serializeRules(r2) {
+  return `# AI Brain Rules
+
+## System Rules
+${r2.system}
+
+## Project Rules
+${r2.project}
+
+## Coding Standards
+${r2.coding}
+`;
+}
+var SECRET_DIRS = [".ssh", ".aws", ".gnupg", ".kube", ".docker"];
+var EXACT_ONLY_DIRS = [".config", "Documents", "Desktop", "Downloads"];
+function isDangerousPath(p2, home = os.homedir()) {
+  const cmp = (s) => process.platform === "win32" ? s.toLowerCase() : s;
+  const norm = path2.resolve(p2);
+  const h2 = path2.resolve(home);
+  if (path2.parse(norm).root === norm)
+    return true;
+  if (cmp(norm) === cmp(h2))
+    return true;
+  if (!cmp(norm).startsWith(cmp(h2) + path2.sep))
+    return true;
+  const parts = path2.relative(h2, norm).split(path2.sep);
+  if (SECRET_DIRS.some((d) => cmp(d) === cmp(parts[0])))
+    return true;
+  if (parts.length === 1 && EXACT_ONLY_DIRS.some((d) => cmp(d) === cmp(parts[0])))
+    return true;
+  return false;
+}
+
+// main.ts
 var execFileAsync = (0, import_util.promisify)(import_child_process2.execFile);
 var DEFAULT_AI_TOOLS = [
   { id: "gemini", name: "Antigravity / Gemini", windowsPath: ".gemini/config", unixPath: ".gemini/config", enabled: true },
@@ -5911,12 +6046,6 @@ function getVaultPath(app) {
     return app.vault.adapter.getBasePath();
   }
   throw new Error("Agentic Vault requires a local file system (desktop).");
-}
-function resolvePath(rawPath) {
-  if (rawPath.startsWith("~/") || rawPath === "~") {
-    return path.join(os.homedir(), rawPath.slice(2));
-  }
-  return rawPath;
 }
 var AgenticVaultPlugin = class extends import_obsidian.Plugin {
   constructor() {
@@ -5966,7 +6095,7 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     new import_obsidian.Notice("\u2705 Agentic Vault Loaded Successfully!", 5e3);
   }
   async ensureGitignore(vaultPath) {
-    const gitignorePath = path.join(vaultPath, ".gitignore");
+    const gitignorePath = path3.join(vaultPath, ".gitignore");
     const brain = this.settings.vaultBrainFolder || "AI-Brain";
     const rules = [
       ".obsidian/workspace.json",
@@ -5982,8 +6111,8 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     ];
     try {
       let content = "";
-      if (fs.existsSync(gitignorePath)) {
-        content = fs.readFileSync(gitignorePath, "utf8");
+      if (fs2.existsSync(gitignorePath)) {
+        content = fs2.readFileSync(gitignorePath, "utf8");
       }
       const existingLines = new Set(content.split(/\r?\n/).map((l) => l.trim()));
       let changed = false;
@@ -5994,11 +6123,20 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
         }
       }
       if (changed) {
-        fs.writeFileSync(gitignorePath, content);
+        fs2.writeFileSync(gitignorePath, content);
         new import_obsidian.Notice("Agentic Vault: Updated .gitignore to prevent secret leaks.");
+        for (const rule of rules) {
+          if (!existingLines.has(rule)) {
+            try {
+              await this.git.raw(["rm", "-r", "--cached", "--ignore-unmatch", rule]);
+            } catch (e) {
+            }
+          }
+        }
       }
     } catch (e) {
-      console.error("Failed to create/update .gitignore", e);
+      console.error("Failed to update .gitignore", e);
+      new import_obsidian.Notice("Failed to update .gitignore. Check console.");
     }
   }
   onunload() {
@@ -6061,87 +6199,55 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     this.isSyncing = true;
     try {
       const vaultPath = getVaultPath(this.app);
-      const isRepo = fs.existsSync(path.join(vaultPath, ".git"));
-      if (!isRepo) {
-        if (!silent)
-          new import_obsidian.Notice("Not a git repository. Please initialize in settings.");
-        return;
-      }
-      const rebaseMergeExists = fs.existsSync(path.join(vaultPath, ".git", "rebase-merge"));
-      const rebaseApplyExists = fs.existsSync(path.join(vaultPath, ".git", "rebase-apply"));
-      if (rebaseMergeExists || rebaseApplyExists) {
-        const errMsg = "Rebase in progress. Please resolve conflicts or abort.";
-        if (!silent || this.lastErrorMsg !== errMsg) {
-          new import_obsidian.Notice(`\u26A0\uFE0F ${errMsg}`);
-          this.lastErrorMsg = errMsg;
-        }
-        this.isSyncing = false;
-        void this.updateStatusBar();
-        return;
-      }
-      if (!silent)
-        new import_obsidian.Notice("Agentic Vault: Syncing...");
-      await this.git.add(".");
-      const status = await this.git.status();
-      const hasChanges = status.files.length > 0;
-      if (hasChanges) {
-        await this.git.commit(this.settings.commitMessageFormat);
-        if (!silent)
-          new import_obsidian.Notice("\u2713 Changes committed.");
-      } else {
-        if (!silent)
-          new import_obsidian.Notice("Agentic Vault: Nothing to commit.");
-      }
-      const branch = status.current || "main";
-      const tracking = status.tracking;
-      try {
-        if (!tracking) {
-          const remotes = await this.git.getRemotes();
-          if (remotes.length === 0) {
-            throw new Error("No remote configured. Please set up a GitHub repository.");
+      const result = await syncVault(this.git, {
+        vaultPath,
+        commitMessage: this.settings.commitMessageFormat,
+        autoPush: this.settings.gitAutoPush
+      });
+      switch (result.status) {
+        case "not-a-repo":
+          if (!silent)
+            new import_obsidian.Notice("Not a git repository. Please initialize in settings.");
+          break;
+        case "rebase-in-progress":
+          if (!silent || this.lastErrorMsg !== result.message) {
+            new import_obsidian.Notice(`\u26A0\uFE0F ${result.message}`);
+            this.lastErrorMsg = result.message || null;
           }
-          const lsRemote = await this.git.listRemote(["--heads", "origin", branch]);
-          if (lsRemote.trim() !== "") {
-            await this.git.pull("origin", branch, ["--rebase"]);
+          this.isSyncing = false;
+          void this.updateStatusBar();
+          return;
+        case "conflict":
+          if (!silent || this.lastErrorMsg !== "conflict") {
+            new import_obsidian.Notice(`\u26A0\uFE0F ${result.message}`);
+            this.lastErrorMsg = "conflict";
           }
-        } else {
-          await this.git.pull(["--rebase"]);
-        }
-      } catch (e) {
-        const gitDir = path.join(vaultPath, ".git");
-        const midRebase = ["rebase-merge", "rebase-apply"].some((d) => fs.existsSync(path.join(gitDir, d)));
-        if (midRebase) {
-          await this.git.raw(["rebase", "--abort"]).catch(() => {
-          });
-          throw new Error("Merge conflict! Rebase aborted. Resolve manually.");
-        }
-        throw e;
+          this.isSyncing = false;
+          void this.updateStatusBar();
+          return;
+        case "error":
+          if (!silent || this.lastErrorMsg !== result.message) {
+            const displayMsg = result.message && result.message.length > 100 ? result.message.substring(0, 100) + "..." : result.message;
+            new import_obsidian.Notice(`Git Error: ${displayMsg}`);
+            this.lastErrorMsg = result.message || null;
+          }
+          break;
+        case "no-remote":
+          if (!silent || this.lastErrorMsg !== "no-remote") {
+            new import_obsidian.Notice(`\u26A0\uFE0F ${result.message}`);
+            this.lastErrorMsg = "no-remote";
+          }
+          break;
+        case "ok":
+          this.lastErrorMsg = null;
+          if (result.pushed && !silent)
+            new import_obsidian.Notice("\u{1F680} Pushed to GitHub!");
+          else if (result.committed && !silent)
+            new import_obsidian.Notice("\u2713 Changes committed.");
+          else if (!silent)
+            new import_obsidian.Notice("Agentic Vault: Nothing to commit.");
+          break;
       }
-      if (this.settings.gitAutoPush) {
-        if (!tracking) {
-          await this.git.push(["-u", "origin", branch]);
-        } else {
-          await this.git.push();
-        }
-        if (hasChanges && !silent)
-          new import_obsidian.Notice("\u{1F680} Pushed to GitHub!");
-      }
-      this.lastErrorMsg = null;
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      const maskedMsg = msg.replace(/https?:\/\/[^\s/@]+@/g, "https://***@");
-      const isConflict = maskedMsg.includes("CONFLICT") || maskedMsg.includes("Automatic merge failed") || maskedMsg.includes("Merge conflict");
-      const errorKey = isConflict ? "conflict" : maskedMsg;
-      if (!silent || this.lastErrorMsg !== errorKey) {
-        if (isConflict) {
-          new import_obsidian.Notice("\u26A0\uFE0F Merge conflict! Resolve manually.");
-        } else {
-          const displayMsg = maskedMsg.length > 100 ? maskedMsg.substring(0, 100) + "..." : maskedMsg;
-          new import_obsidian.Notice(`Git Error: ${displayMsg}`);
-        }
-        this.lastErrorMsg = errorKey;
-      }
-      console.error("Git Sync Error:", maskedMsg);
     } finally {
       this.isSyncing = false;
       void this.updateStatusBar();
@@ -6195,26 +6301,26 @@ var SetupWizardModal = class extends import_obsidian.Modal {
   }
   buildSteps() {
     const vaultPath = getVaultPath(this.app);
-    const isWin = os.platform() === "win32";
+    const isWin = os2.platform() === "win32";
     const steps = [
       {
         label: "Detect Platform",
         status: "pending",
-        detail: `Detected: ${isWin ? "Windows" : os.platform()} | Vault: ${vaultPath}`
+        detail: `Detected: ${isWin ? "Windows" : os2.platform()} | Vault: ${vaultPath}`
       }
     ];
-    const skillsSrc = path.join(vaultPath, this.plugin.settings.skillsFolder);
-    const skillsDst = path.join(os.homedir(), ".agents", "skills");
+    const skillsSrc = path3.join(vaultPath, this.plugin.settings.skillsFolder);
+    const skillsDst = path3.join(os2.homedir(), ".agents", "skills");
     steps.push({ label: "\u{1F9E0} Link Skills Folder", status: "pending", detail: `${skillsSrc} \u2192 ${skillsDst}` });
-    const scriptsSrc = path.join(vaultPath, this.plugin.settings.scriptsFolder);
-    const scriptsDst = path.join(os.homedir(), ".agents", "scripts");
+    const scriptsSrc = path3.join(vaultPath, this.plugin.settings.scriptsFolder);
+    const scriptsDst = path3.join(os2.homedir(), ".agents", "scripts");
     steps.push({ label: "\u26A1 Link Scripts Folder", status: "pending", detail: `${scriptsSrc} \u2192 ${scriptsDst}` });
     for (const tool of this.plugin.settings.aiTools) {
       if (!tool.enabled)
         continue;
       const dstRel = isWin ? tool.windowsPath : tool.unixPath;
-      const dst = path.join(os.homedir(), dstRel);
-      const src = path.join(vaultPath, this.plugin.settings.vaultBrainFolder, tool.id);
+      const dst = path3.join(os2.homedir(), dstRel);
+      const src = path3.join(vaultPath, this.plugin.settings.vaultBrainFolder, tool.id);
       steps.push({ label: `\u{1F916} Link ${tool.name}`, status: "pending", detail: `${src} \u2192 ${dst}` });
     }
     steps.push({ label: "\u{1F500} Verify Git Repository", status: "pending", detail: "Check vault is connected to GitHub" });
@@ -6236,32 +6342,32 @@ var SetupWizardModal = class extends import_obsidian.Modal {
   }
   async runAllSteps() {
     const vaultPath = getVaultPath(this.app);
-    const isWin = os.platform() === "win32";
+    const isWin = os2.platform() === "win32";
     let stepIdx = 0;
     this.setStepStatus(stepIdx++, "done");
     await this.runSymlinkStep(
       stepIdx++,
-      path.join(vaultPath, this.plugin.settings.skillsFolder),
-      path.join(os.homedir(), ".agents", "skills"),
+      path3.join(vaultPath, this.plugin.settings.skillsFolder),
+      path3.join(os2.homedir(), ".agents", "skills"),
       isWin
     );
     await this.runSymlinkStep(
       stepIdx++,
-      path.join(vaultPath, this.plugin.settings.scriptsFolder),
-      path.join(os.homedir(), ".agents", "scripts"),
+      path3.join(vaultPath, this.plugin.settings.scriptsFolder),
+      path3.join(os2.homedir(), ".agents", "scripts"),
       isWin
     );
     for (const tool of this.plugin.settings.aiTools) {
       if (!tool.enabled)
         continue;
       const dstRel = isWin ? tool.windowsPath : tool.unixPath;
-      const dst = path.join(os.homedir(), dstRel);
-      const src = path.join(vaultPath, this.plugin.settings.vaultBrainFolder, tool.id);
+      const dst = path3.join(os2.homedir(), dstRel);
+      const src = path3.join(vaultPath, this.plugin.settings.vaultBrainFolder, tool.id);
       await this.runSymlinkStep(stepIdx++, src, dst, isWin);
     }
     this.setStepStatus(stepIdx, "running");
     try {
-      const isRepo = fs.existsSync(path.join(vaultPath, ".git"));
+      const isRepo = fs2.existsSync(path3.join(vaultPath, ".git"));
       if (isRepo) {
         const remote = await this.plugin.git.getRemotes(true);
         const origin = remote.find((r2) => r2.name === "origin");
@@ -6277,24 +6383,28 @@ var SetupWizardModal = class extends import_obsidian.Modal {
   async runSymlinkStep(idx, src, dst, isWin) {
     this.setStepStatus(idx, "running");
     try {
-      if (!fs.existsSync(src)) {
-        fs.mkdirSync(src, { recursive: true });
+      if (isDangerousPath(dst)) {
+        this.setStepStatus(idx, "error", "Path refused for safety (root, home, or secret dir)");
+        return;
       }
-      if (fs.existsSync(dst)) {
-        const stat = fs.lstatSync(dst);
+      if (!fs2.existsSync(src)) {
+        fs2.mkdirSync(src, { recursive: true });
+      }
+      if (fs2.existsSync(dst)) {
+        const stat = fs2.lstatSync(dst);
         if (stat.isSymbolicLink()) {
-          fs.unlinkSync(dst);
+          fs2.unlinkSync(dst);
         } else {
           const backup = `${dst}_backup_${Date.now()}`;
-          fs.renameSync(dst, backup);
+          fs2.renameSync(dst, backup);
         }
       }
-      const parent = path.dirname(dst);
-      if (!fs.existsSync(parent)) {
-        fs.mkdirSync(parent, { recursive: true });
+      const parent = path3.dirname(dst);
+      if (!fs2.existsSync(parent)) {
+        fs2.mkdirSync(parent, { recursive: true });
       }
       const linkType = isWin ? "junction" : "dir";
-      fs.symlinkSync(src, dst, linkType);
+      fs2.symlinkSync(src, dst, linkType);
       this.setStepStatus(idx, "done", `Linked \u2713`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -6353,30 +6463,12 @@ var BrainManagerModal = class extends import_obsidian.Modal {
     const file = this.app.vault.getAbstractFileByPath(this.plugin.settings.ruleFilePath);
     if (file instanceof import_obsidian.TFile) {
       const content = await this.app.vault.read(file);
-      const sysMatch = content.match(/## System Rules\r?\n([\s\S]*?)(?=\r?\n## |$)/);
-      const projMatch = content.match(/## Project Rules\r?\n([\s\S]*?)(?=\r?\n## |$)/);
-      const codeMatch = content.match(/## Coding Standards\r?\n([\s\S]*?)(?=\r?\n## |$)/);
-      if (sysMatch)
-        this.rules.system = sysMatch[1].trim();
-      if (projMatch)
-        this.rules.project = projMatch[1].trim();
-      if (codeMatch)
-        this.rules.coding = codeMatch[1].trim();
+      this.rules = parseRules(content);
     }
   }
   async saveRulesToFile() {
     const filePath = this.plugin.settings.ruleFilePath;
-    const content = `# AI Brain Rules
-
-## System Rules
-${this.rules.system}
-
-## Project Rules
-${this.rules.project}
-
-## Coding Standards
-${this.rules.coding}
-`;
+    const content = serializeRules(this.rules);
     const file = this.app.vault.getAbstractFileByPath(filePath);
     try {
       if (file instanceof import_obsidian.TFile) {
@@ -6457,28 +6549,6 @@ var CreateIssueModal = class extends import_obsidian.Modal {
     this.contentEl.empty();
   }
 };
-var ConfirmModal = class extends import_obsidian.Modal {
-  constructor(app, message, onConfirm) {
-    super(app);
-    this.message = message;
-    this.onConfirm = onConfirm;
-  }
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.empty();
-    contentEl.createEl("h2", { text: "Confirm" });
-    contentEl.createEl("p", { text: this.message, cls: "av-subtitle" });
-    const row = contentEl.createDiv({ cls: "av-tabs-container" });
-    row.createEl("button", { text: "Cancel", cls: "av-tab-btn" }).onclick = () => this.close();
-    row.createEl("button", { text: "Proceed", cls: "mod-cta" }).onclick = () => {
-      this.onConfirm();
-      this.close();
-    };
-  }
-  onClose() {
-    this.contentEl.empty();
-  }
-};
 var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
@@ -6490,7 +6560,7 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
     const vaultPath = getVaultPath(this.app);
-    const isGitRepo = fs.existsSync(path.join(vaultPath, ".git"));
+    const isGitRepo = fs2.existsSync(path3.join(vaultPath, ".git"));
     new import_obsidian.Setting(containerEl).setName("\u2699\uFE0F Git & Sync").setHeading();
     const statusDiv = containerEl.createDiv();
     statusDiv.createEl("p", {
@@ -6563,8 +6633,8 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
       cls: "av-subtitle"
     });
     for (const tool of this.plugin.settings.aiTools) {
-      const isWin = os.platform() === "win32";
-      const dstPath = path.join("~", isWin ? tool.windowsPath : tool.unixPath);
+      const isWin = os2.platform() === "win32";
+      const dstPath = path3.join("~", isWin ? tool.windowsPath : tool.unixPath);
       new import_obsidian.Setting(containerEl).setName(tool.name).setDesc(`Current Link: ${dstPath}`).addToggle((t2) => t2.setValue(tool.enabled).onChange(async (v) => {
         tool.enabled = v;
         await this.plugin.saveSettings();
@@ -6581,60 +6651,6 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
           await this.plugin.saveSettings();
         }));
       }
-    }
-    new import_obsidian.Setting(containerEl).setName("\u{1F517} Custom Symlink").setHeading();
-    new import_obsidian.Setting(containerEl).setName("Vault Brain Folder").setDesc("Folder in this vault where AI configs live.").addText((t2) => t2.setPlaceholder("AI-Brain").setValue(this.plugin.settings.vaultBrainFolder).onChange(async (v) => {
-      this.plugin.settings.vaultBrainFolder = v;
-      await this.plugin.saveSettings();
-    }));
-    new import_obsidian.Setting(containerEl).setName("Create Custom Symlink").setDesc("Manually link a specific OS path to your vault folder.").addButton((btn) => btn.setButtonText("\u{1F517} Create Link").setCta().onClick(() => {
-      new ConfirmModal(this.app, "This will backup the existing OS folder and create a symlink. Proceed?", () => {
-        this.createCustomSymlink();
-      }).open();
-    }));
-  }
-  isDangerousPath(p2) {
-    const norm = path.resolve(p2);
-    const cmp = (s) => process.platform === "win32" ? s.toLowerCase() : s;
-    const home = path.resolve(os.homedir());
-    if (path.parse(norm).root === norm)
-      return true;
-    if (cmp(norm) === cmp(home))
-      return true;
-    if (!cmp(norm).startsWith(cmp(home) + path.sep))
-      return true;
-    return false;
-  }
-  createCustomSymlink() {
-    try {
-      const vaultPath = getVaultPath(this.app);
-      const src = path.join(vaultPath, this.plugin.settings.vaultBrainFolder);
-      const dst = resolvePath(this.plugin.settings.vaultBrainFolder);
-      if (this.isDangerousPath(dst)) {
-        new import_obsidian.Notice("Error: Cannot symlink root or home directory for safety.");
-        return;
-      }
-      const isWin = os.platform() === "win32";
-      if (!fs.existsSync(src))
-        fs.mkdirSync(src, { recursive: true });
-      if (fs.existsSync(dst)) {
-        const stat = fs.lstatSync(dst);
-        if (stat.isSymbolicLink()) {
-          fs.unlinkSync(dst);
-        } else {
-          fs.renameSync(dst, `${dst}_backup_${Date.now()}`);
-        }
-      } else {
-        const parent = path.dirname(dst);
-        if (!fs.existsSync(parent))
-          fs.mkdirSync(parent, { recursive: true });
-      }
-      const type = isWin ? "junction" : "dir";
-      fs.symlinkSync(src, dst, type);
-      new import_obsidian.Notice("\u2705 Symlink created!");
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      new import_obsidian.Notice(`Symlink failed: ${msg}`);
     }
   }
 };
