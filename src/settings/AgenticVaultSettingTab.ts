@@ -133,8 +133,8 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Device Name')
 			.setDesc('Used to identify this device in conflict resolution copies (e.g. .conflict-local-[deviceName]-2024...).')
-			.addText(t => t.setPlaceholder(require('os').hostname()).setValue(this.plugin.settings.deviceName).onChange(async v => {
-				this.plugin.settings.deviceName = v || require('os').hostname();
+			.addText(t => t.setPlaceholder(os.hostname()).setValue(this.plugin.settings.deviceName).onChange(async v => {
+				this.plugin.settings.deviceName = v || os.hostname();
 				await this.plugin.saveSettings();
 			}));
 

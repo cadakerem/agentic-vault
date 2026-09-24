@@ -58,8 +58,8 @@ class CreateIssueModal extends Modal {
 						new Notice('✅ Issue created!');
 						this.close();
 					}
-				} catch (err: any) {
-					const errMsg = err.stderr || err.message || 'Is GitHub CLI (gh) installed and authenticated?';
+				} catch (err: unknown) {
+					const errMsg = (err as {stderr?: string, message?: string})?.stderr || (err as {message?: string})?.message || 'Is GitHub CLI (gh) installed and authenticated?';
 					new Notice(`Error: ${errMsg}`);
 				} finally {
 					btn.setDisabled(false).setButtonText('Create Issue');
