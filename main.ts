@@ -774,15 +774,22 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 			.addToggle(t => t.setValue(this.plugin.settings.allowPublicRemote).onChange(async v => {
 				this.plugin.settings.allowPublicRemote = v;
 				await this.plugin.saveSettings();
+				this.display(); // re-render to update Secret Scanner toggle state
 			}));
 
 		new Setting(containerEl)
 			.setName('Enable Secret Scanner')
-			.setDesc('Block commits if secrets (API keys, .env, id_rsa) are detected in staged changes.')
-			.addToggle(t => t.setValue(this.plugin.settings.scanSecrets).onChange(async v => {
-				this.plugin.settings.scanSecrets = v;
-				await this.plugin.saveSettings();
-			}));
+			.setDesc('Block commits if secrets (API keys, .env) are detected. (Cannot be disabled unless "Allow Public Remote" is ON).')
+			.addToggle(t => {
+				t.setValue(this.plugin.settings.scanSecrets).onChange(async v => {
+					this.plugin.settings.scanSecrets = v;
+					await this.plugin.saveSettings();
+				});
+				if (!this.plugin.settings.allowPublicRemote) {
+					t.setValue(true);
+					t.setDisabled(true);
+				}
+			});
 
 		new Setting(containerEl)
 			.setName('Auto-Sync Interval (minutes)')

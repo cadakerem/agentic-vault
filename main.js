@@ -6122,7 +6122,8 @@ async function syncVault(git, opts) {
       };
     }
     await git.add(".");
-    if (opts.scanSecrets !== false) {
+    const shouldScan = opts.allowPublicRemote === false ? true : opts.scanSecrets !== false;
+    if (shouldScan) {
       const diff = await git.raw(["diff", "--cached", "-U0", "--no-color", "--no-ext-diff"]);
       const names = (await git.raw(["diff", "--cached", "--name-only", "--diff-filter=AM", "-z"])).split("\0").filter(Boolean);
       const findings = [...scanFileNames(names), ...scanDiff(diff)];
@@ -6956,11 +6957,18 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
     new import_obsidian.Setting(containerEl).setName("Allow Public Remote").setDesc("DANGER: Allow syncing even if the GitHub repository is public. This may expose your AI secrets.").addToggle((t2) => t2.setValue(this.plugin.settings.allowPublicRemote).onChange(async (v) => {
       this.plugin.settings.allowPublicRemote = v;
       await this.plugin.saveSettings();
+      this.display();
     }));
-    new import_obsidian.Setting(containerEl).setName("Enable Secret Scanner").setDesc("Block commits if secrets (API keys, .env, id_rsa) are detected in staged changes.").addToggle((t2) => t2.setValue(this.plugin.settings.scanSecrets).onChange(async (v) => {
-      this.plugin.settings.scanSecrets = v;
-      await this.plugin.saveSettings();
-    }));
+    new import_obsidian.Setting(containerEl).setName("Enable Secret Scanner").setDesc('Block commits if secrets (API keys, .env) are detected. (Cannot be disabled unless "Allow Public Remote" is ON).').addToggle((t2) => {
+      t2.setValue(this.plugin.settings.scanSecrets).onChange(async (v) => {
+        this.plugin.settings.scanSecrets = v;
+        await this.plugin.saveSettings();
+      });
+      if (!this.plugin.settings.allowPublicRemote) {
+        t2.setValue(true);
+        t2.setDisabled(true);
+      }
+    });
     new import_obsidian.Setting(containerEl).setName("Auto-Sync Interval (minutes)").setDesc("How often to sync. Set to 0 to disable.").addText((t2) => t2.setPlaceholder("1").setValue(String(this.plugin.settings.syncIntervalMinutes)).onChange(async (v) => {
       const n = parseInt(v);
       if (!isNaN(n) && n >= 0) {
