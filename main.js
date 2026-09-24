@@ -5907,8 +5907,10 @@ var DEFAULT_SETTINGS = {
   scriptsFolder: "AI-Agent-System/scripts"
 };
 function getVaultPath(app) {
-  const adapter = app.vault.adapter;
-  return adapter.getBasePath();
+  if (app.vault.adapter instanceof import_obsidian.FileSystemAdapter) {
+    return app.vault.adapter.getBasePath();
+  }
+  throw new Error("Agentic Vault requires a local file system (desktop).");
 }
 function resolvePath(rawPath) {
   if (rawPath.startsWith("~/") || rawPath === "~") {
@@ -5923,6 +5925,7 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     __publicField(this, "git");
     __publicField(this, "syncIntervalId", null);
     __publicField(this, "statusBarEl");
+    __publicField(this, "isSyncing", false);
   }
   onload() {
     this.initialize().catch((err) => {
@@ -5934,6 +5937,7 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     await this.loadSettings();
     const vaultPath = getVaultPath(this.app);
     this.git = esm_default(vaultPath);
+    await this.ensureGitignore(vaultPath);
     this.statusBarEl = this.addStatusBarItem();
     this.statusBarEl.setText("\u27F3 Agentic Vault");
     void this.updateStatusBar();
@@ -5959,6 +5963,24 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     this.addSettingTab(new AgenticVaultSettingTab(this.app, this));
     this.startAutoSync();
     new import_obsidian.Notice("\u2705 Agentic Vault Loaded Successfully!", 5e3);
+  }
+  async ensureGitignore(vaultPath) {
+    const gitignorePath = path.join(vaultPath, ".gitignore");
+    try {
+      if (!fs.existsSync(gitignorePath)) {
+        const defaultGitignore = `.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/core-plugins.json
+node_modules/
+.DS_Store
+# Prevent accidental secret leaks
+.gemini/credentials
+`;
+        fs.writeFileSync(gitignorePath, defaultGitignore);
+      }
+    } catch (e) {
+      console.error("Failed to create .gitignore", e);
+    }
   }
   onunload() {
     if (this.syncIntervalId !== null) {
@@ -6011,9 +6033,19 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
     await this.saveData(this.settings);
   }
   async performDynamicCommit(silent = false) {
-    if (!silent)
-      new import_obsidian.Notice("Agentic Vault: Syncing...");
+    if (this.isSyncing)
+      return;
+    this.isSyncing = true;
     try {
+      const vaultPath = getVaultPath(this.app);
+      const isRepo = fs.existsSync(path.join(vaultPath, ".git"));
+      if (!isRepo) {
+        if (!silent)
+          new import_obsidian.Notice("Not a git repository. Please initialize in settings.");
+        return;
+      }
+      if (!silent)
+        new import_obsidian.Notice("Agentic Vault: Syncing...");
       await this.git.add(".");
       const status = await this.git.status();
       const hasChanges = status.files.length > 0;
@@ -6025,9 +6057,20 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
         if (!silent)
           new import_obsidian.Notice("Agentic Vault: Nothing to commit.");
       }
-      await this.git.pull(["--rebase"]);
+      try {
+        await this.git.pull(["--rebase"]);
+      } catch (e) {
+        if (!e.message.includes("remote")) {
+          throw e;
+        }
+      }
       if (this.settings.gitAutoPush) {
-        await this.git.push();
+        const statusAfterPull = await this.git.status();
+        if (statusAfterPull.tracking === null) {
+          await this.git.push(["-u", "origin", statusAfterPull.current || "main"]);
+        } else {
+          await this.git.push();
+        }
         if (hasChanges && !silent)
           new import_obsidian.Notice("\u{1F680} Pushed to GitHub!");
       }
@@ -6038,8 +6081,10 @@ var AgenticVaultPlugin = class extends import_obsidian.Plugin {
       } else {
         if (!silent)
           new import_obsidian.Notice(`Git Error: ${msg}`);
+        console.error("Git Sync Error:", error);
       }
     } finally {
+      this.isSyncing = false;
       void this.updateStatusBar();
     }
   }
@@ -6249,9 +6294,9 @@ var BrainManagerModal = class extends import_obsidian.Modal {
     const file = this.app.vault.getAbstractFileByPath(this.plugin.settings.ruleFilePath);
     if (file instanceof import_obsidian.TFile) {
       const content = await this.app.vault.read(file);
-      const sysMatch = content.match(/## System Rules\n([\s\S]*?)(?=\n##|$)/);
-      const projMatch = content.match(/## Project Rules\n([\s\S]*?)(?=\n##|$)/);
-      const codeMatch = content.match(/## Coding Standards\n([\s\S]*?)(?=\n##|$)/);
+      const sysMatch = content.match(/## System Rules\n([\s\S]*?)(?=\n## |$)/);
+      const projMatch = content.match(/## Project Rules\n([\s\S]*?)(?=\n## |$)/);
+      const codeMatch = content.match(/## Coding Standards\n([\s\S]*?)(?=\n## |$)/);
       if (sysMatch)
         this.rules.system = sysMatch[1].trim();
       if (projMatch)
@@ -6336,13 +6381,13 @@ var CreateIssueModal = class extends import_obsidian.Modal {
         const args = ["issue", "create", "--title", this.issueTitle, "--body", this.issueBody, "--label", this.issueLabel];
         const { stdout, stderr } = await execFileAsync("gh", args, { cwd: vaultPath });
         if (stderr && !stdout) {
-          new import_obsidian.Notice("Error creating issue. Is gh CLI authenticated?");
+          new import_obsidian.Notice(`Error: ${stderr}`);
         } else {
           new import_obsidian.Notice("\u2705 Issue created!");
           this.close();
         }
-      } catch (e) {
-        new import_obsidian.Notice("Error! Is GitHub CLI (gh) installed and authenticated?");
+      } catch (err) {
+        new import_obsidian.Notice(`Error: ${err.message || "Is GitHub CLI (gh) installed and authenticated?"}`);
       } finally {
         btn.setDisabled(false).setButtonText("Create Issue");
       }
@@ -6399,7 +6444,7 @@ var AgenticVaultSettingTab = class extends import_obsidian.PluginSettingTab {
       try {
         if (!isGitRepo) {
           await this.plugin.git.init();
-          await this.plugin.git.branch(["-M", "main"]);
+          await this.plugin.git.checkoutLocalBranch("main");
         }
         if (this.remoteUrlInput) {
           try {
