@@ -6929,8 +6929,7 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
             this.app.setting.openTabById(this.plugin.manifest.id);
           }));
           if (tool.enabled) {
-            const toolContainer = createDiv({ cls: "av-tool-path-container" });
-            toolContainer.style.paddingLeft = "20px";
+            const toolContainer = createDiv({ cls: "av-tool-path-container av-tool-padding" });
             new import_obsidian5.Setting(toolContainer).setName("Windows Path").setDesc("Relative to User Home (~/)").addText((t2) => t2.setValue(tool.windowsPath).onChange(async (v) => {
               tool.windowsPath = v;
               await this.plugin.saveSettings();
@@ -6945,8 +6944,6 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       });
     }
     return defs;
-  }
-  display() {
   }
 };
 

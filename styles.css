@@ -150,3 +150,6 @@ NEW MACHINE SETUP WIZARD
     border-left: 2px solid var(--interactive-accent);
     padding-left: 15px;
 }
+
+.av-tool-padding { padding-left: 20px; }
+
