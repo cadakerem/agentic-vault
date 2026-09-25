@@ -317,8 +317,7 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 						}));
 
 					if (tool.enabled) {
-						const toolContainer = createDiv({ cls: 'av-tool-path-container' });
-						toolContainer.style.paddingLeft = '20px';
+						const toolContainer = createDiv({ cls: 'av-tool-path-container av-tool-padding' });
 						
 						new Setting(toolContainer)
 							.setName('Windows Path')
@@ -343,10 +342,6 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 		}
 
 		return defs;
-	}
-
-	display(): void {
-		// Empty intentionally! Obsidian 1.13.0+ will bypass this entirely.
 	}
 }
 
