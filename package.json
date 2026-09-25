@@ -1,6 +1,6 @@
 {
   "name": "agentic-vault",
-  "version": "1.4.10",
+  "version": "1.4.11",
   "description": "The ultimate Obsidian plugin to automate Git sync, manage AI system prompts, and enable Issue-Driven Development directly from your vault.",
   "main": "main.js",
   "scripts": {
@@ -30,10 +30,10 @@
     "@codemirror/state": "^6.7.6",
     "@codemirror/view": "^6.43.13",
     "@types/jest": "^30.0.0",
-    "@types/node": "^16.18.126",
+    "@types/node": "^22.0.0",
     "@typescript-eslint/eslint-plugin": "^5.29.0",
     "@typescript-eslint/parser": "^5.29.0",
-    "esbuild": "0.17.3",
+    "esbuild": "^0.28.2",
     "jest": "^30.5.2",
     "obsidian": "1.6.6",
     "ts-jest": "^29.4.12",
