@@ -11,7 +11,11 @@ var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __commonJS = (cb, mod) => function __require() {
-  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  try {
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  } catch (e) {
+    throw mod = 0, e;
+  }
 };
 var __export = (target, all) => {
   for (var name in all)
@@ -34,14 +38,11 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-var __publicField = (obj, key, value) => {
-  __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-  return value;
-};
+var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
 // node_modules/ms/index.js
 var require_ms = __commonJS({
-  "node_modules/ms/index.js"(exports, module2) {
+  "node_modules/ms/index.js"(exports2, module2) {
     var s = 1e3;
     var m = s * 60;
     var h2 = m * 60;
@@ -157,7 +158,7 @@ var require_ms = __commonJS({
 
 // node_modules/debug/src/common.js
 var require_common = __commonJS({
-  "node_modules/debug/src/common.js"(exports, module2) {
+  "node_modules/debug/src/common.js"(exports2, module2) {
     function setup(env) {
       createDebug.debug = createDebug;
       createDebug.default = createDebug;
@@ -192,7 +193,7 @@ var require_common = __commonJS({
             return;
           }
           const self = debug2;
-          const curr = Number(new Date());
+          const curr = Number(/* @__PURE__ */ new Date());
           const ms = curr - (prevTime || curr);
           self.diff = ms;
           self.prev = prevTime;
@@ -334,13 +335,13 @@ var require_common = __commonJS({
 
 // node_modules/debug/src/browser.js
 var require_browser = __commonJS({
-  "node_modules/debug/src/browser.js"(exports, module2) {
-    exports.formatArgs = formatArgs;
-    exports.save = save;
-    exports.load = load;
-    exports.useColors = useColors;
-    exports.storage = localstorage();
-    exports.destroy = (() => {
+  "node_modules/debug/src/browser.js"(exports2, module2) {
+    exports2.formatArgs = formatArgs;
+    exports2.save = save;
+    exports2.load = load;
+    exports2.useColors = useColors;
+    exports2.storage = localstorage();
+    exports2.destroy = /* @__PURE__ */ (() => {
       let warned = false;
       return () => {
         if (!warned) {
@@ -349,7 +350,7 @@ var require_browser = __commonJS({
         }
       };
     })();
-    exports.colors = [
+    exports2.colors = [
       "#0000CC",
       "#0000FF",
       "#0033CC",
@@ -461,14 +462,14 @@ var require_browser = __commonJS({
       });
       args.splice(lastC, 0, c3);
     }
-    exports.log = console.debug || console.log || (() => {
+    exports2.log = console.debug || console.log || (() => {
     });
     function save(namespaces) {
       try {
         if (namespaces) {
-          exports.storage.setItem("debug", namespaces);
+          exports2.storage.setItem("debug", namespaces);
         } else {
-          exports.storage.removeItem("debug");
+          exports2.storage.removeItem("debug");
         }
       } catch (error) {
       }
@@ -476,7 +477,7 @@ var require_browser = __commonJS({
     function load() {
       let r2;
       try {
-        r2 = exports.storage.getItem("debug") || exports.storage.getItem("DEBUG");
+        r2 = exports2.storage.getItem("debug") || exports2.storage.getItem("DEBUG");
       } catch (error) {
       }
       if (!r2 && typeof process !== "undefined" && "env" in process) {
@@ -490,7 +491,7 @@ var require_browser = __commonJS({
       } catch (error) {
       }
     }
-    module2.exports = require_common()(exports);
+    module2.exports = require_common()(exports2);
     var { formatters } = module2.exports;
     formatters.j = function(v) {
       try {
@@ -504,7 +505,7 @@ var require_browser = __commonJS({
 
 // node_modules/has-flag/index.js
 var require_has_flag = __commonJS({
-  "node_modules/has-flag/index.js"(exports, module2) {
+  "node_modules/has-flag/index.js"(exports2, module2) {
     "use strict";
     module2.exports = (flag, argv = process.argv) => {
       const prefix = flag.startsWith("-") ? "" : flag.length === 1 ? "-" : "--";
@@ -517,7 +518,7 @@ var require_has_flag = __commonJS({
 
 // node_modules/supports-color/index.js
 var require_supports_color = __commonJS({
-  "node_modules/supports-color/index.js"(exports, module2) {
+  "node_modules/supports-color/index.js"(exports2, module2) {
     "use strict";
     var os7 = require("os");
     var tty = require("tty");
@@ -619,25 +620,25 @@ var require_supports_color = __commonJS({
 
 // node_modules/debug/src/node.js
 var require_node = __commonJS({
-  "node_modules/debug/src/node.js"(exports, module2) {
+  "node_modules/debug/src/node.js"(exports2, module2) {
     var tty = require("tty");
     var util = require("util");
-    exports.init = init;
-    exports.log = log;
-    exports.formatArgs = formatArgs;
-    exports.save = save;
-    exports.load = load;
-    exports.useColors = useColors;
-    exports.destroy = util.deprecate(
+    exports2.init = init;
+    exports2.log = log;
+    exports2.formatArgs = formatArgs;
+    exports2.save = save;
+    exports2.load = load;
+    exports2.useColors = useColors;
+    exports2.destroy = util.deprecate(
       () => {
       },
       "Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`."
     );
-    exports.colors = [6, 2, 3, 4, 5, 1];
+    exports2.colors = [6, 2, 3, 4, 5, 1];
     try {
       const supportsColor = require_supports_color();
       if (supportsColor && (supportsColor.stderr || supportsColor).level >= 2) {
-        exports.colors = [
+        exports2.colors = [
           20,
           21,
           26,
@@ -718,7 +719,7 @@ var require_node = __commonJS({
       }
     } catch (error) {
     }
-    exports.inspectOpts = Object.keys(process.env).filter((key) => {
+    exports2.inspectOpts = Object.keys(process.env).filter((key) => {
       return /^debug_/i.test(key);
     }).reduce((obj, key) => {
       const prop = key.substring(6).toLowerCase().replace(/_([a-z])/g, (_2, k2) => {
@@ -738,7 +739,7 @@ var require_node = __commonJS({
       return obj;
     }, {});
     function useColors() {
-      return "colors" in exports.inspectOpts ? Boolean(exports.inspectOpts.colors) : tty.isatty(process.stderr.fd);
+      return "colors" in exports2.inspectOpts ? Boolean(exports2.inspectOpts.colors) : tty.isatty(process.stderr.fd);
     }
     function formatArgs(args) {
       const { namespace: name, useColors: useColors2 } = this;
@@ -753,13 +754,13 @@ var require_node = __commonJS({
       }
     }
     function getDate() {
-      if (exports.inspectOpts.hideDate) {
+      if (exports2.inspectOpts.hideDate) {
         return "";
       }
-      return new Date().toISOString() + " ";
+      return (/* @__PURE__ */ new Date()).toISOString() + " ";
     }
     function log(...args) {
-      return process.stderr.write(util.formatWithOptions(exports.inspectOpts, ...args) + "\n");
+      return process.stderr.write(util.formatWithOptions(exports2.inspectOpts, ...args) + "\n");
     }
     function save(namespaces) {
       if (namespaces) {
@@ -773,12 +774,12 @@ var require_node = __commonJS({
     }
     function init(debug2) {
       debug2.inspectOpts = {};
-      const keys = Object.keys(exports.inspectOpts);
+      const keys = Object.keys(exports2.inspectOpts);
       for (let i2 = 0; i2 < keys.length; i2++) {
-        debug2.inspectOpts[keys[i2]] = exports.inspectOpts[keys[i2]];
+        debug2.inspectOpts[keys[i2]] = exports2.inspectOpts[keys[i2]];
       }
     }
-    module2.exports = require_common()(exports);
+    module2.exports = require_common()(exports2);
     var { formatters } = module2.exports;
     formatters.o = function(v) {
       this.inspectOpts.colors = this.useColors;
@@ -793,7 +794,7 @@ var require_node = __commonJS({
 
 // node_modules/debug/src/index.js
 var require_src = __commonJS({
-  "node_modules/debug/src/index.js"(exports, module2) {
+  "node_modules/debug/src/index.js"(exports2, module2) {
     if (typeof process === "undefined" || process.type === "renderer" || process.browser === true || process.__nwjs) {
       module2.exports = require_browser();
     } else {
@@ -804,12 +805,12 @@ var require_src = __commonJS({
 
 // node_modules/@kwsites/file-exists/dist/src/index.js
 var require_src2 = __commonJS({
-  "node_modules/@kwsites/file-exists/dist/src/index.js"(exports) {
+  "node_modules/@kwsites/file-exists/dist/src/index.js"(exports2) {
     "use strict";
-    var __importDefault = exports && exports.__importDefault || function(mod) {
+    var __importDefault = exports2 && exports2.__importDefault || function(mod) {
       return mod && mod.__esModule ? mod : { "default": mod };
     };
-    Object.defineProperty(exports, "__esModule", { value: true });
+    Object.defineProperty(exports2, "__esModule", { value: true });
     var fs_1 = require("fs");
     var debug_1 = __importDefault(require_src());
     var log = debug_1.default("@kwsites/file-exists");
@@ -836,36 +837,34 @@ var require_src2 = __commonJS({
         throw e;
       }
     }
-    function exists2(path8, type = exports.READABLE) {
-      return check(path8, (type & exports.FILE) > 0, (type & exports.FOLDER) > 0);
+    function exists2(path8, type = exports2.READABLE) {
+      return check(path8, (type & exports2.FILE) > 0, (type & exports2.FOLDER) > 0);
     }
-    exports.exists = exists2;
-    exports.FILE = 1;
-    exports.FOLDER = 2;
-    exports.READABLE = exports.FILE + exports.FOLDER;
+    exports2.exists = exists2;
+    exports2.FILE = 1;
+    exports2.FOLDER = 2;
+    exports2.READABLE = exports2.FILE + exports2.FOLDER;
   }
 });
 
 // node_modules/@kwsites/file-exists/dist/index.js
 var require_dist = __commonJS({
-  "node_modules/@kwsites/file-exists/dist/index.js"(exports) {
+  "node_modules/@kwsites/file-exists/dist/index.js"(exports2) {
     "use strict";
     function __export3(m) {
-      for (var p2 in m)
-        if (!exports.hasOwnProperty(p2))
-          exports[p2] = m[p2];
+      for (var p2 in m) if (!exports2.hasOwnProperty(p2)) exports2[p2] = m[p2];
     }
-    Object.defineProperty(exports, "__esModule", { value: true });
+    Object.defineProperty(exports2, "__esModule", { value: true });
     __export3(require_src2());
   }
 });
 
 // node_modules/@kwsites/promise-deferred/dist/index.js
 var require_dist2 = __commonJS({
-  "node_modules/@kwsites/promise-deferred/dist/index.js"(exports) {
+  "node_modules/@kwsites/promise-deferred/dist/index.js"(exports2) {
     "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.createDeferred = exports.deferred = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.createDeferred = exports2.deferred = void 0;
     function deferred2() {
       let done;
       let fail;
@@ -896,9 +895,9 @@ var require_dist2 = __commonJS({
         }
       };
     }
-    exports.deferred = deferred2;
-    exports.createDeferred = deferred2;
-    exports.default = deferred2;
+    exports2.deferred = deferred2;
+    exports2.createDeferred = deferred2;
+    exports2.default = deferred2;
   }
 });
 
@@ -931,7 +930,7 @@ function o(n) {
 var import_debug = __toESM(require_src(), 1);
 var import_child_process = require("child_process");
 var import_promise_deferred = __toESM(require_dist2(), 1);
-var import_node_path = require("path");
+var import_node_path = require("node:path");
 
 // node_modules/@simple-git/argv-parser/dist/index.mjs
 function* U(e, t2) {
@@ -1185,8 +1184,7 @@ function j(e, t2 = []) {
   let n = 0;
   for (; n < e.length; ) {
     const o2 = String(e[n]);
-    if (!o2.startsWith("-") || o2.length < 2)
-      break;
+    if (!o2.startsWith("-") || o2.length < 2) break;
     const s = b(o2);
     let r2 = n + 1;
     for (const l of s) {
@@ -1404,7 +1402,7 @@ function ne(e, t2) {
 
 // node_modules/simple-git/dist/esm/index.js
 var import_promise_deferred2 = __toESM(require_dist2(), 1);
-var import_node_events = require("events");
+var import_node_events = require("node:events");
 var __defProp2 = Object.defineProperty;
 var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -2396,7 +2394,7 @@ var init_grep = __esm({
     init_utils();
     init_task();
     disallowedOptions = ["-h"];
-    Query = Symbol("grepQuery");
+    Query = /* @__PURE__ */ Symbol("grepQuery");
     GrepQuery = class {
       constructor() {
         this[_a] = [];
@@ -2530,8 +2528,8 @@ var init_git_logger = __esm({
 var TasksPendingQueue;
 var init_tasks_pending_queue = __esm({
   "src/lib/runners/tasks-pending-queue.ts"() {
-    var _a2;
     "use strict";
+    var _a2;
     init_git_error();
     init_git_logger();
     TasksPendingQueue = (_a2 = class {
@@ -2593,9 +2591,7 @@ var init_tasks_pending_queue = __esm({
       static getName(name = "empty") {
         return `task:${name}:${++_a2.counter}`;
       }
-    }, (() => {
-      _a2.counter = 0;
-    })(), _a2);
+    }, _a2.counter = 0, _a2);
   }
 });
 function pluginContext(task, commands) {
@@ -5129,7 +5125,7 @@ var init_tag = __esm({
   }
 });
 var require_git = __commonJS2({
-  "src/git.js"(exports, module2) {
+  "src/git.js"(exports2, module2) {
     "use strict";
     var { GitExecutor: GitExecutor2 } = (init_git_executor(), __toCommonJS2(git_executor_exports));
     var { SimpleGitApi: SimpleGitApi2 } = (init_simple_git_api(), __toCommonJS2(simple_git_api_exports));
@@ -5914,15 +5910,12 @@ function redact(line, re) {
   return line.replace(new RegExp(re.source, re.flags), "[REDACTED]").trim().slice(0, 120);
 }
 function scanLine(line) {
-  if (line.includes(ALLOW_MARKER))
-    return [];
+  if (line.includes(ALLOW_MARKER)) return [];
   const out = [];
   for (const r2 of RULES) {
     const m = new RegExp(r2.re.source, r2.re.flags).exec(line);
-    if (!m)
-      continue;
-    if (r2.confidence === "low" && PLACEHOLDER.test(m[0]))
-      continue;
+    if (!m) continue;
+    if (r2.confidence === "low" && PLACEHOLDER.test(m[0])) continue;
     out.push({ rule: r2.name, confidence: r2.confidence, preview: redact(line, r2.re) });
   }
   return out;
@@ -5937,16 +5930,14 @@ function scanDiff(diff) {
       file = p2 === "/dev/null" ? "" : p2.replace(/^b\//, "");
       continue;
     }
-    if (raw.startsWith("--- ") || raw.startsWith("diff --git"))
-      continue;
+    if (raw.startsWith("--- ") || raw.startsWith("diff --git")) continue;
     const hunk = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(raw);
     if (hunk) {
       newLine = parseInt(hunk[1], 10);
       continue;
     }
     if (raw.startsWith("+")) {
-      for (const f of scanLine(raw.slice(1)))
-        findings.push({ file, line: newLine, ...f });
+      for (const f of scanLine(raw.slice(1))) findings.push({ file, line: newLine, ...f });
       newLine++;
     } else if (raw.startsWith(" ")) {
       newLine++;
@@ -5967,8 +5958,7 @@ function scanFileNames(paths) {
   const out = [];
   for (const p2 of paths) {
     const base = (_a2 = p2.split(/[\\/]/).pop()) != null ? _a2 : p2;
-    if (SAFE_NAMES.test(base))
-      continue;
+    if (SAFE_NAMES.test(base)) continue;
     if (SENSITIVE_NAMES.some((re) => re.test(base))) {
       out.push({ file: p2, line: 0, rule: "sensitive-filename", confidence: "high", preview: base });
     }
@@ -5996,8 +5986,7 @@ function conflictCopyName(rel, device, when, exists2 = () => false) {
     const suffix = n === 1 ? "" : `-${n}`;
     const file = `${base}.conflict-local-${sanitizeDevice(device)}-${stamp(when)}${suffix}${ext}`;
     const candidate = dir === "." ? file : path.posix.join(dir, file);
-    if (!exists2(candidate))
-      return candidate;
+    if (!exists2(candidate)) return candidate;
   }
   throw new Error("Could not find a free conflict-copy name");
 }
@@ -6009,8 +5998,7 @@ function parseUnmergedStages(out) {
   const map = /* @__PURE__ */ new Map();
   for (const rec of out.split("\0")) {
     const m = /^\d+ [0-9a-f]+ ([123])\t([\s\S]+)$/.exec(rec);
-    if (!m)
-      continue;
+    if (!m) continue;
     const st = (_a2 = map.get(m[2])) != null ? _a2 : { has1: false, has2: false, has3: false };
     st[`has${m[1]}`] = true;
     map.set(m[2], st);
@@ -6020,7 +6008,7 @@ function parseUnmergedStages(out) {
 var midRebase = (vaultPath) => ["rebase-merge", "rebase-apply"].some((d) => fs.existsSync(path.join(vaultPath, ".git", d)));
 async function resolveRebaseConflicts(git, opts) {
   var _a2, _b;
-  const when = (_a2 = opts.now) != null ? _a2 : new Date();
+  const when = (_a2 = opts.now) != null ? _a2 : /* @__PURE__ */ new Date();
   const copies = [];
   let orig = "";
   try {
@@ -6028,14 +6016,12 @@ async function resolveRebaseConflicts(git, opts) {
   } catch (e) {
     orig = (await git.raw(["rev-parse", "--verify", "ORIG_HEAD"]).catch(() => "")).trim();
   }
-  if (orig)
-    await git.raw(["update-ref", `refs/av-backup/conflict-${stamp(when)}`, orig]);
+  if (orig) await git.raw(["update-ref", `refs/av-backup/conflict-${stamp(when)}`, orig]);
   for (let round = 0; round < ((_b = opts.maxRounds) != null ? _b : 100); round++) {
     const unmerged = parseUnmergedStages(await git.raw(["ls-files", "-u", "-z"]));
     const fresh = [];
     for (const [file, st] of unmerged) {
-      if (!st.has2 && !st.has3)
-        throw new Error(`Unsupported conflict type for ${file}`);
+      if (!st.has2 && !st.has3) throw new Error(`Unsupported conflict type for ${file}`);
       if (st.has3) {
         const copyRel = conflictCopyName(file, opts.device, when, (c3) => copies.includes(c3) || fs.existsSync(path.join(opts.vaultPath, c3)));
         const blob = await git.binaryCatFile(["blob", `:3:${file}`]);
@@ -6051,8 +6037,7 @@ async function resolveRebaseConflicts(git, opts) {
         await git.raw(["rm", "-q", "--force", "--", file]);
       }
     }
-    if (fresh.length)
-      await git.raw(["add", "--", ...fresh]);
+    if (fresh.length) await git.raw(["add", "--", ...fresh]);
     const hasUnmerged = async () => (await git.raw(["ls-files", "-u", "-z"])).length > 0;
     const staged = (await git.raw(["diff", "--cached", "--name-only", "-z"])).length > 0;
     try {
@@ -6063,17 +6048,13 @@ async function resolveRebaseConflicts(git, opts) {
         await git.raw(["rebase", "--skip"]);
       }
     } catch (e) {
-      if (midRebase(opts.vaultPath) && await hasUnmerged())
-        continue;
-      if (!midRebase(opts.vaultPath))
-        return { copies };
+      if (midRebase(opts.vaultPath) && await hasUnmerged()) continue;
+      if (!midRebase(opts.vaultPath)) return { copies };
       throw e;
     }
-    if (!midRebase(opts.vaultPath))
-      return { copies };
+    if (!midRebase(opts.vaultPath)) return { copies };
   }
-  if (!midRebase(opts.vaultPath))
-    return { copies };
+  if (!midRebase(opts.vaultPath)) return { copies };
   throw new Error("Conflict resolution did not converge");
 }
 
@@ -6113,8 +6094,7 @@ async function syncVault(git, opts) {
   const remote = (_a2 = opts.remote) != null ? _a2 : "origin";
   const result = { status: "ok", committed: false, pushed: false };
   try {
-    if (!await git.checkIsRepo())
-      return { ...result, status: "not-a-repo" };
+    if (!await git.checkIsRepo()) return { ...result, status: "not-a-repo" };
     if (isMidRebase(opts.vaultPath)) {
       return {
         ...result,
@@ -6142,8 +6122,7 @@ async function syncVault(git, opts) {
       await git.commit(opts.commitMessage);
       result.committed = true;
     }
-    if (!await hasCommits(git))
-      return result;
+    if (!await hasCommits(git)) return result;
     const remotes = await git.getRemotes();
     if (!remotes.some((r2) => r2.name === remote)) {
       return { ...result, status: "no-remote", message: "No remote configured." };
@@ -6156,18 +6135,15 @@ async function syncVault(git, opts) {
         await git.pull(["--rebase"]);
       } else {
         const heads = await git.listRemote(["--heads", remote, branch]);
-        if (heads.trim() !== "")
-          await git.pull(remote, branch, ["--rebase"]);
+        if (heads.trim() !== "") await git.pull(remote, branch, ["--rebase"]);
       }
     } catch (e) {
-      if (!isMidRebase(opts.vaultPath))
-        throw e;
+      if (!isMidRebase(opts.vaultPath)) throw e;
       const giveUp = async () => {
         await git.raw(["rebase", "--abort"]).catch(() => void 0);
         return { ...result, status: "conflict", message: "Merge conflict! Rebase aborted. Resolve manually." };
       };
-      if (opts.conflictStrategy === "abort")
-        return giveUp();
+      if (opts.conflictStrategy === "abort") return giveUp();
       try {
         conflictCopies = (await resolveRebaseConflicts(git, {
           vaultPath: opts.vaultPath,
@@ -6178,8 +6154,7 @@ async function syncVault(git, opts) {
         return giveUp();
       }
     }
-    if (conflictCopies.length > 0)
-      result.conflictCopies = conflictCopies;
+    if (conflictCopies.length > 0) result.conflictCopies = conflictCopies;
     if (opts.autoPush) {
       if (opts.allowPublicRemote === false) {
         try {
@@ -6195,10 +6170,8 @@ async function syncVault(git, opts) {
         } catch (e) {
         }
       }
-      if (hasUpstream)
-        await git.push();
-      else
-        await git.push(["-u", remote, branch]);
+      if (hasUpstream) await git.push();
+      else await git.push(["-u", remote, branch]);
       result.pushed = true;
     }
     return result;
@@ -6211,10 +6184,8 @@ async function syncVault(git, opts) {
 // src/syncState.ts
 var initialSyncState = { paused: false };
 function shouldRun(state, opts) {
-  if (opts.isSyncing)
-    return false;
-  if (state.paused && !opts.manual)
-    return false;
+  if (opts.isSyncing) return false;
+  if (state.paused && !opts.manual) return false;
   return true;
 }
 var PAUSING = ["conflict", "rebase-in-progress", "secrets-found", "no-remote", "not-a-repo"];
@@ -6304,17 +6275,12 @@ function isDangerousPath(p2, home = os2.homedir()) {
   const cmp = (s) => process.platform === "win32" ? s.toLowerCase() : s;
   const norm = path3.resolve(p2);
   const h2 = path3.resolve(home);
-  if (path3.parse(norm).root === norm)
-    return true;
-  if (cmp(norm) === cmp(h2))
-    return true;
-  if (!cmp(norm).startsWith(cmp(h2) + path3.sep))
-    return true;
+  if (path3.parse(norm).root === norm) return true;
+  if (cmp(norm) === cmp(h2)) return true;
+  if (!cmp(norm).startsWith(cmp(h2) + path3.sep)) return true;
   const parts = path3.relative(h2, norm).split(path3.sep);
-  if (SECRET_DIRS.some((d) => cmp(d) === cmp(parts[0])))
-    return true;
-  if (parts.length === 1 && EXACT_ONLY_DIRS.some((d) => cmp(d) === cmp(parts[0])))
-    return true;
+  if (SECRET_DIRS.some((d) => cmp(d) === cmp(parts[0]))) return true;
+  if (parts.length === 1 && EXACT_ONLY_DIRS.some((d) => cmp(d) === cmp(parts[0]))) return true;
   return false;
 }
 
@@ -6336,14 +6302,12 @@ function isEmptyOrMissing(dir) {
 function planLink(source, target, home = os3.homedir()) {
   const s = path4.resolve(source);
   const t2 = path4.resolve(target);
-  if (isDangerousPath(t2, home))
-    return { action: "refuse", reason: "Target folder is protected or outside your home directory." };
+  if (isDangerousPath(t2, home)) return { action: "refuse", reason: "Target folder is protected or outside your home directory." };
   if (t2 === s || t2.startsWith(s + path4.sep) || s.startsWith(t2 + path4.sep)) {
     return { action: "refuse", reason: "Source and target overlap (one is inside the other)." };
   }
   const st = safeLstat(t2);
-  if (!st)
-    return { action: "create" };
+  if (!st) return { action: "create" };
   if (st.isSymbolicLink()) {
     const dest = path4.resolve(path4.dirname(t2), fs3.readlinkSync(t2));
     let same = false;
@@ -6359,10 +6323,8 @@ function planLink(source, target, home = os3.homedir()) {
 function applyLink(source, target, plan, platform3 = process.platform) {
   const s = path4.resolve(source);
   const t2 = path4.resolve(target);
-  if (plan.action === "refuse")
-    throw new Error(plan.reason);
-  if (plan.action === "noop")
-    return {};
+  if (plan.action === "refuse") throw new Error(plan.reason);
+  if (plan.action === "noop") return {};
   fs3.mkdirSync(s, { recursive: true });
   fs3.mkdirSync(path4.dirname(t2), { recursive: true });
   let backup;
@@ -6371,8 +6333,7 @@ function applyLink(source, target, plan, platform3 = process.platform) {
   } else if (plan.action === "backup-and-create") {
     backup = plan.backup;
     fs3.renameSync(t2, backup);
-    if (plan.willMigrate)
-      fs3.cpSync(backup, s, { recursive: true });
+    if (plan.willMigrate) fs3.cpSync(backup, s, { recursive: true });
   }
   fs3.symlinkSync(s, t2, platform3 === "win32" ? "junction" : "dir");
   return { backup };
@@ -6419,8 +6380,7 @@ var SetupWizardModal = class extends import_obsidian2.Modal {
     const btnRow = contentEl.createDiv({ cls: "av-tabs-container" });
     const btnStart = btnRow.createEl("button", { text: "\u{1F680} Start Setup", cls: "mod-cta" });
     btnStart.onclick = async () => {
-      if (this.running)
-        return;
+      if (this.running) return;
       this.running = true;
       btnStart.setAttr("disabled", "true");
       btnStart.setText("Running...");
@@ -6468,8 +6428,7 @@ var SetupWizardModal = class extends import_obsidian2.Modal {
     addSymlinkStep("\u{1F9E0} Link Skills Folder", path5.join(vaultPath, this.plugin.settings.skillsFolder), path5.join(os4.homedir(), ".agents", "skills"));
     addSymlinkStep("\u26A1 Link Scripts Folder", path5.join(vaultPath, this.plugin.settings.scriptsFolder), path5.join(os4.homedir(), ".agents", "scripts"));
     for (const tool of this.plugin.settings.aiTools) {
-      if (!tool.enabled)
-        continue;
+      if (!tool.enabled) continue;
       const dstRel = isWin ? tool.windowsPath : tool.unixPath;
       addSymlinkStep(`\u{1F916} Link ${tool.name}`, path5.join(vaultPath, this.plugin.settings.vaultBrainFolder, tool.id), path5.join(os4.homedir(), dstRel));
     }
@@ -6487,8 +6446,7 @@ var SetupWizardModal = class extends import_obsidian2.Modal {
     };
     el.className = `av-step av-step-${status}`;
     el.querySelector(".av-step-icon").setText(icons[status]);
-    if (detail)
-      el.querySelector(".av-step-detail").setText(detail);
+    if (detail) el.querySelector(".av-step-detail").setText(detail);
   }
   async runAllSteps() {
     const vaultPath = getVaultPath(this.app);
@@ -6945,6 +6903,9 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
     }
     return defs;
   }
+  // eslint-disable-next-line obsidianmd/settings-tab/no-deprecated-display
+  display() {
+  }
 };
 
 // main.ts
@@ -7019,21 +6980,16 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
     void this.updateStatusBar();
   }
   async verifyPauseState(vaultPath) {
-    if (!this.settings.syncState.paused)
-      return;
+    if (!this.settings.syncState.paused) return;
     const r2 = this.settings.syncState.pauseReason;
     if (r2 === "not-a-repo") {
-      if (await this.git.checkIsRepo())
-        this.clearPause();
+      if (await this.git.checkIsRepo()) this.clearPause();
     } else if (r2 === "no-remote") {
-      if ((await this.git.getRemotes()).length > 0)
-        this.clearPause();
+      if ((await this.git.getRemotes()).length > 0) this.clearPause();
     } else if (r2 === "rebase-in-progress") {
-      if (!fs6.existsSync(path7.join(vaultPath, ".git", "rebase-merge")) && !fs6.existsSync(path7.join(vaultPath, ".git", "rebase-apply")))
-        this.clearPause();
+      if (!fs6.existsSync(path7.join(vaultPath, ".git", "rebase-merge")) && !fs6.existsSync(path7.join(vaultPath, ".git", "rebase-apply"))) this.clearPause();
     } else if (r2 === "conflict") {
-      if ((await this.git.status()).conflicted.length === 0)
-        this.clearPause();
+      if ((await this.git.status()).conflicted.length === 0) this.clearPause();
     }
   }
   clearPause() {
@@ -7124,12 +7080,9 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
       } else if (copies.length > 0) {
         text += ` \xB7 ${copies.length} conflict cop${copies.length === 1 ? "y" : "ies"}`;
       } else {
-        if (ahead)
-          text += ` \u2191${ahead}`;
-        if (behind)
-          text += ` \u2193${behind}`;
-        if (dirty)
-          text += ` \u270E${dirty}`;
+        if (ahead) text += ` \u2191${ahead}`;
+        if (behind) text += ` \u2193${behind}`;
+        if (dirty) text += ` \u270E${dirty}`;
       }
       this.statusBarEl.setText(text);
     } catch (e) {
@@ -7150,8 +7103,7 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
     await this.saveData(this.settings);
   }
   async performDynamicCommit(silent = false, manual = false) {
-    if (!shouldRun(this.settings.syncState, { manual, isSyncing: this.isSyncing }))
-      return;
+    if (!shouldRun(this.settings.syncState, { manual, isSyncing: this.isSyncing })) return;
     this.isSyncing = true;
     try {
       const vaultPath = getVaultPath(this.app);
@@ -7172,12 +7124,9 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
       if (transition.notice && (!silent || manual)) {
         new import_obsidian6.Notice(transition.notice, 1e4);
       } else if (result.status === "ok" && !silent) {
-        if (result.pushed)
-          new import_obsidian6.Notice("\u{1F680} Pushed to GitHub!");
-        else if (result.committed)
-          new import_obsidian6.Notice("\u2713 Changes committed.");
-        else
-          new import_obsidian6.Notice("Agentic Vault: Nothing to commit.");
+        if (result.pushed) new import_obsidian6.Notice("\u{1F680} Pushed to GitHub!");
+        else if (result.committed) new import_obsidian6.Notice("\u2713 Changes committed.");
+        else new import_obsidian6.Notice("Agentic Vault: Nothing to commit.");
       }
       void this.updateStatusBar(transition.statusText);
     } catch (e) {
@@ -7187,5 +7136,3 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
     }
   }
 };
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {});

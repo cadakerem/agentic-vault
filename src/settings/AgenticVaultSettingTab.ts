@@ -343,6 +343,11 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 
 		return defs;
 	}
+
+	// eslint-disable-next-line obsidianmd/settings-tab/no-deprecated-display
+	display(): void {
+		// Empty intentionally! Obsidian 1.13.0+ will bypass this entirely.
+	}
 }
 
 export { AgenticVaultSettingTab };
