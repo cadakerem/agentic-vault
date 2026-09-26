@@ -149,6 +149,20 @@ export default class AgenticVaultPlugin extends Plugin {
 			'node_modules/',
 			'.DS_Store',
 			`${this.app.vault.configDir}/plugins/agentic-vault/secrets.json`,
+			// ZERO-TRUST ARCHITECTURE FOR AI-BRAIN
+			`${brain}/**/*`,
+			`!${brain}/**/`,
+			// AUTOMATIC WHITELIST (Pure text, safe instructions)
+			`!${brain}/**/skills/**`,
+			`!${brain}/**/.agents/skills/**`,
+			`!${brain}/**/CLAUDE.md`,
+			`!${brain}/**/GEMINI.md`,
+			`!${brain}/**/.cursorrules`,
+			`!${brain}/**/.cursor/rules/**`,
+			`!${brain}/**/copilot-instructions.md`,
+			`!${brain}/**/CONVENTIONS.md`,
+			`!${brain}/**/.windsurfrules`,
+			// HARD BLACKLIST (Always blocked even if someone whitelists them by mistake)
 			`${brain}/**/*oauth*`,
 			`${brain}/**/*token*`,
 			`${brain}/**/*secret*`,
@@ -171,7 +185,7 @@ export default class AgenticVaultPlugin extends Plugin {
 			}
 			if (changed) {
 				fs.writeFileSync(gitignorePath, content);
-				new Notice('Agentic Vault: Updated .gitignore to prevent secret leaks.');
+				new Notice('Agentic Vault Security Update: Zero-Trust mode activated for AI-Brain. Unapproved files will no longer sync.', 10000);
 			}
 			
 			// Check if any ignored files are still being tracked
