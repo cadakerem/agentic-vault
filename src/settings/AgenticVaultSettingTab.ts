@@ -157,6 +157,23 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 		});
 
 		defs.push({
+			name: 'Excluded Sync Paths',
+			desc: 'List of folders/files to exclude from git add (one per line, e.g. Private/).',
+			render: (setting: Setting, _group: SettingGroup) => {
+				setting.setName('Excluded Sync Paths')
+					.setDesc('List of folders/files to exclude from git add (one per line, e.g. Private/).')
+					.addTextArea(t => {
+						t.setPlaceholder('Private/\nSecrets/');
+						t.setValue(this.plugin.settings.excludedSyncPaths);
+						t.onChange(async v => {
+							this.plugin.settings.excludedSyncPaths = v;
+							await this.plugin.saveSettings();
+						});
+					});
+			}
+		});
+
+		defs.push({
 			name: 'Default Commit Message',
 			render: (setting: Setting, _group: SettingGroup) => {
 				setting.setName('Default Commit Message')

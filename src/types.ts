@@ -19,6 +19,7 @@ export interface AgenticVaultSettings {
 	scriptsFolder: string;
 	allowPublicRemote: boolean;
 	scanSecrets: boolean;
+	excludedSyncPaths: string;
 	deviceName: string;
 	syncState: SyncState;
 }

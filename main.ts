@@ -40,6 +40,7 @@ const DEFAULT_SETTINGS: AgenticVaultSettings = {
 	scriptsFolder: 'AI-Agent-System/scripts',
 	allowPublicRemote: false,
 	scanSecrets: true,
+	excludedSyncPaths: '',
 	deviceName: os.hostname(),
 	syncState: initialSyncState,
 };
@@ -261,6 +262,7 @@ export default class AgenticVaultPlugin extends Plugin {
 				autoPush: this.settings.gitAutoPush,
 				allowPublicRemote: this.settings.allowPublicRemote,
 				scanSecrets: this.settings.scanSecrets,
+				excludedPaths: this.settings.excludedSyncPaths.split('\n').map(p => p.trim()).filter(Boolean),
 				device: this.settings.deviceName,
 			});
 
