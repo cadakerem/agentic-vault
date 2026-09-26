@@ -6245,7 +6245,8 @@ var path4 = __toESM(require("path"));
 var os2 = __toESM(require("os"));
 var path3 = __toESM(require("path"));
 function section(content, title) {
-  const re = new RegExp(`## ${title}\\r?\\n([\\s\\S]*?)(?=\\r?\\n## |$)`);
+  const knownHeaders = "System Rules|Project Rules|Coding Standards";
+  const re = new RegExp(`## ${title}\\r?\\n([\\s\\S]*?)(?=\\r?\\n## (?:${knownHeaders})|$)`);
   const m = content.match(re);
   return m ? m[1].trim() : "";
 }
