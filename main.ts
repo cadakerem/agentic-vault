@@ -189,6 +189,11 @@ export default class AgenticVaultPlugin extends Plugin {
 			this.syncIntervalId = null;
 		}
 		if (this.settings.gitAutoPush && this.settings.syncIntervalMinutes > 0) {
+			// Perform an initial sync 5 seconds after startup to fetch remote changes immediately
+			window.setTimeout(() => {
+				void this.performDynamicCommit(true);
+			}, 5000);
+
 			this.syncIntervalId = window.setInterval(() => {
 				void this.performDynamicCommit(true);
 			}, this.settings.syncIntervalMinutes * 60 * 1000);

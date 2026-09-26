@@ -7028,6 +7028,9 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
       this.syncIntervalId = null;
     }
     if (this.settings.gitAutoPush && this.settings.syncIntervalMinutes > 0) {
+      window.setTimeout(() => {
+        void this.performDynamicCommit(true);
+      }, 5e3);
       this.syncIntervalId = window.setInterval(() => {
         void this.performDynamicCommit(true);
       }, this.settings.syncIntervalMinutes * 60 * 1e3);
