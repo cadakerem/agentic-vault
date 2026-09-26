@@ -43,6 +43,7 @@ const DEFAULT_SETTINGS: AgenticVaultSettings = {
 	scanSecrets: true,
 	excludedSyncPaths: '',
 	includedSyncPaths: '',
+	dismissedWhitelistSuggestions: [],
 	deviceName: os.hostname(),
 	syncState: initialSyncState,
 };
