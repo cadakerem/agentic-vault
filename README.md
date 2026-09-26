@@ -1,4 +1,4 @@
-﻿# 🧠 Agentic Vault for Obsidian
+# 🧠 Agentic Vault for Obsidian
 
 Agentic Vault is an Obsidian plugin for Git-backed AI configuration, automated vault synchronization, pattern-based secret scanning, and developer workflow integration.
 
@@ -105,13 +105,15 @@ Contributions, issues, and feature requests are welcome! Feel free to check the 
 This project is licensed under the [MIT License](LICENSE).
 
 
-## ?? Security Warning: API Keys & Git History
+## 🚨 Security Warning: API Keys & Git History
 
-**NEVER push your \data.json\ to a public repository!**
+**NEVER push your `data.json` to a public repository!**
 
-Agentic Vault automatically adds its configuration file (\.obsidian/plugins/agentic-vault/data.json\) to your \.gitignore\. However, if you previously tracked this file in Git before the plugin added it to \.gitignore\, **it will still be tracked and pushed!**
+Agentic Vault automatically adds all of its configuration files (`.obsidian/plugins/agentic-vault/*.json`) to your `.gitignore`. **Trade-off Note:** This means your plugin settings (like UI preferences) will no longer sync across devices via Git. This is a strict, intentional security design to ensure API keys are never accidentally leaked.
+
+However, if you previously tracked your `data.json` file in Git before the plugin added it to `.gitignore`, **it will still be tracked and pushed!**
 
 If you accidentally committed your API keys:
 1. **REVOKE YOUR KEYS IMMEDIATELY:** Go to your provider (OpenAI, Google, etc.) dashboard and delete the compromised keys. This is the only way to stop abuse.
-2. **Stop tracking the file:** Run \git rm --cached .obsidian/plugins/agentic-vault/data.json\ to remove it from future commits.
-3. **Clean Git History (Optional but Recommended):** The keys are STILL in your past Git history! Use [BFG Repo-Cleaner](https://rtyley.github.io/bfg-repo-cleaner/) to rewrite your history, or simply delete the repository and create a new one. *Note: Rewriting history requires a \git push -f\ (force-push), which will break the local clones for anyone else sharing this repository. Inform your team before doing this.*
+2. **Stop tracking the file:** Click the "Stop Tracking" button in the security warning Modal, or manually run `git rm --cached .obsidian/plugins/agentic-vault/data.json` to remove it from future commits.
+3. **Clean Git History (Optional but Recommended):** The keys are STILL in your past Git history! Use [BFG Repo-Cleaner](https://rtyley.github.io/bfg-repo-cleaner/) to rewrite your history, or simply delete the repository and create a new one. *Note: Rewriting history requires a `git push -f` (force-push), which will break the local clones for anyone else sharing this repository. Inform your team before doing this.*
