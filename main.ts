@@ -258,7 +258,7 @@ export default class AgenticVaultPlugin extends Plugin {
 			const secretsPath = this.manifest.dir + '/secrets.json';
 			if (await this.app.vault.adapter.exists(secretsPath)) {
 				const data = await this.app.vault.adapter.read(secretsPath);
-				this.secrets = Object.assign({}, DEFAULT_SECRETS, JSON.parse(data));
+				this.secrets = Object.assign({}, DEFAULT_SECRETS, JSON.parse(data) as Partial<AgenticVaultSecrets>);
 			} else {
 				this.secrets = Object.assign({}, DEFAULT_SECRETS);
 			}

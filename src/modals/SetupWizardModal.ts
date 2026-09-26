@@ -69,18 +69,22 @@ class SetupWizardModal extends Modal {
 			});
 			
 			const checkList = contentEl.createDiv({ cls: 'av-whitelist-suggestions' });
-			checkList.style.marginBottom = '15px';
-			checkList.style.background = 'var(--background-secondary)';
-			checkList.style.padding = '10px';
-			checkList.style.borderRadius = '5px';
+			checkList.setCssStyles({
+				marginBottom: '15px',
+				background: 'var(--background-secondary)',
+				padding: '10px',
+				borderRadius: '5px'
+			});
 			
 			newCandidates.forEach(c => {
 				const label = checkList.createEl('label');
-				label.style.display = 'block';
-				label.style.marginBottom = '5px';
+				label.setCssStyles({
+					display: 'block',
+					marginBottom: '5px'
+				});
 				
 				const cb = label.createEl('input', { type: 'checkbox' });
-				cb.style.marginRight = '8px';
+				cb.setCssStyles({ marginRight: '8px' });
 				cb.onchange = () => {
 					if (cb.checked) selectedWhitelist.push(c);
 					else selectedWhitelist = selectedWhitelist.filter(x => x !== c);
