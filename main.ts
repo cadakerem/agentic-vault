@@ -55,7 +55,7 @@ import { getVaultPath } from './src/obsidian-util';
 // ─────────────────────────────────────────────
 
 export default class AgenticVaultPlugin extends Plugin {
-	settings: AgenticVaultSettings;
+	declare settings: AgenticVaultSettings;
 	git: SimpleGit;
 	syncIntervalId: number | null = null;
 	statusBarEl: HTMLElement;

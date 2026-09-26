@@ -422,15 +422,17 @@ describe('conflict copies', () => {
   it('(t) BINARY file conflict: the copy is byte-identical to the local file', async () => {
     const bin = (n: number) => Buffer.from(Array.from({ length: 256 }, (_, i) => (i + n) % 256));
     const { A, B } = await twoClones({ 'img.bin': bin(0) });
-    fs.writeFileSync(path.join(A.dir, 'img.bin'), bin(1) as any);
+    fs.writeFileSync(path.join(A.dir, 'img.bin'), new Uint8Array(bin(1)));
     await syncVault(A.git, copts(A.dir));
-    fs.writeFileSync(path.join(B.dir, 'img.bin'), bin(2) as any);
+    fs.writeFileSync(path.join(B.dir, 'img.bin'), new Uint8Array(bin(2)));
 
     const res = await syncVault(B.git, copts(B.dir));
 
     expect(res.status).toBe('ok');
-    expect(fs.readFileSync(path.join(B.dir, 'img.bin')).equals(bin(1) as any)).toBe(true);
-    expect(fs.readFileSync(path.join(B.dir, COPY('img', '.bin'))).equals(bin(2) as any)).toBe(true);
+    const read1 = Array.from(fs.readFileSync(path.join(B.dir, 'img.bin'))).join(',');
+    const read2 = Array.from(fs.readFileSync(path.join(B.dir, COPY('img', '.bin')))).join(',');
+    expect(read1).toBe(Array.from(bin(1)).join(','));
+    expect(read2).toBe(Array.from(bin(2)).join(','));
   });
 
   it('(u) remote DELETED the file, local edited it: file is removed, local content survives as a copy', async () => {

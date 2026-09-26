@@ -12,7 +12,9 @@
     "strictNullChecks": true,
     "lib": [
       "DOM",
+      "DOM.Iterable",
       "ES2022",
+      "es2017.sharedmemory",
       "ESNext"
     ],
     "types": [
