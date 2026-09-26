@@ -59,11 +59,12 @@ import { getVaultPath } from './src/obsidian-util';
 export default class AgenticVaultPlugin extends Plugin {
 	declare settings: AgenticVaultSettings;
 	git: SimpleGit;
+	initPromise: Promise<void> | null = null;
 	syncIntervalId: number | null = null;
 	statusBarEl: HTMLElement;
 
 	onload(): void {
-		this.initialize().catch(err => {
+		this.initPromise = this.initialize().catch(err => {
 			const msg = err instanceof Error ? err.message : String(err);
 			console.error("Agentic Vault Init Error:", err);
 			new Notice("Agentic Vault failed to load: " + msg, 10000);
@@ -254,6 +255,7 @@ export default class AgenticVaultPlugin extends Plugin {
 	lastErrorMsg: string | null = null;
 
 	async performDynamicCommit(silent: boolean = false, manual: boolean = false): Promise<void> {
+		if (this.initPromise) { await this.initPromise; }
 		if (!shouldRun(this.settings.syncState, { manual, isSyncing: this.isSyncing })) return;
 		this.isSyncing = true;
 		try {
