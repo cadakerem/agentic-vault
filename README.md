@@ -12,6 +12,7 @@ It bridges the gap between your local OS-level AI tools (Antigravity, Claude Cod
 - **🔄 Auto Git Sync:** Background auto-pull, commit, and push. Your vault acts as a seamless Git repository without needing terminal commands.
 - **☁️ Git Status Bar:** Live status in the bottom right corner showing your current branch, ahead/behind commits, and uncommitted changes (e.g., `☁ main ↑2 ✎3`).
 - **🛡️ Pattern-Based Secret Scanning:** A pre-commit scanning layer that helps prevent accidentally committing known API keys and tokens. Note that this is a pattern-based heuristic and not an absolute security guarantee.
+- **🔒 Zero-Trust Sync Architecture:** By default, only safe text files (prompts, rules, and skills) in your `AI-Brain` are synced to GitHub. Junk config files, AI chat histories, and locally cached secrets are automatically blocked by our Default-Deny whitelist engine.
 - **🔄 Smart Conflict Resolution (Dropbox-style):** If you make edits on your laptop and desktop at the same time, Agentic Vault cleanly handles Git merge conflicts by keeping the remote version and saving your local edits side-by-side as `.conflict-local` copies. No more broken Markdown files with Git markers!
 - **🌐 Universal AI Tool Support:** Natively links configurations for:
   - Antigravity / Gemini CLI (`~/.gemini/config`)
@@ -65,8 +66,8 @@ When moving to a new computer, you can restore your entire AI ecosystem in secon
 - Edit your System, Project, and Coding rules.
 - Click **Save & Sync**. The changes are immediately saved to markdown and pushed to GitHub.
 
-> **💡 Pro-Tip for Users:** 
-> Different AI tools look for rules in different files (e.g., `GEMINI.md` or `claude-rules.md`). You can change exactly which file the Brain Manager updates by changing the **"Brain File Path"** in the Agentic Vault settings to match your AI's expected config file!
+> **💡 Pro-Tip for Users:**
+> The Setup Wizard now features **Smart Auto-Detection**. It will automatically scan your vault for known AI rule files (e.g., `GEMINI.md`, `CLAUDE.md`, `.cursorrules`) and set your **Brain File Path** for you!
 
 ---
 
@@ -77,18 +78,14 @@ Agentic Vault is built for local-first automation. Because it creates symlinks a
 
 *All source code is public, and GitHub Actions guarantees that release assets match the repository code byte-for-byte.*
 
-### ⚠️ Critical Security Notice
-**Agentic Vault is designed to sync your personal AI agent skills, rules, and configurations.** Because these environments often reside close to `.env` files, API keys, and sensitive prompts, **we strongly recommend using a PRIVATE GitHub repository** to store your vault. 
+### 🚨 Zero-Trust Security Architecture
+**Agentic Vault is designed to sync your personal AI agent skills, rules, and configurations.** Because these environments often reside close to `.env` files, API keys, and sensitive prompts, Agentic Vault uses a three-layered defense system:
 
-Even with our built-in Secret Scanner, syncing personal AI configurations to a public repository carries a significant risk of accidentally exposing your API keys (e.g., OpenAI, Anthropic) or personal tokens. Always ensure your repository is set to `Private` and configure the "Excluded Sync Paths" in the plugin settings to explicitly ignore folders containing API credentials.
+1. **Zero-Trust Whitelist (.gitignore):** By default, your entire `AI-Brain` folder is blocked from syncing (Default-Deny). The plugin automatically whitelists only known, safe text formats (e.g. `GEMINI.md`, `CLAUDE.md`, `.cursorrules`, and `skills/`).
+2. **Setup Wizard Sandboxing:** Any custom plugins or settings folders you want to sync must be explicitly approved via the Setup Wizard's Whitelist Detection UI. The system will never silently sync unapproved files.
+3. **Content-based Defense (Secret Scanner):** Before every commit, a built-in scanner reads the actual content of the changed files. If it detects AWS keys, Slack tokens, private keys, or generic secret patterns, it blocks the commit.
 
-### 🛡️ Defense-in-Depth for Secrets
-Agentic Vault uses a two-layered approach to help prevent accidental leakage of API keys, tokens, and credentials:
-1. **Filename-based Defense (.gitignore):** Automatically generates and enforces a `.gitignore` that blocks common sensitive file names (e.g., `.env`, `credentials`, `*oauth*`) and explicitly excluded paths configured in settings.
-2. **Content-based Defense (Pattern-Based Scanner):** Before every commit, a built-in scanner reads the actual content of the changed files. If it detects AWS keys, Slack tokens, private keys, or generic secret patterns, it blocks the commit.
-
-*(Disclaimer: The secret scanner is a pattern-based heuristic designed as a safety net. It does not provide absolute security guarantees and might miss non-standard credential formats like `MY_SERVICE_TOKEN=abc...`).*
-
+*(Disclaimer: While the Zero-Trust architecture blocks unknown files, we still strongly recommend keeping your GitHub repository Private.)*
 *(Note: The Secret Scanner cannot be disabled if you have 'Allow Public Remote' toggled off, ensuring 100% protection for private environments).*
 
 ---
