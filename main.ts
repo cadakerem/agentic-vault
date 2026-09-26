@@ -1,4 +1,4 @@
-import {
+﻿import {
 	Notice, Plugin, addIcon
 } from 'obsidian';
 import simpleGit, { SimpleGit, StatusResult } from 'simple-git';
@@ -136,6 +136,7 @@ export default class AgenticVaultPlugin extends Plugin {
 			'/workspace-mobile.json',
 			'node_modules/',
 			'.DS_Store',
+			'.obsidian/plugins/agentic-vault/data.json',
 			`${brain}/**/*oauth*`,
 			`${brain}/**/*token*`,
 			`${brain}/**/*secret*`,
@@ -166,11 +167,12 @@ export default class AgenticVaultPlugin extends Plugin {
 				const lsFiles = await this.git.raw(['ls-files', '-ci', '--exclude-standard']);
 				const trackedIgnored = lsFiles.split('\n').map(l => l.trim()).filter(Boolean);
 				if (trackedIgnored.length > 0) {
-					new Notice(`⚠️ WARNING: ${trackedIgnored.length} ignored files are still tracked by git. Run 'git rm --cached <file>' manually. Note: This deletes the file on other devices upon pull. Rotate compromised keys immediately!`, 15000);
-					console.warn('Tracked ignored files:', trackedIgnored);
+					console.warn('Tracked ignored files found. Auto-removing them from index:', trackedIgnored);
+					await this.git.raw(['rm', '--cached', ...trackedIgnored]);
+					new Notice(`Agentic Vault: Auto-removed ${trackedIgnored.length} sensitive files from git tracking. Rotate keys if they were already pushed!`, 15000);
 				}
-			} catch {
-				// Ignore errors from ls-files
+			} catch (err) {
+				console.error('Failed to auto-remove tracked ignored files:', err);
 			}
 		} catch (e) {
 			console.error("Failed to update .gitignore", e);
