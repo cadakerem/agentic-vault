@@ -1,4 +1,4 @@
-﻿# ğŸ§  Agentic Vault for Obsidian
+# 🧠 Agentic Vault for Obsidian
 
 Agentic Vault is an Obsidian plugin for Git-backed AI configuration, automated vault synchronization, pattern-based secret scanning, and developer workflow integration.
 
@@ -6,26 +6,26 @@ It bridges the gap between your local OS-level AI tools (Antigravity, Claude Cod
 
 ---
 
-## âœ¨ Features
+## ✨ Features
 
-- **ğŸ’» New Machine Setup Wizard:** Got a new laptop? Just open Obsidian, click the wizard, and it automatically creates OS-level symlinks (`junction`/`dir`) connecting your local AI agents to your vault's `AI-Brain` folder.
-- **ğŸ”„ Auto Git Sync:** Background auto-pull, commit, and push. Your vault acts as a seamless Git repository without needing terminal commands.
-- **â˜ï¸ Git Status Bar:** Live status in the bottom right corner showing your current branch, ahead/behind commits, and uncommitted changes (e.g., `â˜ main â†‘2 âœ3`).
-- **ğŸ›¡ï¸ Pattern-Based Secret Scanning:** A pre-commit scanning layer that helps prevent accidentally committing known API keys and tokens. Note that this is a pattern-based heuristic and not an absolute security guarantee.
-- **ğŸ”„ Smart Conflict Resolution (Dropbox-style):** If you make edits on your laptop and desktop at the same time, Agentic Vault cleanly handles Git merge conflicts by keeping the remote version and saving your local edits side-by-side as `.conflict-local` copies. No more broken Markdown files with Git markers!
-- **ğŸŒ Universal AI Tool Support:** Natively links configurations for:
+- **💻 New Machine Setup Wizard:** Got a new laptop? Just open Obsidian, click the wizard, and it automatically creates OS-level symlinks (`junction`/`dir`) connecting your local AI agents to your vault's `AI-Brain` folder.
+- **🔄 Auto Git Sync:** Background auto-pull, commit, and push. Your vault acts as a seamless Git repository without needing terminal commands.
+- **☁️ Git Status Bar:** Live status in the bottom right corner showing your current branch, ahead/behind commits, and uncommitted changes (e.g., `☁ main ↑2 ✎3`).
+- **🛡️ Pattern-Based Secret Scanning:** A pre-commit scanning layer that helps prevent accidentally committing known API keys and tokens. Note that this is a pattern-based heuristic and not an absolute security guarantee.
+- **🔄 Smart Conflict Resolution (Dropbox-style):** If you make edits on your laptop and desktop at the same time, Agentic Vault cleanly handles Git merge conflicts by keeping the remote version and saving your local edits side-by-side as `.conflict-local` copies. No more broken Markdown files with Git markers!
+- **🌐 Universal AI Tool Support:** Natively links configurations for:
   - Antigravity / Gemini CLI (`~/.gemini/config`)
   - Claude Code (`~/.claude`)
   - Cursor (`AppData/Roaming/Cursor/User`)
   - Windsurf
   - VS Code / Copilot
   *(Fully customizable: you can edit the exact Windows or Mac/Linux path for each tool in the plugin settings!)*
-- **ğŸ§  Brain Manager:** A dedicated visual editor to manage your AI System Prompts, Project Rules, and Coding Standards. All rules are auto-tracked in Git.
-- **ğŸš€ Issue-Driven Development:** Create GitHub Issues directly from inside Obsidian without ever opening a browser.
+- **🧠 Brain Manager:** A dedicated visual editor to manage your AI System Prompts, Project Rules, and Coding Standards. All rules are auto-tracked in Git.
+- **🚀 Issue-Driven Development:** Create GitHub Issues directly from inside Obsidian without ever opening a browser.
 
 ---
 
-## ğŸ› ï¸ How to Install
+## 🛠️ How to Install
 
 Agentic Vault is officially available in the Obsidian Community Plugins directory!
 
@@ -43,7 +43,7 @@ Agentic Vault is officially available in the Obsidian Community Plugins director
 
 ---
 
-## ğŸš€ Getting Started
+## 🚀 Getting Started
 
 ### 1. Initialize Git (If you haven't already)
 - Go to **Settings > Agentic Vault**.
@@ -57,7 +57,7 @@ When moving to a new computer, you can restore your entire AI ecosystem in secon
    git clone https://github.com/YOUR_USERNAME/YOUR_VAULT_REPO.git ~/ObsidianVault
    ```
 2. **Open in Obsidian:** Launch Obsidian and open the downloaded folder as a vault.
-3. **Run the Wizard:** Click the **Laptop Icon (ğŸ’»)** in the left ribbon and click **Start Setup**.
+3. **Run the Wizard:** Click the **Laptop Icon (💻)** in the left ribbon and click **Start Setup**.
 *Agentic Vault will automatically back up any existing local configs and create symlinks directly to your vault. Your AI tools will instantly remember all your rules and scripts!*
 
 ### 3. Manage Your AI Brain
@@ -65,24 +65,24 @@ When moving to a new computer, you can restore your entire AI ecosystem in secon
 - Edit your System, Project, and Coding rules.
 - Click **Save & Sync**. The changes are immediately saved to markdown and pushed to GitHub.
 
-> **ğŸ’¡ Pro-Tip for Users:** 
+> **💡 Pro-Tip for Users:** 
 > Different AI tools look for rules in different files (e.g., `GEMINI.md` or `claude-rules.md`). You can change exactly which file the Brain Manager updates by changing the **"Brain File Path"** in the Agentic Vault settings to match your AI's expected config file!
 
 ---
 
-## ğŸ”’ Permissions & Security
+## 🔒 Permissions & Security
 Agentic Vault is built for local-first automation. Because it creates symlinks and runs Git commands, it requires:
 - **Node.js `fs` module:** To read/write outside the Obsidian sandbox (strictly for creating symlinks to `~/.agents`, `~/.claude`, etc.).
 - **Node.js `child_process`:** To execute `git` and `gh` (GitHub CLI) commands securely in the background.
 
 *All source code is public, and GitHub Actions guarantees that release assets match the repository code byte-for-byte.*
 
-### âš ï¸ Critical Security Notice
+### ⚠️ Critical Security Notice
 **Agentic Vault is designed to sync your personal AI agent skills, rules, and configurations.** Because these environments often reside close to `.env` files, API keys, and sensitive prompts, **we strongly recommend using a PRIVATE GitHub repository** to store your vault. 
 
 Even with our built-in Secret Scanner, syncing personal AI configurations to a public repository carries a significant risk of accidentally exposing your API keys (e.g., OpenAI, Anthropic) or personal tokens. Always ensure your repository is set to `Private` and configure the "Excluded Sync Paths" in the plugin settings to explicitly ignore folders containing API credentials.
 
-### ğŸ›¡ï¸ Defense-in-Depth for Secrets
+### 🛡️ Defense-in-Depth for Secrets
 Agentic Vault uses a two-layered approach to help prevent accidental leakage of API keys, tokens, and credentials:
 1. **Filename-based Defense (.gitignore):** Automatically generates and enforces a `.gitignore` that blocks common sensitive file names (e.g., `.env`, `credentials`, `*oauth*`) and explicitly excluded paths configured in settings.
 2. **Content-based Defense (Pattern-Based Scanner):** Before every commit, a built-in scanner reads the actual content of the changed files. If it detects AWS keys, Slack tokens, private keys, or generic secret patterns, it blocks the commit.
@@ -93,22 +93,7 @@ Agentic Vault uses a two-layered approach to help prevent accidental leakage of 
 
 ---
 
-## ğŸš¨ Security Warning: API Keys & Git History
-
-**NEVER push your `data.json` to a public repository!**
-
-Agentic Vault automatically adds all of its configuration files (`.obsidian/plugins/agentic-vault/*.json`) to your `.gitignore`. **Trade-off Note:** This means your plugin settings (like UI preferences) will no longer sync across devices via Git. This is a strict, intentional security design that significantly reduces the risk of accidentally leaking API keys.
-
-However, if you previously tracked your `data.json` file in Git before the plugin added it to `.gitignore`, **it will still be tracked and pushed!**
-
-If you accidentally committed your API keys:
-1. **REVOKE YOUR KEYS IMMEDIATELY:** Go to your provider (OpenAI, Google, etc.) dashboard and delete the compromised keys. This is the only way to stop abuse.
-2. **Stop tracking the file:** Click the "Stop Tracking" button in the security warning Modal, or manually run `git rm --cached .obsidian/plugins/agentic-vault/data.json` to remove it from future commits.
-3. **Clean Git History (Optional but Recommended):** The keys are STILL in your past Git history! Use [BFG Repo-Cleaner](https://rtyley.github.io/bfg-repo-cleaner/) to rewrite your history, or simply delete the repository and create a new one. *Note: Rewriting history requires a `git push -f` (force-push), which will break the local clones for anyone else sharing this repository. Inform your team before doing this.*
-
----
-
-## ğŸ§‘â€ğŸ’» Developer & Contributions
+## 🧑‍💻 Developer & Contributions
 
 Developed by **Kerem Barbaros Karnabat** (@cadakerem). 
 
@@ -118,6 +103,5 @@ Contributions, issues, and feature requests are welcome! Feel free to check the 
 
 ### License
 This project is licensed under the [MIT License](LICENSE).
-
 
 
