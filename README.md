@@ -1,4 +1,4 @@
-# 🧠 Agentic Vault for Obsidian
+﻿# 🧠 Agentic Vault for Obsidian
 
 Agentic Vault is an Obsidian plugin for Git-backed AI configuration, automated vault synchronization, pattern-based secret scanning, and developer workflow integration.
 
@@ -103,3 +103,15 @@ Contributions, issues, and feature requests are welcome! Feel free to check the 
 
 ### License
 This project is licensed under the [MIT License](LICENSE).
+
+
+## ?? Security Warning: API Keys & Git History
+
+**NEVER push your \data.json\ to a public repository!**
+
+Agentic Vault automatically adds its configuration file (\.obsidian/plugins/agentic-vault/data.json\) to your \.gitignore\. However, if you previously tracked this file in Git before the plugin added it to \.gitignore\, **it will still be tracked and pushed!**
+
+If you accidentally committed your API keys:
+1. **Rotate your keys immediately** via your provider (OpenAI, Google, etc.).
+2. Run \git rm --cached .obsidian/plugins/agentic-vault/data.json\ to stop tracking.
+3. **WARNING:** The keys are STILL in your Git history! You must rewrite your history using [BFG Repo-Cleaner](https://rtyley.github.io/bfg-repo-cleaner/) or simply delete the repository and create a new one.

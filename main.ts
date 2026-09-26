@@ -167,12 +167,11 @@ export default class AgenticVaultPlugin extends Plugin {
 				const lsFiles = await this.git.raw(['ls-files', '-ci', '--exclude-standard']);
 				const trackedIgnored = lsFiles.split('\n').map(l => l.trim()).filter(Boolean);
 				if (trackedIgnored.length > 0) {
-					console.warn('Tracked ignored files found. Auto-removing them from index:', trackedIgnored);
-					await this.git.raw(['rm', '--cached', ...trackedIgnored]);
-					new Notice(`Agentic Vault: Auto-removed ${trackedIgnored.length} sensitive files from git tracking. Rotate keys if they were already pushed!`, 15000);
+					new Notice(`CRITICAL SECURITY WARNING:  sensitive files (like data.json) are currently tracked by Git! \n\nRun 'git rm --cached <file>' manually to stop tracking.\n\nDANGER: They are STILL in your git history! You MUST rotate your API keys immediately. Use BFG Repo-Cleaner or delete the repo to purge history.`, 30000);
+					console.warn('Tracked ignored files (DANGER):', trackedIgnored);
 				}
 			} catch (err) {
-				console.error('Failed to auto-remove tracked ignored files:', err);
+				// Ignore ls-files errors or index.lock race conditions safely
 			}
 		} catch (e) {
 			console.error("Failed to update .gitignore", e);
