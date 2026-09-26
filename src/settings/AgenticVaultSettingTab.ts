@@ -169,15 +169,18 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 							this.plugin.settings.excludedSyncPaths = v;
 							await this.plugin.saveSettings();
 						});
+					});
+			}
+		});
 
 		defs.push({
 			name: 'Included Sync Paths (Whitelist Mode)',
-			desc: 'If you excluded an entire folder above (e.g. AI-Brain/), list specific files/folders inside it to whitelist (one per line, e.g. AI-Brain/Rules.md). These will be enforced via .gitignore.',
+			desc: 'If you excluded an entire folder above (e.g. AI-Brain/), list specific files/folders inside it to whitelist (one per line, e.g. AI-Brain/gemini/GEMINI.md). These will be enforced via .gitignore.',
 			render: (setting: Setting, _group: SettingGroup) => {
 				setting.setName('Included Sync Paths (Whitelist)')
-					.setDesc('Whitelist specific paths that were ignored by an excluded folder (one per line, e.g. AI-Brain/Rules.md).')
+					.setDesc('Whitelist specific paths that were ignored by an excluded folder (one per line, e.g. AI-Brain/gemini/GEMINI.md).')
 					.addTextArea(t => {
-						t.setPlaceholder('AI-Brain/Rules.md\nAI-Brain/skills/');
+						t.setPlaceholder('AI-Brain/gemini/GEMINI.md\nAI-Brain/skills/');
 						t.setValue(this.plugin.settings.includedSyncPaths);
 						t.onChange(async v => {
 							this.plugin.settings.includedSyncPaths = v;
@@ -189,9 +192,6 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 						new Notice('Dismissed suggestions reset. Run the Setup Wizard again to see them.');
 					}));
-			}
-		});
-					});
 			}
 		});
 
@@ -221,11 +221,11 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 
 		defs.push({
 			name: 'Brain File Path',
-			desc: 'Markdown file where AI rules are stored (e.g. AI-Brain/Rules.md)',
+			desc: 'Markdown file where AI rules are stored (e.g. AI-Brain/gemini/GEMINI.md)',
 			render: (setting: Setting, _group: SettingGroup) => {
 				setting.setName('Brain File Path')
-					.setDesc('Markdown file where AI rules are stored (e.g. AI-Brain/Rules.md)')
-					.addText(t => t.setPlaceholder('AI-Brain/Rules.md').setValue(this.plugin.settings.ruleFilePath).onChange(async v => {
+					.setDesc('Markdown file where AI rules are stored (e.g. AI-Brain/gemini/GEMINI.md)')
+					.addText(t => t.setPlaceholder('AI-Brain/gemini/GEMINI.md').setValue(this.plugin.settings.ruleFilePath).onChange(async v => {
 						this.plugin.settings.ruleFilePath = v;
 						await this.plugin.saveSettings();
 					}));
