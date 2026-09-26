@@ -907,7 +907,7 @@ __export(main_exports, {
   default: () => AgenticVaultPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian6 = require("obsidian");
+var import_obsidian7 = require("obsidian");
 
 // node_modules/simple-git/dist/esm/index.js
 var import_file_exists = __toESM(require_dist(), 1);
@@ -6102,7 +6102,11 @@ async function syncVault(git, opts) {
         message: "Rebase in progress. Resolve conflicts or abort."
       };
     }
-    await git.add(".");
+    const addArgs = ["."];
+    if (opts.excludedPaths && opts.excludedPaths.length > 0) {
+      opts.excludedPaths.forEach((p2) => addArgs.push(`:(exclude)${p2}`));
+    }
+    await git.raw(["add", ...addArgs]);
     const shouldScan = opts.allowPublicRemote === false ? true : opts.scanSecrets !== false;
     if (shouldScan) {
       const diff = await git.raw(["diff", "--cached", "-U0", "--no-color", "--no-ext-diff"]);
@@ -6168,6 +6172,11 @@ async function syncVault(git, opts) {
             };
           }
         } catch (e) {
+          return {
+            ...result,
+            status: "error",
+            message: 'Push aborted: Could not verify if remote is private (ensure GitHub CLI is installed and authenticated). Enable "Allow Public Remote" in settings to bypass.'
+          };
         }
       }
       if (hasUpstream) await git.push();
@@ -6437,6 +6446,7 @@ var SetupWizardModal = class extends import_obsidian2.Modal {
     return steps;
   }
   setStepStatus(idx, status, detail) {
+    this.steps[idx].status = status;
     const el = this.stepEls[idx];
     const icons = {
       pending: "\u25CB",
@@ -6477,7 +6487,12 @@ var SetupWizardModal = class extends import_obsidian2.Modal {
     } catch (e) {
       this.setStepStatus(stepIdx, "error", "Could not check git status");
     }
-    new import_obsidian2.Notice("\u2705 Machine setup complete! All symlinks are active.");
+    const hasError = this.steps.some((s) => s.status === "error");
+    if (hasError) {
+      new import_obsidian2.Notice("\u26A0\uFE0F Setup completed with errors. Check details above.");
+    } else {
+      new import_obsidian2.Notice("\u2705 Machine setup complete! All symlinks are active.");
+    }
   }
   async runSymlinkStep(idx, src, dst, plan) {
     this.setStepStatus(idx, "running");
@@ -6545,10 +6560,15 @@ var BrainManagerModal = class extends import_obsidian3.Modal {
     };
   }
   async loadExistingRules() {
-    const file = this.app.vault.getAbstractFileByPath(this.plugin.settings.ruleFilePath);
-    if (file instanceof import_obsidian3.TFile) {
-      const content = await this.app.vault.read(file);
-      this.rules = parseRules(content);
+    try {
+      const file = this.app.vault.getAbstractFileByPath(this.plugin.settings.ruleFilePath);
+      if (file instanceof import_obsidian3.TFile) {
+        const content = await this.app.vault.read(file);
+        this.rules = parseRules(content);
+      }
+    } catch (err) {
+      console.error("Agentic Vault: Error loading rules:", err);
+      new import_obsidian3.Notice("Failed to load existing rules. Check console.");
     }
   }
   async saveRulesToFile() {
@@ -6641,12 +6661,70 @@ var CreateIssueModal = class extends import_obsidian4.Modal {
   }
 };
 
-// src/settings/AgenticVaultSettingTab.ts
+// src/modals/SecurityAlertModal.ts
 var import_obsidian5 = require("obsidian");
+var SecurityAlertModal = class extends import_obsidian5.Modal {
+  constructor(app, git, trackedFiles) {
+    super(app);
+    __publicField(this, "trackedFiles");
+    __publicField(this, "git");
+    this.git = git;
+    this.trackedFiles = trackedFiles;
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.createEl("h2", { text: "\u{1F6A8} CRITICAL SECURITY ALERT \u{1F6A8}", cls: "agentic-vault-danger" });
+    contentEl.createEl("h3", { text: "API KEYS POTENTIALLY EXPOSED" });
+    const p1 = contentEl.createEl("p");
+    p1.createEl("strong", { text: "DANGER: " });
+    p1.createSpan({ text: `The following ${this.trackedFiles.length} sensitive files (e.g. data.json) are currently tracked by Git in your vault:` });
+    const ul = contentEl.createEl("ul");
+    this.trackedFiles.forEach((f) => ul.createEl("li", { text: f }));
+    const p2 = contentEl.createEl("p");
+    const spanRevoke = p2.createSpan({ text: "1. REVOKE YOUR API KEYS IMMEDIATELY!" });
+    spanRevoke.setCssStyles({ color: "var(--text-error)", fontWeight: "bold", fontSize: "1.1em" });
+    p2.createEl("br");
+    p2.createSpan({ text: "If this repository is or ever was public, your keys are compromised. Do not wait. Delete them from your AI provider's dashboard right now." });
+    const p3 = contentEl.createEl("p");
+    p3.createEl("strong", { text: "2. Stop Tracking the Files: " });
+    p3.createEl("br");
+    p3.createSpan({ text: "You MUST remove these files from Git tracking to prevent them from being pushed again. Click the button below to do this automatically." });
+    const p4 = contentEl.createEl("p");
+    p4.createEl("strong", { text: "3. Clean Git History (Hygiene): " });
+    p4.createEl("br");
+    p4.createSpan({ text: "The keys are STILL visible in your past git history! Use " });
+    p4.createEl("a", { text: "BFG Repo-Cleaner", href: "https://rtyley.github.io/bfg-repo-cleaner/" });
+    p4.createSpan({ text: " to purge them, or delete the repository completely. Note: Rewriting history requires a force-push, which will break clones for other team members." });
+    new import_obsidian5.Setting(contentEl).addButton((btn) => btn.setButtonText("Stop Tracking & Protect Me").setTooltip("Runs git rm --cached on these files").setCta().onClick(async () => {
+      btn.setDisabled(true);
+      btn.setButtonText("Removing...");
+      try {
+        await this.git.raw(["rm", "--cached", "--", ...this.trackedFiles]);
+        new import_obsidian5.Notice(`Successfully removed ${this.trackedFiles.length} files from git tracking. DON'T FORGET TO REVOKE YOUR KEYS!`, 1e4);
+        this.close();
+      } catch (e) {
+        console.error("Failed to rm --cached:", e);
+        const msg = e instanceof Error ? e.message : String(e);
+        new import_obsidian5.Notice("Failed to remove files: " + msg, 1e4);
+        btn.setDisabled(false);
+        btn.setButtonText("Retry");
+      }
+    })).addButton((btn) => btn.setButtonText("Ignore Risk").onClick(() => {
+      this.close();
+    }));
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+};
+
+// src/settings/AgenticVaultSettingTab.ts
+var import_obsidian6 = require("obsidian");
 var fs5 = __toESM(require("fs"));
 var path6 = __toESM(require("path"));
 var os5 = __toESM(require("os"));
-var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
+var AgenticVaultSettingTab = class extends import_obsidian6.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     __publicField(this, "plugin");
@@ -6698,10 +6776,10 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
                 await this.plugin.git.addRemote("origin", this.remoteUrlInput);
               }
             }
-            new import_obsidian5.Notice("\u2705 Git setup complete!");
+            new import_obsidian6.Notice("\u2705 Git setup complete!");
             this.update();
           } catch (err) {
-            new import_obsidian5.Notice("Failed to init Git. Check console.");
+            new import_obsidian6.Notice("Failed to init Git. Check console.");
             console.error(err);
           }
         }));
@@ -6767,6 +6845,20 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
             this.plugin.startAutoSync();
           }
         }));
+      }
+    });
+    defs.push({
+      name: "Excluded Sync Paths",
+      desc: "List of folders/files to exclude from git add (one per line, e.g. Private/).",
+      render: (setting, _group) => {
+        setting.setName("Excluded Sync Paths").setDesc("List of folders/files to exclude from git add (one per line, e.g. Private/).").addTextArea((t2) => {
+          t2.setPlaceholder("Private/\nSecrets/");
+          t2.setValue(this.plugin.settings.excludedSyncPaths);
+          t2.onChange(async (v) => {
+            this.plugin.settings.excludedSyncPaths = v;
+            await this.plugin.saveSettings();
+          });
+        });
       }
     });
     defs.push({
@@ -6902,23 +6994,25 @@ var DEFAULT_SETTINGS = {
   scriptsFolder: "AI-Agent-System/scripts",
   allowPublicRemote: false,
   scanSecrets: true,
+  excludedSyncPaths: "",
   deviceName: os6.hostname(),
   syncState: initialSyncState
 };
-var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
+var AgenticVaultPlugin = class extends import_obsidian7.Plugin {
   constructor() {
     super(...arguments);
     __publicField(this, "git");
+    __publicField(this, "initPromise", null);
     __publicField(this, "syncIntervalId", null);
     __publicField(this, "statusBarEl");
     __publicField(this, "isSyncing", false);
     __publicField(this, "lastErrorMsg", null);
   }
   onload() {
-    this.initialize().catch((err) => {
+    this.initPromise = this.initialize().catch((err) => {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("Agentic Vault Init Error:", err);
-      new import_obsidian6.Notice("Agentic Vault failed to load: " + msg, 1e4);
+      new import_obsidian7.Notice("Agentic Vault failed to load: " + msg, 1e4);
     });
   }
   async initialize() {
@@ -6931,7 +7025,7 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
     this.addRibbonIcon("git-commit-vertical", "Force Git Sync", () => {
       void this.performDynamicCommit(false, true);
     });
-    (0, import_obsidian6.addIcon)("laptop-2", '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>');
+    (0, import_obsidian7.addIcon)("laptop-2", '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>');
     this.addRibbonIcon("laptop-2", "New Machine Setup", () => {
       new SetupWizardModal(this.app, this).open();
     });
@@ -6949,7 +7043,7 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
     } });
     this.addSettingTab(new AgenticVaultSettingTab(this.app, this));
     this.startAutoSync();
-    new import_obsidian6.Notice("\u2705 Agentic Vault Loaded Successfully!", 5e3);
+    new import_obsidian7.Notice("\u2705 Agentic Vault Loaded Successfully!", 5e3);
     await this.verifyPauseState(vaultPath);
     void this.updateStatusBar();
   }
@@ -6980,6 +7074,7 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
       "/workspace-mobile.json",
       "node_modules/",
       ".DS_Store",
+      `${this.app.vault.configDir}/plugins/agentic-vault/secrets.json`,
       `${brain}/**/*oauth*`,
       `${brain}/**/*token*`,
       `${brain}/**/*secret*`,
@@ -7002,20 +7097,20 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
       }
       if (changed) {
         fs6.writeFileSync(gitignorePath, content);
-        new import_obsidian6.Notice("Agentic Vault: Updated .gitignore to prevent secret leaks.");
+        new import_obsidian7.Notice("Agentic Vault: Updated .gitignore to prevent secret leaks.");
       }
       try {
         const lsFiles = await this.git.raw(["ls-files", "-ci", "--exclude-standard"]);
         const trackedIgnored = lsFiles.split("\n").map((l) => l.trim()).filter(Boolean);
         if (trackedIgnored.length > 0) {
-          new import_obsidian6.Notice(`\u26A0\uFE0F WARNING: ${trackedIgnored.length} ignored files are still tracked by git. Run 'git rm --cached <file>' manually. Note: This deletes the file on other devices upon pull. Rotate compromised keys immediately!`, 15e3);
-          console.warn("Tracked ignored files:", trackedIgnored);
+          new SecurityAlertModal(this.app, this.git, trackedIgnored).open();
+          console.warn("Tracked ignored files (DANGER):", trackedIgnored);
         }
       } catch (e) {
       }
     } catch (e) {
       console.error("Failed to update .gitignore", e);
-      new import_obsidian6.Notice("Failed to update .gitignore. Check console.");
+      new import_obsidian7.Notice("Failed to update .gitignore. Check console.");
     }
   }
   onunload() {
@@ -7075,14 +7170,34 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
       const found = savedTools.find((t2) => t2.id === def.id);
       return found ? { ...def, ...found } : { ...def };
     });
+    try {
+      const secretsPath = this.manifest.dir + "/secrets.json";
+      if (await this.app.vault.adapter.exists(secretsPath)) {
+        const data = await this.app.vault.adapter.read(secretsPath);
+        this.secrets = Object.assign({}, DEFAULT_SECRETS, JSON.parse(data));
+      } else {
+        this.secrets = Object.assign({}, DEFAULT_SECRETS);
+      }
+    } catch (e) {
+      this.secrets = Object.assign({}, DEFAULT_SECRETS);
+    }
   }
   async saveSettings() {
     await this.saveData(this.settings);
+    try {
+      const secretsPath = this.manifest.dir + "/secrets.json";
+      await this.app.vault.adapter.write(secretsPath, JSON.stringify(this.secrets, null, 2));
+    } catch (e) {
+      console.error("Failed to save secrets", e);
+    }
   }
   async performDynamicCommit(silent = false, manual = false) {
-    if (!shouldRun(this.settings.syncState, { manual, isSyncing: this.isSyncing })) return;
-    this.isSyncing = true;
     try {
+      if (this.initPromise) {
+        await this.initPromise;
+      }
+      if (!shouldRun(this.settings.syncState, { manual, isSyncing: this.isSyncing })) return;
+      this.isSyncing = true;
       const vaultPath = getVaultPath(this.app);
       const result = await syncVault(this.git, {
         vaultPath,
@@ -7090,6 +7205,7 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
         autoPush: this.settings.gitAutoPush,
         allowPublicRemote: this.settings.allowPublicRemote,
         scanSecrets: this.settings.scanSecrets,
+        excludedPaths: this.settings.excludedSyncPaths.split("\n").map((p2) => p2.trim()).filter(Boolean),
         device: this.settings.deviceName
       });
       const transition = nextSyncState(this.settings.syncState, result, { manual });
@@ -7099,15 +7215,17 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
         console.error("Agentic Vault - Secrets blocked from commit:\n", result.findings);
       }
       if (transition.notice && (!silent || manual)) {
-        new import_obsidian6.Notice(transition.notice, 1e4);
+        new import_obsidian7.Notice(transition.notice, 1e4);
       } else if (result.status === "ok" && !silent) {
-        if (result.pushed) new import_obsidian6.Notice("\u{1F680} Pushed to GitHub!");
-        else if (result.committed) new import_obsidian6.Notice("\u2713 Changes committed.");
-        else new import_obsidian6.Notice("Agentic Vault: Nothing to commit.");
+        if (result.pushed) new import_obsidian7.Notice("\u{1F680} Pushed to GitHub!");
+        else if (result.committed) new import_obsidian7.Notice("\u2713 Changes committed.");
+        else new import_obsidian7.Notice("Agentic Vault: Nothing to commit.");
       }
       void this.updateStatusBar(transition.statusText);
     } catch (e) {
       console.error(e);
+      const msg = e instanceof Error ? e.message : String(e);
+      new import_obsidian7.Notice("Agentic Vault Sync Error: " + msg, 1e4);
     } finally {
       this.isSyncing = false;
     }

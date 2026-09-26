@@ -1,5 +1,12 @@
 import { SyncState } from './syncState';
 
+export interface AgenticVaultSecrets {
+	openAIApiKey?: string;
+	githubToken?: string;
+	geminiApiKey?: string;
+	anthropicApiKey?: string;
+}
+
 export interface AIToolConfig {
 	id: string;
 	name: string;
