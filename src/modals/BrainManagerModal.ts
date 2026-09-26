@@ -65,10 +65,15 @@ class BrainManagerModal extends Modal {
 	}
 
 	private async loadExistingRules(): Promise<void> {
-		const file = this.app.vault.getAbstractFileByPath(this.plugin.settings.ruleFilePath);
-		if (file instanceof TFile) {
-			const content = await this.app.vault.read(file);
-			this.rules = parseRules(content);
+		try {
+			const file = this.app.vault.getAbstractFileByPath(this.plugin.settings.ruleFilePath);
+			if (file instanceof TFile) {
+				const content = await this.app.vault.read(file);
+				this.rules = parseRules(content);
+			}
+		} catch (err: unknown) {
+			console.error("Agentic Vault: Error loading rules:", err);
+			new Notice("Failed to load existing rules. Check console.");
 		}
 	}
 
