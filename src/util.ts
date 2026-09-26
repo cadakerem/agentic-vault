@@ -9,8 +9,9 @@ export interface Rules {
 }
 
 function section(content: string, title: string): string {
-  // Stops only at the next H2 ("## "), so "### sub" stays inside; tolerates CRLF.
-  const re = new RegExp(`## ${title}\\r?\\n([\\s\\S]*?)(?=\\r?\\n## |$)`);
+  // Stops only at the next known major H2, so users can safely use "## " inside their rules.
+  const knownHeaders = 'System Rules|Project Rules|Coding Standards';
+  const re = new RegExp(`## ${title}\\r?\\n([\\s\\S]*?)(?=\\r?\\n## (?:${knownHeaders})|$)`);
   const m = content.match(re);
   return m ? m[1].trim() : '';
 }
