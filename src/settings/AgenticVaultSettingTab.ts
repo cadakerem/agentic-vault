@@ -16,6 +16,11 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
+	display(): void {
+		this.containerEl.empty();
+		super.display();
+	}
+
 	getSettingDefinitions(): SettingDefinitionRender[] {
 		const vaultPath = getVaultPath(this.app);
 		const isGitRepo = fs.existsSync(path.join(vaultPath, '.git'));
