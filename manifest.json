@@ -1,7 +1,7 @@
 {
   "id": "agentic-vault",
   "name": "Agentic Vault",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "minAppVersion": "1.13.0",
   "description": "The ultimate tool to automate Git sync, manage AI system prompts, and enable Issue-Driven Development directly from your vault.",
   "author": "Kerem (@cadakerem)",
