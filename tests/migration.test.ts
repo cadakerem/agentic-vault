@@ -31,7 +31,7 @@ vi.mock('obsidian', () => {
     };
 });
 
-import AgenticVaultPlugin from '../main.ts';
+import AgenticVaultPlugin from '../main';
 import { AgenticVaultSettings, AgenticVaultSecrets } from '../src/types';
 
 describe('Settings Migration', () => {
