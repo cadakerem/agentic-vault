@@ -15,7 +15,7 @@ export class SecurityAlertModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 		
-		contentEl.createEl('h2', { text: '?? CRITICAL SECURITY ALERT ??', cls: 'agentic-vault-danger' });
+		contentEl.createEl('h2', { text: '🚨 CRITICAL SECURITY ALERT 🚨', cls: 'agentic-vault-danger' });
 		contentEl.createEl('h3', { text: 'API KEYS POTENTIALLY EXPOSED' });
 		
 		const p1 = contentEl.createEl('p');
@@ -42,12 +42,13 @@ export class SecurityAlertModal extends Modal {
 					btn.setDisabled(true);
 					btn.setButtonText('Removing...');
 					try {
-						await this.git.raw(['rm', '--cached', ...this.trackedFiles]);
+						await this.git.raw(['rm', '--cached', '--', ...this.trackedFiles]);
 						new Notice(`Successfully removed ${this.trackedFiles.length} files from git tracking. DON'T FORGET TO REVOKE YOUR KEYS!`, 10000);
 						this.close();
 					} catch (e) {
 						console.error('Failed to rm --cached:', e);
-						new Notice('Failed to remove files. Please run git rm --cached manually.', 10000);
+						const msg = e instanceof Error ? e.message : String(e);
+						new Notice('Failed to remove files: ' + msg, 10000);
 						btn.setDisabled(false);
 						btn.setButtonText('Retry');
 					}
