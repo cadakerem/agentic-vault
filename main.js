@@ -6026,7 +6026,7 @@ async function resolveRebaseConflicts(git, opts) {
         const copyRel = conflictCopyName(file, opts.device, when, (c3) => copies.includes(c3) || fs.existsSync(path.join(opts.vaultPath, c3)));
         const blob = await git.binaryCatFile(["blob", `:3:${file}`]);
         fs.mkdirSync(path.dirname(path.join(opts.vaultPath, copyRel)), { recursive: true });
-        fs.writeFileSync(path.join(opts.vaultPath, copyRel), blob);
+        fs.writeFileSync(path.join(opts.vaultPath, copyRel), new Uint8Array(blob));
         copies.push(copyRel);
         fresh.push(copyRel);
       }
@@ -6657,12 +6657,10 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
     const isGitRepo = fs5.existsSync(path6.join(vaultPath, ".git"));
     const defs = [];
     defs.push({
-      id: "git-sync-heading",
       name: "\u2699\uFE0F Git & Sync",
-      type: "heading",
-      render: (setting) => {
+      render: (setting, _group) => {
         setting.setHeading().setName("\u2699\uFE0F Git & Sync");
-        const statusDiv = setting.settingEl.parentElement ? setting.settingEl.parentElement.createDiv() : setting.settingEl.createDiv();
+        const statusDiv = setting.settingEl.createDiv();
         statusDiv.createEl("p", {
           text: isGitRepo ? "\u2705 Vault is connected to Git." : "\u26A0\uFE0F Not a Git repository yet. Add a GitHub URL and click Initialize.",
           attr: { style: `color: var(${isGitRepo ? "--text-success" : "--text-error"}); font-weight:bold; margin-bottom:10px;` }
@@ -6671,21 +6669,17 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       }
     });
     defs.push({
-      id: "remote-url",
       name: "GitHub Remote URL",
       desc: isGitRepo ? "Update your repository URL." : "Paste your empty GitHub repo URL to connect.",
-      type: "text",
-      render: (setting) => {
+      render: (setting, _group) => {
         setting.setName("GitHub Remote URL").setDesc(isGitRepo ? "Update your repository URL." : "Paste your empty GitHub repo URL to connect.").addText((t2) => t2.setPlaceholder("https://github.com/user/repo.git").onChange((v) => {
           this.remoteUrlInput = v;
         }));
       }
     });
     defs.push({
-      id: "init-repo",
       name: isGitRepo ? "Update Remote URL" : "Initialize Repository",
-      type: "button",
-      render: (setting) => {
+      render: (setting, _group) => {
         setting.setName(isGitRepo ? "Update Remote URL" : "Initialize Repository").addButton((btn) => btn.setButtonText(isGitRepo ? "\u{1F517} Update Remote" : "\u{1F680} Initialize & Connect").setCta().onClick(async () => {
           try {
             if (!isGitRepo) {
@@ -6711,22 +6705,18 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       }
     });
     defs.push({
-      id: "ai-brain-manager",
       name: "AI Brain Manager",
       desc: "Open the visual editor for your AI rules.",
-      type: "button",
-      render: (setting) => {
+      render: (setting, _group) => {
         setting.setName("AI Brain Manager").setDesc("Open the visual editor for your AI rules.").addButton((btn) => btn.setButtonText("\u{1F9E0} Open Editor").setCta().onClick(() => {
           new BrainManagerModal(this.app, this.plugin).open();
         }));
       }
     });
     defs.push({
-      id: "gitAutoPush",
       name: "Auto Push",
       desc: "Automatically commit and push changes to GitHub.",
-      type: "toggle",
-      render: (setting) => {
+      render: (setting, _group) => {
         setting.setName("Auto Push").setDesc("Automatically commit and push changes to GitHub.").addToggle((t2) => t2.setValue(this.plugin.settings.gitAutoPush).onChange(async (v) => {
           this.plugin.settings.gitAutoPush = v;
           await this.plugin.saveSettings();
@@ -6735,11 +6725,9 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       }
     });
     defs.push({
-      id: "allowPublicRemote",
       name: "Allow Public Remote",
       desc: "DANGER: Allow syncing even if the GitHub repository is public. This may expose your AI secrets.",
-      type: "toggle",
-      render: (setting) => {
+      render: (setting, _group) => {
         setting.setName("Allow Public Remote").setDesc("DANGER: Allow syncing even if the GitHub repository is public. This may expose your AI secrets.").addToggle((t2) => t2.setValue(this.plugin.settings.allowPublicRemote).onChange(async (v) => {
           this.plugin.settings.allowPublicRemote = v;
           await this.plugin.saveSettings();
@@ -6748,11 +6736,9 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       }
     });
     defs.push({
-      id: "scanSecrets",
       name: "Enable Secret Scanner",
       desc: 'Block commits if secrets (API keys, .env) are detected. (Cannot be disabled unless "Allow Public Remote" is ON).',
-      type: "toggle",
-      render: (setting) => {
+      render: (setting, _group) => {
         setting.setName("Enable Secret Scanner").setDesc('Block commits if secrets (API keys, .env) are detected. (Cannot be disabled unless "Allow Public Remote" is ON).').addToggle((t2) => {
           t2.setValue(this.plugin.settings.scanSecrets).onChange(async (v) => {
             this.plugin.settings.scanSecrets = v;
@@ -6766,11 +6752,9 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       }
     });
     defs.push({
-      id: "syncIntervalMinutes",
       name: "Auto-Sync Interval (minutes)",
       desc: "How often to sync. Set to 0 to disable.",
-      type: "text",
-      render: (setting) => {
+      render: (setting, _group) => {
         setting.setName("Auto-Sync Interval (minutes)").setDesc("How often to sync. Set to 0 to disable.").addText((t2) => t2.setPlaceholder("1").setValue(String(this.plugin.settings.syncIntervalMinutes)).onChange(async (v) => {
           const n = parseInt(v);
           if (!isNaN(n) && n >= 0) {
@@ -6782,10 +6766,8 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       }
     });
     defs.push({
-      id: "commitMessageFormat",
       name: "Default Commit Message",
-      type: "text",
-      render: (setting) => {
+      render: (setting, _group) => {
         setting.setName("Default Commit Message").addText((t2) => t2.setValue(this.plugin.settings.commitMessageFormat).onChange(async (v) => {
           this.plugin.settings.commitMessageFormat = v;
           await this.plugin.saveSettings();
@@ -6793,11 +6775,9 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       }
     });
     defs.push({
-      id: "deviceName",
       name: "Device Name",
       desc: "Used to identify this device in conflict resolution copies (e.g. .conflict-local-[deviceName]-2024...).",
-      type: "text",
-      render: (setting) => {
+      render: (setting, _group) => {
         setting.setName("Device Name").setDesc("Used to identify this device in conflict resolution copies (e.g. .conflict-local-[deviceName]-2024...).").addText((t2) => t2.setPlaceholder(os5.hostname()).setValue(this.plugin.settings.deviceName).onChange(async (v) => {
           this.plugin.settings.deviceName = v || os5.hostname();
           await this.plugin.saveSettings();
@@ -6805,11 +6785,9 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       }
     });
     defs.push({
-      id: "ruleFilePath",
       name: "Brain File Path",
       desc: "Markdown file where AI rules are stored (e.g. AI-Brain/Rules.md)",
-      type: "text",
-      render: (setting) => {
+      render: (setting, _group) => {
         setting.setName("Brain File Path").setDesc("Markdown file where AI rules are stored (e.g. AI-Brain/Rules.md)").addText((t2) => t2.setPlaceholder("AI-Brain/Rules.md").setValue(this.plugin.settings.ruleFilePath).onChange(async (v) => {
           this.plugin.settings.ruleFilePath = v;
           await this.plugin.saveSettings();
@@ -6817,30 +6795,24 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       }
     });
     defs.push({
-      id: "new-machine-setup",
       name: "\u{1F5A5}\uFE0F New Machine Setup",
-      type: "heading",
-      render: (setting) => {
+      render: (setting, _group) => {
         setting.setHeading().setName("\u{1F5A5}\uFE0F New Machine Setup");
       }
     });
     defs.push({
-      id: "setup-wizard",
       name: "Run Setup Wizard",
       desc: "Create all symlinks for skills, scripts, and AI tools on this machine.",
-      type: "button",
-      render: (setting) => {
+      render: (setting, _group) => {
         setting.setName("Run Setup Wizard").setDesc("Create all symlinks for skills, scripts, and AI tools on this machine.").addButton((btn) => btn.setButtonText("\u{1F680} Open Wizard").setCta().onClick(() => {
           new SetupWizardModal(this.app, this.plugin).open();
         }));
       }
     });
     defs.push({
-      id: "skillsFolder",
       name: "Skills Folder (in Vault)",
       desc: "Will be linked to ~/.agents/skills",
-      type: "text",
-      render: (setting) => {
+      render: (setting, _group) => {
         setting.setName("Skills Folder (in Vault)").setDesc("Will be linked to ~/.agents/skills").addText((t2) => t2.setPlaceholder("AI-Agent-System/skills").setValue(this.plugin.settings.skillsFolder).onChange(async (v) => {
           this.plugin.settings.skillsFolder = v;
           await this.plugin.saveSettings();
@@ -6848,11 +6820,9 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       }
     });
     defs.push({
-      id: "scriptsFolder",
       name: "Scripts Folder (in Vault)",
       desc: "Will be linked to ~/.agents/scripts",
-      type: "text",
-      render: (setting) => {
+      render: (setting, _group) => {
         setting.setName("Scripts Folder (in Vault)").setDesc("Will be linked to ~/.agents/scripts").addText((t2) => t2.setPlaceholder("AI-Agent-System/scripts").setValue(this.plugin.settings.scriptsFolder).onChange(async (v) => {
           this.plugin.settings.scriptsFolder = v;
           await this.plugin.saveSettings();
@@ -6860,10 +6830,8 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       }
     });
     defs.push({
-      id: "ai-tools-heading",
       name: "\u{1F916} AI Tools to Sync",
-      type: "heading",
-      render: (setting) => {
+      render: (setting, _group) => {
         setting.setHeading().setName("\u{1F916} AI Tools to Sync");
         const p2 = createEl("p", {
           text: "Select which AI tools should be linked to your vault. Each tool's config folder becomes a symlink pointing to your vault.",
@@ -6876,11 +6844,9 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       const isWin = os5.platform() === "win32";
       const dstPath = path6.join("~", isWin ? tool.windowsPath : tool.unixPath);
       defs.push({
-        id: "tool-" + tool.id,
         name: tool.name,
         desc: `Current Link: ${dstPath}`,
-        type: "toggle",
-        render: (setting) => {
+        render: (setting, _group) => {
           setting.setName(tool.name).setDesc(`Current Link: ${dstPath}`).addToggle((t2) => t2.setValue(tool.enabled).onChange(async (v) => {
             tool.enabled = v;
             await this.plugin.saveSettings();
@@ -6902,9 +6868,6 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       });
     }
     return defs;
-  }
-  // eslint-disable-next-line obsidianmd/settings-tab/no-deprecated-display
-  display() {
   }
 };
 
@@ -6933,7 +6896,6 @@ var DEFAULT_SETTINGS = {
 var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
   constructor() {
     super(...arguments);
-    __publicField(this, "settings");
     __publicField(this, "git");
     __publicField(this, "syncIntervalId", null);
     __publicField(this, "statusBarEl");
