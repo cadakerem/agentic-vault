@@ -20,7 +20,7 @@ import { AgenticVaultSettingTab } from './src/settings/AgenticVaultSettingTab';
 // Types & Interfaces
 // ─────────────────────────────────────────────
 
-import { AIToolConfig, AgenticVaultSettings } from './src/types';
+import { AIToolConfig, AgenticVaultSettings, AgenticVaultSecrets } from './src/types';
 
 const DEFAULT_AI_TOOLS: AIToolConfig[] = [
 	{ id: 'gemini',    name: 'Antigravity / Gemini', windowsPath: '.gemini/config',             unixPath: '.gemini/config',                 enabled: true  },
@@ -58,6 +58,7 @@ import { getVaultPath } from './src/obsidian-util';
 
 export default class AgenticVaultPlugin extends Plugin {
 	declare settings: AgenticVaultSettings;
+	declare secrets: AgenticVaultSecrets;
 	git: SimpleGit;
 	initPromise: Promise<void> | null = null;
 	syncIntervalId: number | null = null;
@@ -138,7 +139,7 @@ export default class AgenticVaultPlugin extends Plugin {
 			'/workspace-mobile.json',
 			'node_modules/',
 			'.DS_Store',
-			`${this.app.vault.configDir}/plugins/agentic-vault/*.json`,
+			`${this.app.vault.configDir}/plugins/agentic-vault/secrets.json`,
 			`${brain}/**/*oauth*`,
 			`${brain}/**/*token*`,
 			`${brain}/**/*secret*`,
@@ -172,7 +173,7 @@ export default class AgenticVaultPlugin extends Plugin {
 					new SecurityAlertModal(this.app, this.git, trackedIgnored).open();
 					console.warn('Tracked ignored files (DANGER):', trackedIgnored);
 				}
-			} catch (_err) {
+			} catch {
 				// Ignore ls-files errors or index.lock race conditions safely
 			}
 		} catch (e) {
@@ -239,16 +240,32 @@ export default class AgenticVaultPlugin extends Plugin {
 	async loadSettings(): Promise<void> {
 		const saved = await this.loadData() as Partial<AgenticVaultSettings> | null;
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
-		// Ensure aiTools always has all defaults (merge by id)
 		const savedTools = saved?.aiTools ?? [];
 		this.settings.aiTools = DEFAULT_AI_TOOLS.map(def => {
 			const found = savedTools.find(t => t.id === def.id);
 			return found ? { ...def, ...found } : { ...def };
 		});
+		try {
+			const secretsPath = this.manifest.dir + '/secrets.json';
+			if (await this.app.vault.adapter.exists(secretsPath)) {
+				const data = await this.app.vault.adapter.read(secretsPath);
+				this.secrets = Object.assign({}, DEFAULT_SECRETS, JSON.parse(data));
+			} else {
+				this.secrets = Object.assign({}, DEFAULT_SECRETS);
+			}
+		} catch {
+			this.secrets = Object.assign({}, DEFAULT_SECRETS);
+		}
 	}
 
 	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
+		try {
+			const secretsPath = this.manifest.dir + '/secrets.json';
+			await this.app.vault.adapter.write(secretsPath, JSON.stringify(this.secrets, null, 2));
+		} catch (e) {
+			console.error('Failed to save secrets', e);
+		}
 	}
 
 	isSyncing = false;
