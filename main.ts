@@ -1,4 +1,4 @@
-﻿import {
+import {
 	Notice, Plugin, addIcon
 } from 'obsidian';
 import simpleGit, { SimpleGit, StatusResult } from 'simple-git';
@@ -138,7 +138,7 @@ export default class AgenticVaultPlugin extends Plugin {
 			'/workspace-mobile.json',
 			'node_modules/',
 			'.DS_Store',
-			'.obsidian/plugins/agentic-vault/*.json',
+			`${this.app.vault.configDir}/plugins/agentic-vault/*.json`,
 			`${brain}/**/*oauth*`,
 			`${brain}/**/*token*`,
 			`${brain}/**/*secret*`,
@@ -172,7 +172,7 @@ export default class AgenticVaultPlugin extends Plugin {
 					new SecurityAlertModal(this.app, this.git, trackedIgnored).open();
 					console.warn('Tracked ignored files (DANGER):', trackedIgnored);
 				}
-			} catch (err) {
+			} catch (_err) {
 				// Ignore ls-files errors or index.lock race conditions safely
 			}
 		} catch (e) {
@@ -255,10 +255,11 @@ export default class AgenticVaultPlugin extends Plugin {
 	lastErrorMsg: string | null = null;
 
 	async performDynamicCommit(silent: boolean = false, manual: boolean = false): Promise<void> {
-		if (this.initPromise) { await this.initPromise; }
-		if (!shouldRun(this.settings.syncState, { manual, isSyncing: this.isSyncing })) return;
-		this.isSyncing = true;
 		try {
+			// Wait for initialization to finish before doing anything.
+			if (this.initPromise) { await this.initPromise; }
+			if (!shouldRun(this.settings.syncState, { manual, isSyncing: this.isSyncing })) return;
+			this.isSyncing = true;
 			const vaultPath = getVaultPath(this.app);
 			const result = await syncVault(this.git, {
 				vaultPath,
@@ -289,6 +290,8 @@ export default class AgenticVaultPlugin extends Plugin {
 			void this.updateStatusBar(transition.statusText);
 		} catch (e) {
 			console.error(e);
+			const msg = e instanceof Error ? e.message : String(e);
+			new Notice('Agentic Vault Sync Error: ' + msg, 10000);
 		} finally {
 			this.isSyncing = false;
 		}

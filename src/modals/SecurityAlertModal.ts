@@ -19,19 +19,31 @@ export class SecurityAlertModal extends Modal {
 		contentEl.createEl('h3', { text: 'API KEYS POTENTIALLY EXPOSED' });
 		
 		const p1 = contentEl.createEl('p');
-		p1.innerHTML = `<strong>DANGER:</strong> The following ${this.trackedFiles.length} sensitive files (e.g. data.json) are currently tracked by Git in your vault:`;
+		p1.createEl('strong', { text: 'DANGER: ' });
+		p1.createSpan({ text: `The following ${this.trackedFiles.length} sensitive files (e.g. data.json) are currently tracked by Git in your vault:` });
 		
 		const ul = contentEl.createEl('ul');
 		this.trackedFiles.forEach(f => ul.createEl('li', { text: f }));
 
 		const p2 = contentEl.createEl('p');
-		p2.innerHTML = `<span style="color:var(--text-error); font-weight:bold; font-size: 1.1em;">1. REVOKE YOUR API KEYS IMMEDIATELY!</span><br>If this repository is or ever was public, your keys are compromised. Do not wait. Delete them from your AI provider's dashboard right now.`;
+		const spanRevoke = p2.createSpan({ text: '1. REVOKE YOUR API KEYS IMMEDIATELY!' });
+		spanRevoke.style.color = 'var(--text-error)';
+		spanRevoke.style.fontWeight = 'bold';
+		spanRevoke.style.fontSize = '1.1em';
+		p2.createEl('br');
+		p2.createSpan({ text: "If this repository is or ever was public, your keys are compromised. Do not wait. Delete them from your AI provider's dashboard right now." });
 
 		const p3 = contentEl.createEl('p');
-		p3.innerHTML = `<strong>2. Stop Tracking the Files:</strong><br>You MUST remove these files from Git tracking to prevent them from being pushed again. Click the button below to do this automatically.`;
+		p3.createEl('strong', { text: '2. Stop Tracking the Files: ' });
+		p3.createEl('br');
+		p3.createSpan({ text: 'You MUST remove these files from Git tracking to prevent them from being pushed again. Click the button below to do this automatically.' });
 
 		const p4 = contentEl.createEl('p');
-		p4.innerHTML = `<strong>3. Clean Git History (Hygiene):</strong><br>The keys are STILL visible in your past git history! Use <a href="https://rtyley.github.io/bfg-repo-cleaner/">BFG Repo-Cleaner</a> to purge them, or delete the repository completely. Note: Rewriting history requires a force-push, which will break clones for other team members.`;
+		p4.createEl('strong', { text: '3. Clean Git History (Hygiene): ' });
+		p4.createEl('br');
+		p4.createSpan({ text: 'The keys are STILL visible in your past git history! Use ' });
+		p4.createEl('a', { text: 'BFG Repo-Cleaner', href: 'https://rtyley.github.io/bfg-repo-cleaner/' });
+		p4.createSpan({ text: ' to purge them, or delete the repository completely. Note: Rewriting history requires a force-push, which will break clones for other team members.' });
 
 		new Setting(contentEl)
 			.addButton(btn => btn
