@@ -29,6 +29,7 @@ export interface SyncOptions {
   scanSecrets?: boolean; // default: true
   allowPublicRemote?: boolean;
   excludedPaths?: string[];
+  includedPaths?: string[];
   /** 'keep-local-copy' (default): remote wins, local version saved as *.conflict-local-*. 'abort': old behaviour. */
   conflictStrategy?: 'keep-local-copy' | 'abort';
   device?: string; // used in conflict-copy names; default: hostname

@@ -7181,6 +7181,19 @@ var AgenticVaultPlugin = class extends import_obsidian7.Plugin {
     } catch (e) {
       this.secrets = Object.assign({}, DEFAULT_SECRETS);
     }
+    let migrated = false;
+    if (saved) {
+      for (const key of Object.keys(DEFAULT_SECRETS)) {
+        if (saved[key] !== void 0) {
+          this.secrets[key] = saved[key];
+          delete this.settings[key];
+          migrated = true;
+        }
+      }
+    }
+    if (migrated) {
+      await this.saveSettings();
+    }
   }
   async saveSettings() {
     await this.saveData(this.settings);
