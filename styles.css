@@ -161,3 +161,12 @@ NEW MACHINE SETUP WIZARD
 .av-divider-bottom { border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 2em; margin-bottom: 2em; }
 .av-nested-setting { padding-left: 2.5em; }
 
+
+
+/* Setting Tab Specifics */
+.agentic-vault-settings textarea {
+	resize: vertical;
+	max-width: 100%;
+	min-width: 280px;
+	box-sizing: border-box;
+}

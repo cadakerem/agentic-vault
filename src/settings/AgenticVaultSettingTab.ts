@@ -18,6 +18,7 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 
 	display(): void {
 		this.containerEl.empty();
+		this.containerEl.addClass("agentic-vault-settings");
 		super.display();
 	}
 
