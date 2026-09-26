@@ -1,8 +1,8 @@
 # 🧠 Agentic Vault for Obsidian
 
-Turn your Obsidian vault into an automated, self-syncing, issue-driven command center for AI Agents.
+Agentic Vault is an Obsidian plugin for Git-backed AI configuration, automated vault synchronization, pattern-based secret scanning, and developer workflow integration.
 
-Agentic Vault bridges the gap between your local OS-level AI tools (Antigravity, Claude Code, Cursor, Windsurf, etc.) and your Obsidian knowledge base. Manage your system prompts, sync everything automatically via Git, and set up new machines with a single click.
+It bridges the gap between your local OS-level AI tools (Antigravity, Claude Code, Cursor, Windsurf, etc.) and your Obsidian knowledge base. Manage your system prompts, sync everything automatically via Git, and set up new machines with a single click.
 
 ---
 
@@ -11,7 +11,7 @@ Agentic Vault bridges the gap between your local OS-level AI tools (Antigravity,
 - **💻 New Machine Setup Wizard:** Got a new laptop? Just open Obsidian, click the wizard, and it automatically creates OS-level symlinks (`junction`/`dir`) connecting your local AI agents to your vault's `AI-Brain` folder.
 - **🔄 Auto Git Sync:** Background auto-pull, commit, and push. Your vault acts as a seamless Git repository without needing terminal commands.
 - **☁️ Git Status Bar:** Live status in the bottom right corner showing your current branch, ahead/behind commits, and uncommitted changes (e.g., `☁ main ↑2 ✎3`).
-- **🛡️ Secret Scanner:** Real-time secret scanning stops you from accidentally committing API keys and tokens to your repository. It enforces safety on public repositories while letting you customize exemptions for private ones.
+- **🛡️ Pattern-Based Secret Scanning:** A pre-commit scanning layer that helps prevent accidentally committing known API keys and tokens. Note that this is a pattern-based heuristic and not an absolute security guarantee.
 - **🔄 Smart Conflict Resolution (Dropbox-style):** If you make edits on your laptop and desktop at the same time, Agentic Vault cleanly handles Git merge conflicts by keeping the remote version and saving your local edits side-by-side as `.conflict-local` copies. No more broken Markdown files with Git markers!
 - **🌐 Universal AI Tool Support:** Natively links configurations for:
   - Antigravity / Gemini CLI (`~/.gemini/config`)
@@ -77,10 +77,12 @@ Agentic Vault is built for local-first automation. Because it creates symlinks a
 
 *All source code is public, and GitHub Actions guarantees that release assets match the repository code byte-for-byte.*
 
-### 🛡️ Two Layers of Defense: Secrets & Security
-Agentic Vault uses a two-layered security approach to prevent accidental leakage of API keys, tokens, and credentials to GitHub:
-1. **Filename-based Defense (.gitignore):** Automatically generates and enforces a `.gitignore` that blocks common sensitive file names (e.g., `.env`, `credentials`, `*oauth*`).
-2. **Content-based Defense (Secret Scanner):** Before every commit, the built-in Secret Scanner reads the actual content of the changed files. If it detects AWS keys, Slack tokens, private keys, or generic secret patterns, it instantly blocks the commit and alerts you.
+### 🛡️ Defense-in-Depth for Secrets
+Agentic Vault uses a two-layered approach to help prevent accidental leakage of API keys, tokens, and credentials:
+1. **Filename-based Defense (.gitignore):** Automatically generates and enforces a `.gitignore` that blocks common sensitive file names (e.g., `.env`, `credentials`, `*oauth*`) and explicitly excluded paths configured in settings.
+2. **Content-based Defense (Pattern-Based Scanner):** Before every commit, a built-in scanner reads the actual content of the changed files. If it detects AWS keys, Slack tokens, private keys, or generic secret patterns, it blocks the commit.
+
+*(Disclaimer: The secret scanner is a pattern-based heuristic designed as a safety net. It does not provide absolute security guarantees and might miss non-standard credential formats like `MY_SERVICE_TOKEN=abc...`).*
 
 *(Note: The Secret Scanner cannot be disabled if you have 'Allow Public Remote' toggled off, ensuring 100% protection for private environments).*
 
@@ -89,6 +91,8 @@ Agentic Vault uses a two-layered security approach to prevent accidental leakage
 ## 🧑‍💻 Developer & Contributions
 
 Developed by **Kerem Barbaros Karnabat** (@cadakerem). 
+
+> **Note on Repository Structure:** You may notice both `src/main.ts` and `main.js` in the repository root. `src/main.ts` (along with the `src/` folder) contains the actual TypeScript source code. `main.js` is the compiled build artifact required by Obsidian for distribution.
 
 Contributions, issues, and feature requests are welcome! Feel free to check the [Issues page](https://github.com/cadakerem/agentic-vault/issues).
 
