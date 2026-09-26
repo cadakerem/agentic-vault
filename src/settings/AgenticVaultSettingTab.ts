@@ -169,6 +169,23 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 							this.plugin.settings.excludedSyncPaths = v;
 							await this.plugin.saveSettings();
 						});
+
+		defs.push({
+			name: 'Included Sync Paths (Whitelist Mode)',
+			desc: 'If you excluded an entire folder above (e.g. AI-Brain/), list specific files/folders inside it to whitelist (one per line, e.g. AI-Brain/Rules.md). These will be enforced via .gitignore.',
+			render: (setting: Setting, _group: SettingGroup) => {
+				setting.setName('Included Sync Paths (Whitelist)')
+					.setDesc('Whitelist specific paths that were ignored by an excluded folder (one per line, e.g. AI-Brain/Rules.md).')
+					.addTextArea(t => {
+						t.setPlaceholder('AI-Brain/Rules.md\nAI-Brain/skills/');
+						t.setValue(this.plugin.settings.includedSyncPaths);
+						t.onChange(async v => {
+							this.plugin.settings.includedSyncPaths = v;
+							await this.plugin.saveSettings();
+						});
+					});
+			}
+		});
 					});
 			}
 		});

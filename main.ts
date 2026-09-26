@@ -42,6 +42,7 @@ const DEFAULT_SETTINGS: AgenticVaultSettings = {
 	allowPublicRemote: false,
 	scanSecrets: true,
 	excludedSyncPaths: '',
+	includedSyncPaths: '',
 	deviceName: os.hostname(),
 	syncState: initialSyncState,
 };
@@ -307,6 +308,7 @@ export default class AgenticVaultPlugin extends Plugin {
 				allowPublicRemote: this.settings.allowPublicRemote,
 				scanSecrets: this.settings.scanSecrets,
 				excludedPaths: this.settings.excludedSyncPaths.split('\n').map(p => p.trim()).filter(Boolean),
+				includedPaths: this.settings.includedSyncPaths.split('\n').map(p => p.trim()).filter(Boolean),
 				device: this.settings.deviceName,
 			});
 
