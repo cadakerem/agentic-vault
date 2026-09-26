@@ -6661,14 +6661,14 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       desc: isGitRepo ? "\u2705 Vault is connected to Git." : "\u26A0\uFE0F Not a Git repository yet. Add a GitHub URL and click Initialize.",
       render: (setting, _group) => {
         setting.setHeading().setName("\u2699\uFE0F Git & Sync");
-        setting.settingEl.style.marginTop = "1.5em";
-        const frag = document.createDocumentFragment();
-        const p2 = document.createElement("p");
-        p2.textContent = isGitRepo ? "\u2705 Vault is connected to Git." : "\u26A0\uFE0F Not a Git repository yet. Add a GitHub URL and click Initialize.";
-        p2.style.color = `var(${isGitRepo ? "--text-success" : "--text-error"})`;
-        p2.style.fontWeight = "bold";
-        p2.style.margin = "4px 0";
-        frag.appendChild(p2);
+        setting.settingEl.classList.add("av-setting-margin-top");
+        const frag = createFragment((f) => {
+          createEl("p", {
+            text: isGitRepo ? "\u2705 Vault is connected to Git." : "\u26A0\uFE0F Not a Git repository yet. Add a GitHub URL and click Initialize.",
+            cls: `av-status-msg ${isGitRepo ? "av-status-success" : "av-status-error"}`,
+            parent: f
+          });
+        });
         setting.setDesc(frag);
       }
     });
@@ -6704,9 +6704,7 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
             console.error(err);
           }
         }));
-        setting.settingEl.style.borderBottom = "1px solid var(--background-modifier-border)";
-        setting.settingEl.style.paddingBottom = "2em";
-        setting.settingEl.style.marginBottom = "2em";
+        setting.settingEl.classList.add("av-divider-bottom");
       }
     });
     defs.push({
@@ -6860,7 +6858,7 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
           name: `${tool.name} Windows Path`,
           desc: "Relative to User Home (~/)",
           render: (setting) => {
-            setting.settingEl.style.paddingLeft = "2.5em";
+            setting.settingEl.classList.add("av-nested-setting");
             setting.setName("\u21B3 Windows Path").setDesc("Relative to User Home (~/)").addText((t2) => t2.setValue(tool.windowsPath).onChange(async (v) => {
               tool.windowsPath = v;
               await this.plugin.saveSettings();
@@ -6871,7 +6869,7 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
           name: `${tool.name} Mac/Linux Path`,
           desc: "Relative to User Home (~/)",
           render: (setting) => {
-            setting.settingEl.style.paddingLeft = "2.5em";
+            setting.settingEl.classList.add("av-nested-setting");
             setting.setName("\u21B3 Mac/Linux Path").setDesc("Relative to User Home (~/)").addText((t2) => t2.setValue(tool.unixPath).onChange(async (v) => {
               tool.unixPath = v;
               await this.plugin.saveSettings();
