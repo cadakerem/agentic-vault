@@ -109,7 +109,7 @@ This project is licensed under the [MIT License](LICENSE).
 
 **NEVER push your `data.json` to a public repository!**
 
-Agentic Vault automatically adds all of its configuration files (`.obsidian/plugins/agentic-vault/*.json`) to your `.gitignore`. **Trade-off Note:** This means your plugin settings (like UI preferences) will no longer sync across devices via Git. This is a strict, intentional security design to ensure API keys are never accidentally leaked.
+Agentic Vault automatically adds all of its configuration files (`.obsidian/plugins/agentic-vault/*.json`) to your `.gitignore`. **Trade-off Note:** This means your plugin settings (like UI preferences) will no longer sync across devices via Git. This is a strict, intentional security design that significantly reduces the risk of accidentally leaking API keys.
 
 However, if you previously tracked your `data.json` file in Git before the plugin added it to `.gitignore`, **it will still be tracked and pushed!**
 
