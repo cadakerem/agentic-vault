@@ -137,7 +137,7 @@ export default class AgenticVaultPlugin extends Plugin {
 			'/workspace-mobile.json',
 			'node_modules/',
 			'.DS_Store',
-			'.obsidian/plugins/agentic-vault/data.json',
+			'.obsidian/plugins/agentic-vault/*.json',
 			`${brain}/**/*oauth*`,
 			`${brain}/**/*token*`,
 			`${brain}/**/*secret*`,
@@ -168,7 +168,7 @@ export default class AgenticVaultPlugin extends Plugin {
 				const lsFiles = await this.git.raw(['ls-files', '-ci', '--exclude-standard']);
 				const trackedIgnored = lsFiles.split('\n').map(l => l.trim()).filter(Boolean);
 				if (trackedIgnored.length > 0) {
-					new SecurityAlertModal(this.app, trackedIgnored).open();
+					new SecurityAlertModal(this.app, this.git, trackedIgnored).open();
 					console.warn('Tracked ignored files (DANGER):', trackedIgnored);
 				}
 			} catch (err) {
