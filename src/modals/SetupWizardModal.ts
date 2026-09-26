@@ -41,6 +41,54 @@ class SetupWizardModal extends Modal {
 			cls: 'av-subtitle',
 		});
 
+		
+		// --- Whitelist Detection UI ---
+		const vaultPath = getVaultPath(this.app);
+		const brain = this.plugin.settings.vaultBrainFolder || 'AI-Brain';
+		const candidates = [
+			`${brain}/gemini/GEMINI.md`,
+			`${brain}/claude/CLAUDE.md`,
+			`${brain}/cursor/.cursorrules`,
+			`${brain}/gemini/.agents/skills/`,
+			`${brain}/gemini/plugins/`,
+			`${brain}/system-prompts/`
+		];
+		
+		const foundCandidates = candidates.filter(c => fs.existsSync(path.join(vaultPath, c)));
+		const existingWhitelist = this.plugin.settings.includedSyncPaths.split('\n').map(l => l.trim());
+		const newCandidates = foundCandidates.filter(c => !existingWhitelist.includes(c));
+		
+		let selectedWhitelist: string[] = [];
+		
+		if (newCandidates.length > 0) {
+			contentEl.createEl('h3', { text: '🛡️ Detected AI Files (Whitelist Suggestions)' });
+			contentEl.createEl('p', {
+				text: 'We found these AI configuration files. Would you like to add them to your Sync Whitelist? (Unchecked by default for Zero-Trust security).',
+				cls: 'av-subtitle',
+			});
+			
+			const checkList = contentEl.createDiv({ cls: 'av-whitelist-suggestions' });
+			checkList.style.marginBottom = '15px';
+			checkList.style.background = 'var(--background-secondary)';
+			checkList.style.padding = '10px';
+			checkList.style.borderRadius = '5px';
+			
+			newCandidates.forEach(c => {
+				const label = checkList.createEl('label');
+				label.style.display = 'block';
+				label.style.marginBottom = '5px';
+				
+				const cb = label.createEl('input', { type: 'checkbox' });
+				cb.style.marginRight = '8px';
+				cb.onchange = () => {
+					if (cb.checked) selectedWhitelist.push(c);
+					else selectedWhitelist = selectedWhitelist.filter(x => x !== c);
+				};
+				label.appendChild(document.createTextNode(c));
+			});
+		}
+		// --- End Whitelist Detection UI ---
+
 		// Build steps list
 		this.steps = this.buildSteps();
 		const listEl = contentEl.createDiv({ cls: 'av-steps-list' });
@@ -60,6 +108,16 @@ class SetupWizardModal extends Modal {
 			this.running = true;
 			btnStart.setAttr('disabled', 'true');
 			btnStart.setText('Running...');
+			
+			// Apply selected whitelist
+			if (selectedWhitelist.length > 0) {
+				const current = this.plugin.settings.includedSyncPaths.trim();
+				const additions = selectedWhitelist.join('\n');
+				this.plugin.settings.includedSyncPaths = current ? current + '\n' + additions : additions;
+				await this.plugin.saveSettings();
+				new Notice(`Added ${selectedWhitelist.length} paths to Whitelist!`);
+			}
+			
 			await this.runAllSteps();
 			btnStart.removeAttribute('disabled');
 			btnStart.setText('Done ✓');
