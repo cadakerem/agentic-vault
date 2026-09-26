@@ -6717,10 +6717,10 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       }
     });
     defs.push({
-      name: "Auto Push",
-      desc: "Automatically commit and push changes to GitHub.",
+      name: "Auto Sync (Pull & Push)",
+      desc: "Automatically pull, commit, and push changes to GitHub.",
       render: (setting, _group) => {
-        setting.setName("Auto Push").setDesc("Automatically commit and push changes to GitHub.").addToggle((t2) => t2.setValue(this.plugin.settings.gitAutoPush).onChange(async (v) => {
+        setting.setName("Auto Sync (Pull & Push)").setDesc("Automatically pull, commit, and push changes to GitHub.").addToggle((t2) => t2.setValue(this.plugin.settings.gitAutoPush).onChange(async (v) => {
           this.plugin.settings.gitAutoPush = v;
           await this.plugin.saveSettings();
           this.plugin.startAutoSync();

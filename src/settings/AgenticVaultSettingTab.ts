@@ -93,11 +93,11 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 		});
 
 		defs.push({
-			name: 'Auto Push',
-			desc: 'Automatically commit and push changes to GitHub.',
+			name: 'Auto Sync (Pull & Push)',
+			desc: 'Automatically pull, commit, and push changes to GitHub.',
 			render: (setting: Setting, _group: SettingGroup) => {
-				setting.setName('Auto Push')
-					.setDesc('Automatically commit and push changes to GitHub.')
+				setting.setName('Auto Sync (Pull & Push)')
+					.setDesc('Automatically pull, commit, and push changes to GitHub.')
 					.addToggle(t => t.setValue(this.plugin.settings.gitAutoPush).onChange(async v => {
 						this.plugin.settings.gitAutoPush = v;
 						await this.plugin.saveSettings();
