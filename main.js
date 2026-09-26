@@ -6377,6 +6377,45 @@ var SetupWizardModal = class extends import_obsidian2.Modal {
       text: "Automatically configure this computer: create symlinks for your AI tools, skills, and scripts \u2014 so everything works like your original machine.",
       cls: "av-subtitle"
     });
+    const vaultPath = getVaultPath(this.app);
+    const brain = this.plugin.settings.vaultBrainFolder || "AI-Brain";
+    const candidates = [
+      `${brain}/gemini/GEMINI.md`,
+      `${brain}/claude/CLAUDE.md`,
+      `${brain}/cursor/.cursorrules`,
+      `${brain}/gemini/.agents/skills/`,
+      `${brain}/gemini/plugins/`,
+      `${brain}/system-prompts/`
+    ];
+    const foundCandidates = candidates.filter((c3) => fs4.existsSync(path5.join(vaultPath, c3)));
+    const existingWhitelist = this.plugin.settings.includedSyncPaths.split("\n").map((l) => l.trim());
+    const dismissed = this.plugin.settings.dismissedWhitelistSuggestions || [];
+    const newCandidates = foundCandidates.filter((c3) => !existingWhitelist.includes(c3) && !dismissed.includes(c3));
+    let selectedWhitelist = [];
+    if (newCandidates.length > 0) {
+      contentEl.createEl("h3", { text: "\u{1F6E1}\uFE0F Detected AI Files (Whitelist Suggestions)" });
+      contentEl.createEl("p", {
+        text: "We found these AI configuration files. Would you like to add them to your Sync Whitelist? (Unchecked by default for Zero-Trust security).",
+        cls: "av-subtitle"
+      });
+      const checkList = contentEl.createDiv({ cls: "av-whitelist-suggestions" });
+      checkList.style.marginBottom = "15px";
+      checkList.style.background = "var(--background-secondary)";
+      checkList.style.padding = "10px";
+      checkList.style.borderRadius = "5px";
+      newCandidates.forEach((c3) => {
+        const label = checkList.createEl("label");
+        label.style.display = "block";
+        label.style.marginBottom = "5px";
+        const cb = label.createEl("input", { type: "checkbox" });
+        cb.style.marginRight = "8px";
+        cb.onchange = () => {
+          if (cb.checked) selectedWhitelist.push(c3);
+          else selectedWhitelist = selectedWhitelist.filter((x2) => x2 !== c3);
+        };
+        label.appendChild(document.createTextNode(c3));
+      });
+    }
     this.steps = this.buildSteps();
     const listEl = contentEl.createDiv({ cls: "av-steps-list" });
     this.stepEls = this.steps.map((step) => {
@@ -6394,6 +6433,20 @@ var SetupWizardModal = class extends import_obsidian2.Modal {
       this.running = true;
       btnStart.setAttr("disabled", "true");
       btnStart.setText("Running...");
+      if (newCandidates.length > 0) {
+        const dismissed2 = newCandidates.filter((c3) => !selectedWhitelist.includes(c3));
+        this.plugin.settings.dismissedWhitelistSuggestions = [
+          ...this.plugin.settings.dismissedWhitelistSuggestions || [],
+          ...dismissed2
+        ];
+        if (selectedWhitelist.length > 0) {
+          const current = this.plugin.settings.includedSyncPaths.trim();
+          const additions = selectedWhitelist.join("\n");
+          this.plugin.settings.includedSyncPaths = current ? current + "\n" + additions : additions;
+          new import_obsidian2.Notice(`Added ${selectedWhitelist.length} paths to Whitelist!`);
+        }
+        await this.plugin.saveSettings();
+      }
       await this.runAllSteps();
       btnStart.removeAttribute("disabled");
       btnStart.setText("Done \u2713");
@@ -6858,6 +6911,20 @@ var AgenticVaultSettingTab = class extends import_obsidian6.PluginSettingTab {
             this.plugin.settings.excludedSyncPaths = v;
             await this.plugin.saveSettings();
           });
+          defs.push({
+            name: "Included Sync Paths (Whitelist Mode)",
+            desc: "If you excluded an entire folder above (e.g. AI-Brain/), list specific files/folders inside it to whitelist (one per line, e.g. AI-Brain/Rules.md). These will be enforced via .gitignore.",
+            render: (setting2, _group2) => {
+              setting2.setName("Included Sync Paths (Whitelist)").setDesc("Whitelist specific paths that were ignored by an excluded folder (one per line, e.g. AI-Brain/Rules.md).").addTextArea((t3) => {
+                t3.setPlaceholder("AI-Brain/Rules.md\nAI-Brain/skills/");
+                t3.setValue(this.plugin.settings.includedSyncPaths);
+                t3.onChange(async (v) => {
+                  this.plugin.settings.includedSyncPaths = v;
+                  await this.plugin.saveSettings();
+                });
+              });
+            }
+          });
         });
       }
     });
@@ -6995,8 +7062,16 @@ var DEFAULT_SETTINGS = {
   allowPublicRemote: false,
   scanSecrets: true,
   excludedSyncPaths: "",
+  includedSyncPaths: "",
+  dismissedWhitelistSuggestions: [],
   deviceName: os6.hostname(),
   syncState: initialSyncState
+};
+var DEFAULT_SECRETS = {
+  openAIApiKey: "",
+  githubToken: "",
+  geminiApiKey: "",
+  anthropicApiKey: ""
 };
 var AgenticVaultPlugin = class extends import_obsidian7.Plugin {
   constructor() {
@@ -7219,6 +7294,7 @@ var AgenticVaultPlugin = class extends import_obsidian7.Plugin {
         allowPublicRemote: this.settings.allowPublicRemote,
         scanSecrets: this.settings.scanSecrets,
         excludedPaths: this.settings.excludedSyncPaths.split("\n").map((p2) => p2.trim()).filter(Boolean),
+        includedPaths: this.settings.includedSyncPaths.split("\n").map((p2) => p2.trim()).filter(Boolean),
         device: this.settings.deviceName
       });
       const transition = nextSyncState(this.settings.syncState, result, { manual });

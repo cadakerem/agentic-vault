@@ -28,6 +28,7 @@ export interface AgenticVaultSettings {
 	scanSecrets: boolean;
 	excludedSyncPaths: string;
 	includedSyncPaths: string;
+	dismissedWhitelistSuggestions: string[];
 	deviceName: string;
 	syncState: SyncState;
 }

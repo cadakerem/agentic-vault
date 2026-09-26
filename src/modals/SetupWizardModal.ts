@@ -56,7 +56,8 @@ class SetupWizardModal extends Modal {
 		
 		const foundCandidates = candidates.filter(c => fs.existsSync(path.join(vaultPath, c)));
 		const existingWhitelist = this.plugin.settings.includedSyncPaths.split('\n').map(l => l.trim());
-		const newCandidates = foundCandidates.filter(c => !existingWhitelist.includes(c));
+		const dismissed = this.plugin.settings.dismissedWhitelistSuggestions || [];
+		const newCandidates = foundCandidates.filter(c => !existingWhitelist.includes(c) && !dismissed.includes(c));
 		
 		let selectedWhitelist: string[] = [];
 		
@@ -109,13 +110,21 @@ class SetupWizardModal extends Modal {
 			btnStart.setAttr('disabled', 'true');
 			btnStart.setText('Running...');
 			
-			// Apply selected whitelist
-			if (selectedWhitelist.length > 0) {
-				const current = this.plugin.settings.includedSyncPaths.trim();
-				const additions = selectedWhitelist.join('\n');
-				this.plugin.settings.includedSyncPaths = current ? current + '\n' + additions : additions;
+			// Apply selected whitelist and save dismissed ones
+			if (newCandidates.length > 0) {
+				const dismissed = newCandidates.filter(c => !selectedWhitelist.includes(c));
+				this.plugin.settings.dismissedWhitelistSuggestions = [
+					...(this.plugin.settings.dismissedWhitelistSuggestions || []),
+					...dismissed
+				];
+				
+				if (selectedWhitelist.length > 0) {
+					const current = this.plugin.settings.includedSyncPaths.trim();
+					const additions = selectedWhitelist.join('\n');
+					this.plugin.settings.includedSyncPaths = current ? current + '\n' + additions : additions;
+					new Notice(`Added ${selectedWhitelist.length} paths to Whitelist!`);
+				}
 				await this.plugin.saveSettings();
-				new Notice(`Added ${selectedWhitelist.length} paths to Whitelist!`);
 			}
 			
 			await this.runAllSteps();
