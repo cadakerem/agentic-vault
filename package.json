@@ -1,6 +1,6 @@
 {
   "name": "agentic-vault",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "description": "The ultimate Obsidian plugin to automate Git sync, manage AI system prompts, and enable Issue-Driven Development directly from your vault.",
   "main": "main.js",
   "scripts": {
