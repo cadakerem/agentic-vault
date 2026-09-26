@@ -28,6 +28,7 @@ export interface SyncOptions {
   remote?: string; // default: origin
   scanSecrets?: boolean; // default: true
   allowPublicRemote?: boolean;
+  excludedPaths?: string[];
   /** 'keep-local-copy' (default): remote wins, local version saved as *.conflict-local-*. 'abort': old behaviour. */
   conflictStrategy?: 'keep-local-copy' | 'abort';
   device?: string; // used in conflict-copy names; default: hostname
@@ -95,7 +96,11 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
     }
 
     // 1. commit local changes first
-    await git.add('.');
+    const addArgs = ['.'];
+    if (opts.excludedPaths && opts.excludedPaths.length > 0) {
+      opts.excludedPaths.forEach(p => addArgs.push(`:(exclude)${p}`));
+    }
+    await git.raw(['add', ...addArgs]);
 
     // 1b. secret scan of what is about to be committed; on a hit, unstage everything and stop
     // If public remotes are NOT allowed, we FORCE secret scanning. It can only be disabled if allowPublicRemote is true.
