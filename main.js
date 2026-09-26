@@ -6658,14 +6658,18 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
     const defs = [];
     defs.push({
       name: "\u2699\uFE0F Git & Sync",
+      desc: isGitRepo ? "\u2705 Vault is connected to Git." : "\u26A0\uFE0F Not a Git repository yet. Add a GitHub URL and click Initialize.",
       render: (setting, _group) => {
         setting.setHeading().setName("\u2699\uFE0F Git & Sync");
-        const statusDiv = setting.settingEl.createDiv();
-        statusDiv.createEl("p", {
-          text: isGitRepo ? "\u2705 Vault is connected to Git." : "\u26A0\uFE0F Not a Git repository yet. Add a GitHub URL and click Initialize.",
-          attr: { style: `color: var(${isGitRepo ? "--text-success" : "--text-error"}); font-weight:bold; margin-bottom:10px;` }
-        });
-        setting.settingEl.insertAdjacentElement("afterend", statusDiv);
+        setting.settingEl.style.marginTop = "1.5em";
+        const frag = document.createDocumentFragment();
+        const p2 = document.createElement("p");
+        p2.textContent = isGitRepo ? "\u2705 Vault is connected to Git." : "\u26A0\uFE0F Not a Git repository yet. Add a GitHub URL and click Initialize.";
+        p2.style.color = `var(${isGitRepo ? "--text-success" : "--text-error"})`;
+        p2.style.fontWeight = "bold";
+        p2.style.margin = "4px 0";
+        frag.appendChild(p2);
+        setting.setDesc(frag);
       }
     });
     defs.push({
@@ -6694,14 +6698,15 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
               }
             }
             new import_obsidian5.Notice("\u2705 Git setup complete!");
-            this.app.setting.openTabById(this.plugin.manifest.id);
+            this.update();
           } catch (err) {
             new import_obsidian5.Notice("Failed to init Git. Check console.");
             console.error(err);
           }
         }));
-        const hr = createEl("hr");
-        setting.settingEl.insertAdjacentElement("afterend", hr);
+        setting.settingEl.style.borderBottom = "1px solid var(--background-modifier-border)";
+        setting.settingEl.style.paddingBottom = "2em";
+        setting.settingEl.style.marginBottom = "2em";
       }
     });
     defs.push({
@@ -6731,7 +6736,7 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
         setting.setName("Allow Public Remote").setDesc("DANGER: Allow syncing even if the GitHub repository is public. This may expose your AI secrets.").addToggle((t2) => t2.setValue(this.plugin.settings.allowPublicRemote).onChange(async (v) => {
           this.plugin.settings.allowPublicRemote = v;
           await this.plugin.saveSettings();
-          this.app.setting.openTabById(this.plugin.manifest.id);
+          this.update();
         }));
       }
     });
@@ -6831,13 +6836,9 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
     });
     defs.push({
       name: "\u{1F916} AI Tools to Sync",
+      desc: "Select which AI tools should be linked to your vault. Each tool's config folder becomes a symlink pointing to your vault.",
       render: (setting, _group) => {
-        setting.setHeading().setName("\u{1F916} AI Tools to Sync");
-        const p2 = createEl("p", {
-          text: "Select which AI tools should be linked to your vault. Each tool's config folder becomes a symlink pointing to your vault.",
-          cls: "av-subtitle"
-        });
-        setting.settingEl.insertAdjacentElement("afterend", p2);
+        setting.setHeading().setName("\u{1F916} AI Tools to Sync").setDesc("Select which AI tools should be linked to your vault. Each tool's config folder becomes a symlink pointing to your vault.");
       }
     });
     for (const tool of this.plugin.settings.aiTools) {
@@ -6850,22 +6851,34 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
           setting.setName(tool.name).setDesc(`Current Link: ${dstPath}`).addToggle((t2) => t2.setValue(tool.enabled).onChange(async (v) => {
             tool.enabled = v;
             await this.plugin.saveSettings();
-            this.app.setting.openTabById(this.plugin.manifest.id);
+            this.update();
           }));
-          if (tool.enabled) {
-            const toolContainer = createDiv({ cls: "av-tool-path-container av-tool-padding" });
-            new import_obsidian5.Setting(toolContainer).setName("Windows Path").setDesc("Relative to User Home (~/)").addText((t2) => t2.setValue(tool.windowsPath).onChange(async (v) => {
+        }
+      });
+      if (tool.enabled) {
+        defs.push({
+          name: `${tool.name} Windows Path`,
+          desc: "Relative to User Home (~/)",
+          render: (setting) => {
+            setting.settingEl.style.paddingLeft = "2.5em";
+            setting.setName("\u21B3 Windows Path").setDesc("Relative to User Home (~/)").addText((t2) => t2.setValue(tool.windowsPath).onChange(async (v) => {
               tool.windowsPath = v;
               await this.plugin.saveSettings();
             }));
-            new import_obsidian5.Setting(toolContainer).setName("Mac/Linux Path").setDesc("Relative to User Home (~/)").addText((t2) => t2.setValue(tool.unixPath).onChange(async (v) => {
+          }
+        });
+        defs.push({
+          name: `${tool.name} Mac/Linux Path`,
+          desc: "Relative to User Home (~/)",
+          render: (setting) => {
+            setting.settingEl.style.paddingLeft = "2.5em";
+            setting.setName("\u21B3 Mac/Linux Path").setDesc("Relative to User Home (~/)").addText((t2) => t2.setValue(tool.unixPath).onChange(async (v) => {
               tool.unixPath = v;
               await this.plugin.saveSettings();
             }));
-            setting.settingEl.insertAdjacentElement("afterend", toolContainer);
           }
-        }
-      });
+        });
+      }
     }
     return defs;
   }
