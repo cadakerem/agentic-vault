@@ -42,9 +42,27 @@ class SetupWizardModal extends Modal {
 		});
 
 		
-		// --- Whitelist Detection UI ---
+		
+		// --- System Prompt Auto-Detection ---
 		const vaultPath = getVaultPath(this.app);
 		const brain = this.plugin.settings.vaultBrainFolder || 'AI-Brain';
+		const brainRules = [
+			`${brain}/gemini/GEMINI.md`,
+			`${brain}/claude/CLAUDE.md`,
+			`${brain}/cursor/.cursorrules`,
+			`${brain}/copilot/.github/copilot-instructions.md`,
+			`${brain}/windsurf/.windsurfrules`,
+			`${brain}/Rules.md`
+		];
+		
+		const foundRule = brainRules.find(r => fs.existsSync(path.join(vaultPath, r)));
+		if (foundRule && this.plugin.settings.ruleFilePath !== foundRule && this.plugin.settings.ruleFilePath === 'AI-Brain/Rules.md') {
+			this.plugin.settings.ruleFilePath = foundRule;
+			void this.plugin.saveSettings();
+			new Notice(`Agentic Vault: Brain File Path auto-detected as ${foundRule}`);
+		}
+
+		// --- Whitelist Detection UI ---
 		// Note: Core rule files (GEMINI.md, CLAUDE.md, .cursorrules) and skills/ are automatically whitelisted by default in .gitignore.
 		// We only suggest extra non-standard directories here.
 		const candidates = [
