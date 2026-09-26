@@ -34,7 +34,7 @@ const DEFAULT_SETTINGS: AgenticVaultSettings = {
 	gitAutoPush: true,
 	syncIntervalMinutes: 1,
 	commitMessageFormat: 'docs: update AI memory & rules (auto)',
-	ruleFilePath: 'AI-Brain/gemini/GEMINI.md',
+	ruleFilePath: 'AI-Brain/Rules.md',
 	vaultBrainFolder: 'AI-Brain',
 	aiTools: DEFAULT_AI_TOOLS,
 	skillsFolder: 'AI-Agent-System/skills',
