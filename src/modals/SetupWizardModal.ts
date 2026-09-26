@@ -116,6 +116,7 @@ class SetupWizardModal extends Modal {
 	}
 
 	private setStepStatus(idx: number, status: SetupStep['status'], detail?: string): void {
+		this.steps[idx].status = status;
 		const el = this.stepEls[idx];
 		const icons: Record<SetupStep['status'], string> = {
 			pending: '○', running: '⟳', done: '✅', error: '❌', skipped: '⏭',
@@ -160,7 +161,12 @@ class SetupWizardModal extends Modal {
 			this.setStepStatus(stepIdx, 'error', 'Could not check git status');
 		}
 
-		new Notice('✅ Machine setup complete! All symlinks are active.');
+		const hasError = this.steps.some(s => s.status === 'error');
+		if (hasError) {
+			new Notice('⚠️ Setup completed with errors. Check details above.');
+		} else {
+			new Notice('✅ Machine setup complete! All symlinks are active.');
+		}
 	}
 
 	private async runSymlinkStep(idx: number, src: string, dst: string, plan: LinkPlan): Promise<void> {

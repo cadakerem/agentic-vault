@@ -177,8 +177,12 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
               message: 'Push aborted: Repository is PUBLIC. Enable "Allow Public Remote" in settings if intentional.',
             };
           }
-        } catch {
-          // gh not installed, not authenticated, or not a github remote.
+        } catch (e) {
+          return {
+            ...result,
+            status: 'error',
+            message: 'Push aborted: Could not verify if remote is private (ensure GitHub CLI is installed and authenticated). Enable "Allow Public Remote" in settings to bypass.',
+          };
         }
       }
 
