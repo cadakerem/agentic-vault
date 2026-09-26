@@ -183,7 +183,12 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 							this.plugin.settings.includedSyncPaths = v;
 							await this.plugin.saveSettings();
 						});
-					});
+					})
+					.addButton(btn => btn.setButtonText('🔄 Reset Dismissed').setTooltip('Reset the list of skipped whitelist suggestions so they appear in the Setup Wizard again.').onClick(async () => {
+						this.plugin.settings.dismissedWhitelistSuggestions = [];
+						await this.plugin.saveSettings();
+						new Notice('Dismissed suggestions reset. Run the Setup Wizard again to see them.');
+					}));
 			}
 		});
 					});
