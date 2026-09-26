@@ -182,7 +182,7 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
               message: 'Push aborted: Repository is PUBLIC. Enable "Allow Public Remote" in settings if intentional.',
             };
           }
-        } catch (e) {
+        } catch {
           return {
             ...result,
             status: 'error',
