@@ -11,6 +11,7 @@ import { filterConflictCopies } from './src/conflict';
 import { SetupWizardModal } from './src/modals/SetupWizardModal';
 import { BrainManagerModal } from './src/modals/BrainManagerModal';
 import { CreateIssueModal } from './src/modals/CreateIssueModal';
+import { SecurityAlertModal } from './src/modals/SecurityAlertModal';
 import { AgenticVaultSettingTab } from './src/settings/AgenticVaultSettingTab';
 
 
@@ -167,7 +168,7 @@ export default class AgenticVaultPlugin extends Plugin {
 				const lsFiles = await this.git.raw(['ls-files', '-ci', '--exclude-standard']);
 				const trackedIgnored = lsFiles.split('\n').map(l => l.trim()).filter(Boolean);
 				if (trackedIgnored.length > 0) {
-					new Notice(`CRITICAL SECURITY WARNING:  sensitive files (like data.json) are currently tracked by Git! \n\nRun 'git rm --cached <file>' manually to stop tracking.\n\nDANGER: They are STILL in your git history! You MUST rotate your API keys immediately. Use BFG Repo-Cleaner or delete the repo to purge history.`, 30000);
+					new SecurityAlertModal(this.app, trackedIgnored).open();
 					console.warn('Tracked ignored files (DANGER):', trackedIgnored);
 				}
 			} catch (err) {

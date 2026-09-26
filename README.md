@@ -112,6 +112,6 @@ This project is licensed under the [MIT License](LICENSE).
 Agentic Vault automatically adds its configuration file (\.obsidian/plugins/agentic-vault/data.json\) to your \.gitignore\. However, if you previously tracked this file in Git before the plugin added it to \.gitignore\, **it will still be tracked and pushed!**
 
 If you accidentally committed your API keys:
-1. **Rotate your keys immediately** via your provider (OpenAI, Google, etc.).
-2. Run \git rm --cached .obsidian/plugins/agentic-vault/data.json\ to stop tracking.
-3. **WARNING:** The keys are STILL in your Git history! You must rewrite your history using [BFG Repo-Cleaner](https://rtyley.github.io/bfg-repo-cleaner/) or simply delete the repository and create a new one.
+1. **REVOKE YOUR KEYS IMMEDIATELY:** Go to your provider (OpenAI, Google, etc.) dashboard and delete the compromised keys. This is the only way to stop abuse.
+2. **Stop tracking the file:** Run \git rm --cached .obsidian/plugins/agentic-vault/data.json\ to remove it from future commits.
+3. **Clean Git History (Optional but Recommended):** The keys are STILL in your past Git history! Use [BFG Repo-Cleaner](https://rtyley.github.io/bfg-repo-cleaner/) to rewrite your history, or simply delete the repository and create a new one. *Note: Rewriting history requires a \git push -f\ (force-push), which will break the local clones for anyone else sharing this repository. Inform your team before doing this.*
