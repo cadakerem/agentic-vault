@@ -26,17 +26,15 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 			desc: isGitRepo ? '✅ Vault is connected to Git.' : '⚠️ Not a Git repository yet. Add a GitHub URL and click Initialize.',
 			render: (setting: Setting, _group: SettingGroup) => {
 				setting.setHeading().setName('⚙️ Git & Sync');
-				setting.settingEl.style.marginTop = '1.5em';
+				setting.settingEl.classList.add('av-setting-margin-top');
 
-				const frag = document.createDocumentFragment();
-				const p = document.createElement('p');
-				p.textContent = isGitRepo
-					? '✅ Vault is connected to Git.'
-					: '⚠️ Not a Git repository yet. Add a GitHub URL and click Initialize.';
-				p.style.color = `var(${isGitRepo ? '--text-success' : '--text-error'})`;
-				p.style.fontWeight = 'bold';
-				p.style.margin = '4px 0';
-				frag.appendChild(p);
+				const frag = createFragment((f) => {
+					createEl('p', {
+						text: isGitRepo ? '✅ Vault is connected to Git.' : '⚠️ Not a Git repository yet. Add a GitHub URL and click Initialize.',
+						cls: `av-status-msg ${isGitRepo ? 'av-status-success' : 'av-status-error'}`,
+						parent: f
+					});
+				});
 				setting.setDesc(frag);
 			}
 		});
@@ -78,10 +76,7 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 								console.error(err);
 							}
 						}));
-
-				setting.settingEl.style.borderBottom = '1px solid var(--background-modifier-border)';
-				setting.settingEl.style.paddingBottom = '2em';
-				setting.settingEl.style.marginBottom = '2em';
+				setting.settingEl.classList.add('av-divider-bottom');
 			}
 		});
 
@@ -276,7 +271,7 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 					name: `${tool.name} Windows Path`,
 					desc: 'Relative to User Home (~/)',
 					render: (setting: Setting) => {
-						setting.settingEl.style.paddingLeft = '2.5em';
+						setting.settingEl.classList.add('av-nested-setting');
 						setting.setName('↳ Windows Path')
 							.setDesc('Relative to User Home (~/)')
 							.addText(t => t.setValue(tool.windowsPath).onChange(async v => {
@@ -290,7 +285,7 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 					name: `${tool.name} Mac/Linux Path`,
 					desc: 'Relative to User Home (~/)',
 					render: (setting: Setting) => {
-						setting.settingEl.style.paddingLeft = '2.5em';
+						setting.settingEl.classList.add('av-nested-setting');
 						setting.setName('↳ Mac/Linux Path')
 							.setDesc('Relative to User Home (~/)')
 							.addText(t => t.setValue(tool.unixPath).onChange(async v => {

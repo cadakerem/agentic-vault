@@ -153,3 +153,11 @@ NEW MACHINE SETUP WIZARD
 
 .av-tool-padding { padding-left: 20px; }
 
+
+.av-setting-margin-top { margin-top: 1.5em; }
+.av-status-msg { font-weight: bold; margin: 4px 0; }
+.av-status-success { color: var(--text-success); }
+.av-status-error { color: var(--text-error); }
+.av-divider-bottom { border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 2em; margin-bottom: 2em; }
+.av-nested-setting { padding-left: 2.5em; }
+
