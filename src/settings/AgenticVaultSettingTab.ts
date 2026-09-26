@@ -7,11 +7,6 @@ import { SetupWizardModal } from '../modals/SetupWizardModal';
 import * as os from 'os';
 import { getVaultPath } from '../obsidian-util';
 
-// Internal helper to cast app to access private routing API
-interface AppWithSetting extends App {
-	setting: { openTabById(id: string): void };
-}
-
 class AgenticVaultSettingTab extends PluginSettingTab {
 	plugin: AgenticVaultPlugin;
 	remoteUrlInput = '';
@@ -28,17 +23,21 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 
 		defs.push({
 			name: '⚙️ Git & Sync',
+			desc: isGitRepo ? '✅ Vault is connected to Git.' : '⚠️ Not a Git repository yet. Add a GitHub URL and click Initialize.',
 			render: (setting: Setting, _group: SettingGroup) => {
 				setting.setHeading().setName('⚙️ Git & Sync');
+				setting.settingEl.style.marginTop = '1.5em';
 
-				const statusDiv = setting.settingEl.createDiv();
-				statusDiv.createEl('p', {
-					text: isGitRepo
-						? '✅ Vault is connected to Git.'
-						: '⚠️ Not a Git repository yet. Add a GitHub URL and click Initialize.',
-					attr: { style: `color: var(${isGitRepo ? '--text-success' : '--text-error'}); font-weight:bold; margin-bottom:10px;` },
-				});
-				setting.settingEl.insertAdjacentElement('afterend', statusDiv);
+				const frag = document.createDocumentFragment();
+				const p = document.createElement('p');
+				p.textContent = isGitRepo
+					? '✅ Vault is connected to Git.'
+					: '⚠️ Not a Git repository yet. Add a GitHub URL and click Initialize.';
+				p.style.color = `var(${isGitRepo ? '--text-success' : '--text-error'})`;
+				p.style.fontWeight = 'bold';
+				p.style.margin = '4px 0';
+				frag.appendChild(p);
+				setting.setDesc(frag);
 			}
 		});
 
@@ -73,15 +72,16 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 									}
 								}
 								new Notice('✅ Git setup complete!');
-								(this.app as AppWithSetting).setting.openTabById(this.plugin.manifest.id);
+								this.update();
 							} catch (err: unknown) {
 								new Notice('Failed to init Git. Check console.');
 								console.error(err);
 							}
 						}));
 
-				const hr = createEl('hr');
-				setting.settingEl.insertAdjacentElement('afterend', hr);
+				setting.settingEl.style.borderBottom = '1px solid var(--background-modifier-border)';
+				setting.settingEl.style.paddingBottom = '2em';
+				setting.settingEl.style.marginBottom = '2em';
 			}
 		});
 
@@ -120,7 +120,7 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 					.addToggle(t => t.setValue(this.plugin.settings.allowPublicRemote).onChange(async v => {
 						this.plugin.settings.allowPublicRemote = v;
 						await this.plugin.saveSettings();
-						(this.app as AppWithSetting).setting.openTabById(this.plugin.manifest.id);
+						this.update();
 					}));
 			}
 		});
@@ -245,13 +245,11 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 
 		defs.push({
 			name: '🤖 AI Tools to Sync',
+			desc: 'Select which AI tools should be linked to your vault. Each tool\'s config folder becomes a symlink pointing to your vault.',
 			render: (setting: Setting, _group: SettingGroup) => {
-				setting.setHeading().setName('🤖 AI Tools to Sync');
-				const p = createEl('p', {
-					text: 'Select which AI tools should be linked to your vault. Each tool\'s config folder becomes a symlink pointing to your vault.',
-					cls: 'av-subtitle',
-				});
-				setting.settingEl.insertAdjacentElement('afterend', p);
+				setting.setHeading()
+					.setName('🤖 AI Tools to Sync')
+					.setDesc('Select which AI tools should be linked to your vault. Each tool\'s config folder becomes a symlink pointing to your vault.');
 			}
 		});
 
@@ -268,32 +266,40 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 						.addToggle(t => t.setValue(tool.enabled).onChange(async v => {
 							tool.enabled = v;
 							await this.plugin.saveSettings();
-							(this.app as AppWithSetting).setting.openTabById(this.plugin.manifest.id);
+							this.update();
 						}));
+				}
+			});
 
-					if (tool.enabled) {
-						const toolContainer = createDiv({ cls: 'av-tool-path-container av-tool-padding' });
-
-						new Setting(toolContainer)
-							.setName('Windows Path')
+			if (tool.enabled) {
+				defs.push({
+					name: `${tool.name} Windows Path`,
+					desc: 'Relative to User Home (~/)',
+					render: (setting: Setting) => {
+						setting.settingEl.style.paddingLeft = '2.5em';
+						setting.setName('↳ Windows Path')
 							.setDesc('Relative to User Home (~/)')
 							.addText(t => t.setValue(tool.windowsPath).onChange(async v => {
 								tool.windowsPath = v;
 								await this.plugin.saveSettings();
 							}));
+					}
+				});
 
-						new Setting(toolContainer)
-							.setName('Mac/Linux Path')
+				defs.push({
+					name: `${tool.name} Mac/Linux Path`,
+					desc: 'Relative to User Home (~/)',
+					render: (setting: Setting) => {
+						setting.settingEl.style.paddingLeft = '2.5em';
+						setting.setName('↳ Mac/Linux Path')
 							.setDesc('Relative to User Home (~/)')
 							.addText(t => t.setValue(tool.unixPath).onChange(async v => {
 								tool.unixPath = v;
 								await this.plugin.saveSettings();
 							}));
-
-						setting.settingEl.insertAdjacentElement('afterend', toolContainer);
 					}
-				}
-			});
+				});
+			}
 		}
 
 		return defs;
