@@ -45,11 +45,9 @@ class SetupWizardModal extends Modal {
 		// --- Whitelist Detection UI ---
 		const vaultPath = getVaultPath(this.app);
 		const brain = this.plugin.settings.vaultBrainFolder || 'AI-Brain';
+		// Note: Core rule files (GEMINI.md, CLAUDE.md, .cursorrules) and skills/ are automatically whitelisted by default in .gitignore.
+		// We only suggest extra non-standard directories here.
 		const candidates = [
-			`${brain}/gemini/GEMINI.md`,
-			`${brain}/claude/CLAUDE.md`,
-			`${brain}/cursor/.cursorrules`,
-			`${brain}/gemini/.agents/skills/`,
 			`${brain}/gemini/plugins/`,
 			`${brain}/system-prompts/`
 		];
