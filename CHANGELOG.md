@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.1] - 2026-09-26
+### Fixed
+- **CI Build Failure:** Upgraded Node.js environment to v20 in the release workflow to support Vitest 5.x.
+
 ## [1.5.0] - 2026-09-26
 ### Added
 - **Excluded Sync Paths:** You can now configure specific folder paths (like `Private/` or `Secrets/`) directly in settings to exclude them from `git add`.
