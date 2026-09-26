@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.2] - 2026-09-26
+### Fixed
+- **Code Quality:** Removed an unused variable in the public remote check logic reported by code analysis.
+
 ## [1.5.1] - 2026-09-26
 ### Fixed
 - **CI Build Failure:** Upgraded Node.js environment to v20 in the release workflow to support Vitest 5.x.
