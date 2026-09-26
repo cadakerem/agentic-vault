@@ -238,7 +238,7 @@ export default class AgenticVaultPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		const saved = await this.loadData() as Partial<AgenticVaultSettings> | null;
+		const saved = await this.loadData() as Partial<AgenticVaultSettings & AgenticVaultSecrets> | null;
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
 		const savedTools = saved?.aiTools ?? [];
 		this.settings.aiTools = DEFAULT_AI_TOOLS.map(def => {
@@ -255,6 +255,21 @@ export default class AgenticVaultPlugin extends Plugin {
 			}
 		} catch {
 			this.secrets = Object.assign({}, DEFAULT_SECRETS);
+		}
+		
+		// Migration: Move any legacy secrets from data.json to secrets.json
+		let migrated = false;
+		if (saved) {
+			for (const key of Object.keys(DEFAULT_SECRETS) as Array<keyof AgenticVaultSecrets>) {
+				if (saved[key] !== undefined) {
+					this.secrets[key] = saved[key] as string;
+					delete (this.settings as any)[key];
+					migrated = true;
+				}
+			}
+		}
+		if (migrated) {
+			await this.saveSettings();
 		}
 	}
 
