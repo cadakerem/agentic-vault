@@ -27,9 +27,7 @@ export class SecurityAlertModal extends Modal {
 
 		const p2 = contentEl.createEl('p');
 		const spanRevoke = p2.createSpan({ text: '1. REVOKE YOUR API KEYS IMMEDIATELY!' });
-		spanRevoke.style.color = 'var(--text-error)';
-		spanRevoke.style.fontWeight = 'bold';
-		spanRevoke.style.fontSize = '1.1em';
+		spanRevoke.setCssStyles({ color: 'var(--text-error)', fontWeight: 'bold', fontSize: '1.1em' });
 		p2.createEl('br');
 		p2.createSpan({ text: "If this repository is or ever was public, your keys are compromised. Do not wait. Delete them from your AI provider's dashboard right now." });
 
