@@ -41,6 +41,8 @@ describe('Security Critical Paths in syncVault', () => {
 
   it('fails closed when gh CLI throws an error', async () => {
     vi.spyOn(child_process, 'execFile').mockImplementation((cmd, args, opts, cb) => {
+      // NOTE: intentional signature mismatch (2 args instead of 3) to simulate util.promisify destructuring fallback.
+      // Verify against real execFile behavior if Node version changes.
       if (typeof cb === 'function') (cb as any)(new Error('Command failed'), { stdout: '', stderr: '' });
       return {} as any;
     });
@@ -56,6 +58,8 @@ describe('Security Critical Paths in syncVault', () => {
     vi.spyOn(child_process, 'execFile').mockImplementation((cmd, args, opts, cb) => {
       // util.promisify on a function without the custom symbol resolves to the first non-error argument.
       // So we must pass { stdout, stderr } as the second argument!
+      // NOTE: intentional signature mismatch (2 args instead of 3) to simulate util.promisify destructuring fallback.
+      // Verify against real execFile behavior if Node version changes.
       if (typeof cb === 'function') (cb as any)(null, { stdout: JSON.stringify({ isPrivate: false }), stderr: '' });
       return {} as any;
     });
@@ -69,6 +73,8 @@ describe('Security Critical Paths in syncVault', () => {
 
   it('allows push when gh CLI returns isPrivate: true', async () => {
     vi.spyOn(child_process, 'execFile').mockImplementation((cmd, args, opts, cb) => {
+      // NOTE: intentional signature mismatch (2 args instead of 3) to simulate util.promisify destructuring fallback.
+      // Verify against real execFile behavior if Node version changes.
       if (typeof cb === 'function') (cb as any)(null, { stdout: JSON.stringify({ isPrivate: true }), stderr: '' });
       return {} as any;
     });
