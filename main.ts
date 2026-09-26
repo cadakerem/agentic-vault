@@ -46,6 +46,13 @@ const DEFAULT_SETTINGS: AgenticVaultSettings = {
 	syncState: initialSyncState,
 };
 
+const DEFAULT_SECRETS: AgenticVaultSecrets = {
+	openAIApiKey: '',
+	githubToken: '',
+	geminiApiKey: '',
+	anthropicApiKey: '',
+};
+
 // ─────────────────────────────────────────────
 // Helper: resolve ~ paths & get vault path
 // ─────────────────────────────────────────────
