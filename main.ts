@@ -271,8 +271,8 @@ export default class AgenticVaultPlugin extends Plugin {
 		if (saved) {
 			for (const key of Object.keys(DEFAULT_SECRETS) as Array<keyof AgenticVaultSecrets>) {
 				if (saved[key] !== undefined) {
-					this.secrets[key] = saved[key] as string;
-					delete (this.settings as any)[key];
+					this.secrets[key] = saved[key];
+					delete (this.settings as unknown as Record<string, unknown>)[key as string];
 					migrated = true;
 				}
 			}
