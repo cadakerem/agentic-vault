@@ -77,6 +77,11 @@ Agentic Vault is built for local-first automation. Because it creates symlinks a
 
 *All source code is public, and GitHub Actions guarantees that release assets match the repository code byte-for-byte.*
 
+### ⚠️ Critical Security Notice
+**Agentic Vault is designed to sync your personal AI agent skills, rules, and configurations.** Because these environments often reside close to `.env` files, API keys, and sensitive prompts, **we strongly recommend using a PRIVATE GitHub repository** to store your vault. 
+
+Even with our built-in Secret Scanner, syncing personal AI configurations to a public repository carries a significant risk of accidentally exposing your API keys (e.g., OpenAI, Anthropic) or personal tokens. Always ensure your repository is set to `Private` and configure the "Excluded Sync Paths" in the plugin settings to explicitly ignore folders containing API credentials.
+
 ### 🛡️ Defense-in-Depth for Secrets
 Agentic Vault uses a two-layered approach to help prevent accidental leakage of API keys, tokens, and credentials:
 1. **Filename-based Defense (.gitignore):** Automatically generates and enforces a `.gitignore` that blocks common sensitive file names (e.g., `.env`, `credentials`, `*oauth*`) and explicitly excluded paths configured in settings.
