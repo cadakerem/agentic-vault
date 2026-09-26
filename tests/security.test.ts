@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { syncVault, SyncOptions } from '../src/sync';
 import * as child_process from 'child_process';
 
@@ -41,7 +41,7 @@ describe('Security Critical Paths in syncVault', () => {
 
   it('fails closed when gh CLI throws an error', async () => {
     vi.spyOn(child_process, 'execFile').mockImplementation((cmd, args, opts, cb) => {
-      if (typeof cb === 'function') cb(new Error('Command failed'), { stdout: '', stderr: '' });
+      if (typeof cb === 'function') (cb as any)(new Error('Command failed'), { stdout: '', stderr: '' });
       return {} as any;
     });
 
@@ -56,7 +56,7 @@ describe('Security Critical Paths in syncVault', () => {
     vi.spyOn(child_process, 'execFile').mockImplementation((cmd, args, opts, cb) => {
       // util.promisify on a function without the custom symbol resolves to the first non-error argument.
       // So we must pass { stdout, stderr } as the second argument!
-      if (typeof cb === 'function') cb(null, { stdout: JSON.stringify({ isPrivate: false }), stderr: '' });
+      if (typeof cb === 'function') (cb as any)(null, { stdout: JSON.stringify({ isPrivate: false }), stderr: '' });
       return {} as any;
     });
 
@@ -69,7 +69,7 @@ describe('Security Critical Paths in syncVault', () => {
 
   it('allows push when gh CLI returns isPrivate: true', async () => {
     vi.spyOn(child_process, 'execFile').mockImplementation((cmd, args, opts, cb) => {
-      if (typeof cb === 'function') cb(null, { stdout: JSON.stringify({ isPrivate: true }), stderr: '' });
+      if (typeof cb === 'function') (cb as any)(null, { stdout: JSON.stringify({ isPrivate: true }), stderr: '' });
       return {} as any;
     });
 
