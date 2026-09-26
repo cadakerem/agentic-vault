@@ -93,18 +93,6 @@ Agentic Vault uses a two-layered approach to help prevent accidental leakage of 
 
 ---
 
-## 🧑‍💻 Developer & Contributions
-
-Developed by **Kerem Barbaros Karnabat** (@cadakerem). 
-
-> **Note on Repository Structure:** You may notice both `src/main.ts` and `main.js` in the repository root. `src/main.ts` (along with the `src/` folder) contains the actual TypeScript source code. `main.js` is the compiled build artifact required by Obsidian for distribution.
-
-Contributions, issues, and feature requests are welcome! Feel free to check the [Issues page](https://github.com/cadakerem/agentic-vault/issues).
-
-### License
-This project is licensed under the [MIT License](LICENSE).
-
-
 ## 🚨 Security Warning: API Keys & Git History
 
 **NEVER push your `data.json` to a public repository!**
@@ -117,3 +105,18 @@ If you accidentally committed your API keys:
 1. **REVOKE YOUR KEYS IMMEDIATELY:** Go to your provider (OpenAI, Google, etc.) dashboard and delete the compromised keys. This is the only way to stop abuse.
 2. **Stop tracking the file:** Click the "Stop Tracking" button in the security warning Modal, or manually run `git rm --cached .obsidian/plugins/agentic-vault/data.json` to remove it from future commits.
 3. **Clean Git History (Optional but Recommended):** The keys are STILL in your past Git history! Use [BFG Repo-Cleaner](https://rtyley.github.io/bfg-repo-cleaner/) to rewrite your history, or simply delete the repository and create a new one. *Note: Rewriting history requires a `git push -f` (force-push), which will break the local clones for anyone else sharing this repository. Inform your team before doing this.*
+
+---
+
+## 🧑‍💻 Developer & Contributions
+
+Developed by **Kerem Barbaros Karnabat** (@cadakerem). 
+
+> **Note on Repository Structure:** You may notice both `src/main.ts` and `main.js` in the repository root. `src/main.ts` (along with the `src/` folder) contains the actual TypeScript source code. `main.js` is the compiled build artifact required by Obsidian for distribution.
+
+Contributions, issues, and feature requests are welcome! Feel free to check the [Issues page](https://github.com/cadakerem/agentic-vault/issues).
+
+### License
+This project is licensed under the [MIT License](LICENSE).
+
+
