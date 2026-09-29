@@ -34,19 +34,27 @@ const SECRET_DIRS = ['.ssh', '.aws', '.gnupg', '.kube', '.docker'];
 const EXACT_ONLY_DIRS = ['.config', 'Documents', 'Desktop', 'Downloads'];
 
 /** `home` is injectable so tests do not depend on the machine. */
+function realResolve(p: string): string {
+  let cur = path.resolve(p);
+  const tail: string[] = [];
+  for (;;) {
+    try { return path.join(fs.realpathSync(cur), ...tail.reverse()); }
+    catch {
+      const parent = path.dirname(cur);
+      if (parent === cur) return path.resolve(p);
+      tail.push(path.basename(cur));
+      cur = parent;
+    }
+  }
+}
+
 export function isDangerousPath(p: string, home: string = os.homedir()): boolean {
   const cmp = (s: string) => (process.platform === 'win32' ? s.toLowerCase() : s);
-  
-  let norm = '';
-  try { norm = fs.realpathSync(p); } catch { norm = path.resolve(p); }
-  
-  let h = '';
-  try { h = fs.realpathSync(home); } catch { h = path.resolve(home); }
-
-  if (path.parse(norm).root === norm) return true; // any filesystem/drive root
-  if (cmp(norm) === cmp(h)) return true; // home itself
-  if (!cmp(norm).startsWith(cmp(h) + path.sep)) return true; // outside home
-
+  const norm = realResolve(p);
+  const h = realResolve(home);
+  if (path.parse(norm).root === norm) return true;
+  if (cmp(norm) === cmp(h)) return true;
+  if (!cmp(norm).startsWith(cmp(h) + path.sep)) return true;
   const parts = path.relative(h, norm).split(path.sep);
   if (SECRET_DIRS.some((d) => cmp(d) === cmp(parts[0]))) return true;
   if (parts.length === 1 && EXACT_ONLY_DIRS.some((d) => cmp(d) === cmp(parts[0]))) return true;

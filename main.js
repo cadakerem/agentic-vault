@@ -6102,7 +6102,7 @@ async function syncVault(git, opts) {
         message: "Rebase in progress. Resolve conflicts or abort."
       };
     }
-    const trackedStr = await git.raw(["ls-files", "-ci", "--exclude-standard", "-z"]).catch(() => "");
+    const trackedStr = await git.raw(["ls-files", "-ci", "--exclude-standard", "-z"]);
     const tracked = trackedStr.split("\0").filter(Boolean);
     if (tracked.length > 0) {
       return {
@@ -6122,12 +6122,8 @@ async function syncVault(git, opts) {
       const names = (await git.raw(["diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z"])).split("\0").filter(Boolean);
       let findings = [...scanFileNames(names), ...scanDiff(diff)];
       try {
-        const hasUpstream2 = !!(await git.status()).tracking;
-        if (hasUpstream2) {
-          const unpushedDiff = await git.raw(["diff", "@{u}..HEAD", "-U0", "--no-color", "--no-ext-diff"]);
-          const unpushedNames = (await git.raw(["diff", "@{u}..HEAD", "--name-only", "--diff-filter=ACMR", "-z"])).split("\0").filter(Boolean);
-          findings = [...findings, ...scanFileNames(unpushedNames), ...scanDiff(unpushedDiff)];
-        }
+        const unpushedDiff = await git.raw(["log", "-p", "--not", "--remotes=" + remote, "HEAD"]);
+        findings = [...findings, ...scanDiff(unpushedDiff)];
       } catch (e) {
       }
       if (findings.length > 0) {
@@ -6184,7 +6180,7 @@ async function syncVault(git, opts) {
     }
     if (conflictCopies.length > 0) result.conflictCopies = conflictCopies;
     if (opts.autoPush) {
-      if (opts.allowPublicRemote === false) {
+      if (!opts.allowPublicRemote) {
         try {
           const { stdout } = await execFileAsync("gh", ["repo", "view", "--json", "isPrivate"], { cwd: opts.vaultPath });
           const data = JSON.parse(stdout);
@@ -6305,20 +6301,24 @@ ${r2.coding}
 }
 var SECRET_DIRS = [".ssh", ".aws", ".gnupg", ".kube", ".docker"];
 var EXACT_ONLY_DIRS = [".config", "Documents", "Desktop", "Downloads"];
+function realResolve(p2) {
+  let cur = path3.resolve(p2);
+  const tail = [];
+  for (; ; ) {
+    try {
+      return path3.join(fs.realpathSync(cur), ...tail.reverse());
+    } catch (e) {
+      const parent = path3.dirname(cur);
+      if (parent === cur) return path3.resolve(p2);
+      tail.push(path3.basename(cur));
+      cur = parent;
+    }
+  }
+}
 function isDangerousPath(p2, home = os2.homedir()) {
   const cmp = (s) => process.platform === "win32" ? s.toLowerCase() : s;
-  let norm = "";
-  try {
-    norm = fs.realpathSync(p2);
-  } catch (e) {
-    norm = path3.resolve(p2);
-  }
-  let h2 = "";
-  try {
-    h2 = fs.realpathSync(home);
-  } catch (e) {
-    h2 = path3.resolve(home);
-  }
+  const norm = realResolve(p2);
+  const h2 = realResolve(home);
   if (path3.parse(norm).root === norm) return true;
   if (cmp(norm) === cmp(h2)) return true;
   if (!cmp(norm).startsWith(cmp(h2) + path3.sep)) return true;

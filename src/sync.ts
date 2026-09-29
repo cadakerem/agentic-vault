@@ -98,7 +98,7 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
 
     
     // 0. check for tracked ignored files (fail securely before doing anything)
-    const trackedStr = await git.raw(['ls-files', '-ci', '--exclude-standard', '-z']).catch(() => '');
+    const trackedStr = await git.raw(['ls-files', '-ci', '--exclude-standard', '-z']); // removed .catch() so it fails closed
     const tracked = trackedStr.split('\0').filter(Boolean);
     if (tracked.length > 0) {
       return {
@@ -124,14 +124,10 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
       const names = (await git.raw(['diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z'])).split('\0').filter(Boolean);
       let findings = [...scanFileNames(names), ...scanDiff(diff)];
 
-      // Scan unpushed commits
+      // Scan unpushed commits using git log -p
       try {
-        const hasUpstream = !!(await git.status()).tracking;
-        if (hasUpstream) {
-          const unpushedDiff = await git.raw(['diff', '@{u}..HEAD', '-U0', '--no-color', '--no-ext-diff']);
-          const unpushedNames = (await git.raw(['diff', '@{u}..HEAD', '--name-only', '--diff-filter=ACMR', '-z'])).split('\0').filter(Boolean);
-          findings = [...findings, ...scanFileNames(unpushedNames), ...scanDiff(unpushedDiff)];
-        }
+        const unpushedDiff = await git.raw(['log', '-p', '--not', '--remotes=' + remote, 'HEAD']);
+        findings = [...findings, ...scanDiff(unpushedDiff)];
       } catch (e) {}
 
       if (findings.length > 0) {
@@ -196,7 +192,7 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
 
     // 4. push
     if (opts.autoPush) {
-      if (opts.allowPublicRemote === false) {
+      if (!opts.allowPublicRemote) {
         try {
           const { stdout } = await execFileAsync('gh', ['repo', 'view', '--json', 'isPrivate'], { cwd: opts.vaultPath });
           const data = JSON.parse(stdout) as { isPrivate?: boolean } | null;
