@@ -136,7 +136,7 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
           ...result,
           status: 'secrets-found',
           findings,
-          message: `${findings.length} potential secret(s) found. If they are in unpushed local commits, run: git reset --soft @{u} (or your remote branch), remove the secrets, and commit again.`,
+          message: `${findings.length} potential secret(s) found. If in local commits, run: git reset --soft HEAD~1 (or your remote branch), remove secrets, and commit. If already pushed, ROTATE your keys immediately!`,
         };
       }
     }

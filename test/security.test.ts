@@ -1,3 +1,4 @@
+import { SyncOptions } from '../src/sync';
 import { describe, it, expect, vi } from 'vitest';
 vi.mock('obsidian', () => ({
   Notice: vi.fn(),
@@ -15,7 +16,6 @@ describe('Agentic Vault Security Tests', () => {
     const tmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'av-test-'));
     const remoteDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'av-remote-'));
     
-    // Create local remote
     const remoteGit = simpleGit(remoteDir);
     await remoteGit.init(true);
     
@@ -26,13 +26,13 @@ describe('Agentic Vault Security Tests', () => {
     await git.addConfig('user.email', 'test@example.com');
     await git.addRemote('origin', remoteDir);
     
-    fs.writeFileSync(path.join(tmp, 'dummy.txt'), 'hello\\n');
+    fs.writeFileSync(path.join(tmp, 'dummy.txt'), 'hello\n');
     await git.add('dummy.txt');
     await git.commit('init');
     await git.push('origin', 'master');
     
     await git.checkoutLocalBranch('feature');
-    fs.writeFileSync(path.join(tmp, 'secret.txt'), 'AKIAZ7Q4M2XK9WD3RTP6\\n');
+    fs.writeFileSync(path.join(tmp, 'secret.txt'), 'AKIAZ7Q4M2XK9WD3RTP6\n');
     await git.add('secret.txt');
     await git.commit('add secret');
     
@@ -43,7 +43,7 @@ describe('Agentic Vault Security Tests', () => {
     await git.checkout('master');
     await git.merge(['--no-ff', 'feature']);
     
-    const opts = { vaultPath: tmp, conflictStrategy: 'copy', allowPublicRemote: true };
+    const opts: SyncOptions = { vaultPath: tmp, conflictStrategy: 'keep-local-copy', allowPublicRemote: true, commitMessage: 'sync', autoPush: true };
     const res = await syncVault(git, opts);
     
     expect(res.status).toBe('secrets-found');
@@ -66,7 +66,7 @@ describe('Agentic Vault Security Tests', () => {
       pull: vi.fn()
     };
     
-    const opts = { vaultPath: '.', conflictStrategy: 'copy' };
+    const opts: SyncOptions = { vaultPath: '.', conflictStrategy: 'keep-local-copy', commitMessage: 'sync', autoPush: true };
     const res = await syncVault(fakeGit as any, opts);
     
     expect(res.status).toBe('error');
