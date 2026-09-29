@@ -96,6 +96,33 @@ describe('planLink / applyLink', () => {
     expect(fs.lstatSync(ssh).isSymbolicLink()).toBe(false);
   });
 
+  
+  it('Hedef ~/sym_ssh (symlink -> .ssh) -> yalnizca link degisir, .ssh icerigi dokunulmadan kalir', () => {
+    const ssh = path.join(home, '.ssh');
+    if (!fs.existsSync(ssh)) fs.mkdirSync(ssh);
+    fs.writeFileSync(path.join(ssh, 'id_ed25519'), 'PRIVATE');
+    
+    const symSsh = path.join(home, 'sym_ssh');
+    mkLink(ssh, symSsh);
+    
+    const plan = planLink(source, symSsh, home);
+    expect(plan.action).toBe('replace-link');
+    applyLink(source, symSsh, plan);
+    expect(isLinkTo(symSsh, source)).toBe(true);
+    expect(fs.readFileSync(path.join(ssh, 'id_ed25519'), 'utf8')).toBe('PRIVATE');
+  });
+
+  it('sym_ssh/yeni -> refuse (ust klasor cozuluyor)', () => {
+    const ssh = path.join(home, '.ssh');
+    if (!fs.existsSync(ssh)) fs.mkdirSync(ssh);
+    const symSsh = path.join(home, 'sym_ssh');
+    if (!fs.existsSync(symSsh)) mkLink(ssh, symSsh);
+    
+    const targetInsideSymSsh = path.join(symSsh, 'yeni');
+    const plan = planLink(source, targetInsideSymSsh, home);
+    expect(plan.action).toBe('refuse');
+  });
+
   it('refuses when target and source overlap', () => {
     const inside = path.join(home, 'vault');
     expect(planLink(inside, path.join(inside, 'sub'), home).action).toBe('refuse');

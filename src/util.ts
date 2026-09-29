@@ -36,10 +36,10 @@ const EXACT_ONLY_DIRS = ['.config', 'Documents', 'Desktop', 'Downloads'];
 
 /** `home` is injectable so tests do not depend on the machine. */
 function realResolve(p: string): string {
-  let cur = path.resolve(p);
+  let cur = path.resolve(path.dirname(p));
   const tail: string[] = [];
   for (;;) {
-    try { return path.join(fs.realpathSync(cur), ...tail.reverse()); }
+    try { return path.join(fs.realpathSync.native(cur), ...tail.reverse(), path.basename(p)); }
     catch {
       const parent = path.dirname(cur);
       if (parent === cur) return path.resolve(p);
@@ -55,9 +55,11 @@ export function isDangerousPath(p: string, home: string = os.homedir()): boolean
   const h = realResolve(home);
   if (path.parse(norm).root === norm) return true;
   if (cmp(norm) === cmp(h)) return true;
-  if (!cmp(norm).startsWith(cmp(h) + path.sep)) return true;
-  const parts = path.relative(h, norm).split(path.sep);
-  if (SECRET_DIRS.some((d) => cmp(d) === cmp(parts[0]))) return true;
-  if (parts.length === 1 && EXACT_ONLY_DIRS.some((d) => cmp(d) === cmp(parts[0]))) return true;
+  if (!cmp(norm).startsWith(cmp(h))) return true;
+  if (cmp(norm).length === cmp(h).length) return true;
+  if (cmp(norm)[cmp(h).length] !== '\\' && cmp(norm)[cmp(h).length] !== '/') return true;
+  const parts = cmp(norm).substring(cmp(h).length + 1).split(/[\\/]/);
+  if (SECRET_DIRS.some((d) => cmp(d) === parts[0])) return true;
+  if (parts.length === 1 && EXACT_ONLY_DIRS.some((d) => cmp(d) === parts[0])) return true;
   return false;
 }
