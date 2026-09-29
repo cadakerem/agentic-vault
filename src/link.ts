@@ -69,7 +69,7 @@ export function applyLink(source: string, target: string, plan: LinkPlan, platfo
 
   let backup: string | undefined;
   if (plan.action === 'replace-link') {
-    fs.unlinkSync(t); // removes only the link, never the destination's contents
+    try { fs.unlinkSync(t); } catch (e) { if (e.code === 'EPERM' || e.code === 'EISDIR') fs.rmdirSync(t); else throw e; } // safely remove junction or symlink, never the destination's contents
   } else if (plan.action === 'backup-and-create') {
     backup = plan.backup;
     fs.renameSync(t, backup);
