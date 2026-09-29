@@ -126,7 +126,7 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
 
       // Scan unpushed commits using git log -p
       try {
-        const unpushedDiff = await git.raw(['log', '-p', '-m', '--format=', '--not', '--remotes=' + remote, 'HEAD']);
+        const unpushedDiff = await git.raw(['log', '-p', '-m', '--format=', 'HEAD', '--not', '--remotes=' + remote]);
         findings = [...findings, ...scanDiff(unpushedDiff)];
       } catch (e) {}
 
@@ -136,7 +136,7 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
           ...result,
           status: 'secrets-found',
           findings,
-          message: `${findings.length} potential secret(s) found. Nothing was committed or pushed.`,
+          message: `${findings.length} potential secret(s) found. If they are in unpushed local commits, run: git reset --soft @{u} (or your remote branch), remove the secrets, and commit again.`,
         };
       }
     }
