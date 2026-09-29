@@ -58,7 +58,7 @@ function isMidRebase(vaultPath: string): boolean {
 async function currentBranch(git: SimpleGit): Promise<string> {
   try {
     // works on an unborn branch too (fresh `git init`)
-    return (await git.raw(['symbolic-ref', '--short', 'HEAD'])).trim() || 'main';
+    return (await git.raw(['symbolic-ref', '--short', 'HEAD']).catch(() => '')).trim() || 'main';
   } catch {
     return 'main';
   }
@@ -136,7 +136,7 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
           ...result,
           status: 'secrets-found',
           findings,
-          message: `${findings.length} potential secret(s) found. If in local commits, run: git reset --soft ${remote}/${branch}, remove secrets, and commit. If already pushed, ROTATE your keys immediately!`,
+          message: `${findings.length} potential secret(s) found. If in local commits, run: git reset --soft origin/main, remove secrets, and commit. If already pushed, ROTATE your keys immediately!`,
         };
       }
     }
@@ -203,8 +203,29 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
     // 4. push
     if (opts.autoPush) {
       if (!opts.allowPublicRemote) {
-        try {
-          const { stdout } = await execFileAsync('gh', ['repo', 'view', '--json', 'isPrivate'], { cwd: opts.vaultPath });
+          let repoPath = '';
+          const remoteUrlStr = await git.raw(['remote', 'get-url', remote]).catch(() => '');
+          const remoteUrl = remoteUrlStr.trim();
+          
+          if (!remoteUrl) {
+            return {
+              ...result,
+              status: 'error',
+              message: `Push aborted: Could not fetch URL for remote "${remote}". Enable "Allow Public Remote" to bypass.`
+            };
+          }
+
+          const match = remoteUrl.match(/github\.com[:/]([^/]+\/[^/.]+?)(\.git)?$/i);
+          if (match) repoPath = match[1];
+          if (!repoPath) {
+            return {
+              ...result,
+              status: 'error',
+              message: `Push aborted: Remote "${remote}" (${remoteUrl}) is not a recognized GitHub URL. Enable "Allow Public Remote" to bypass.`
+            };
+          }
+          try {
+            const { stdout } = await execFileAsync('gh', ['repo', 'view', repoPath, '--json', 'isPrivate'], { cwd: opts.vaultPath });
           const data = JSON.parse(stdout) as { isPrivate?: boolean } | null;
           if (data && data.isPrivate === false) {
             return {

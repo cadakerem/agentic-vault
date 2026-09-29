@@ -10,15 +10,16 @@ vi.mock('obsidian', () => ({
 
 vi.mock('child_process', () => {
   const util = require('util');
-  const execFile: any = () => {};
+  const execFile: any = vi.fn();
   execFile[util.promisify.custom] = async (cmd: string, args: string[], opts: any) => {
+    execFile(cmd, args, opts); // for toHaveBeenCalledWith checks
     if (args.includes('view') && args.includes('--json') && args.includes('isPrivate')) {
-      const url = (opts.cwd || '') + ''; 
-      if (url.includes('private')) {
+      const repo = args[2];
+      if (repo.includes('private')) {
         return { stdout: '{"isPrivate":true}' };
-      } else if (url.includes('public')) {
+      } else if (repo.includes('public')) {
         return { stdout: '{"isPrivate":false}' };
-      } else if (url.includes('broken')) {
+      } else if (repo.includes('broken')) {
         throw new Error('gh not found');
       } else {
         return { stdout: '{"isPrivate":true}' };
@@ -28,6 +29,8 @@ vi.mock('child_process', () => {
   };
   return { execFile };
 });
+
+import { execFile } from 'child_process';
 
 describe('Public Remote Checks', () => {
   const getFakeGit = (url: string) => ({
@@ -47,37 +50,46 @@ describe('Public Remote Checks', () => {
     pull: vi.fn()
   });
 
-  it('allows push if remote is private', async () => {
-    const git = getFakeGit('https://github.com/user/private-repo');
-    const opts: SyncOptions = { vaultPath: 'private', conflictStrategy: 'keep-local-copy', commitMessage: 'sync', autoPush: true };
-    const res = await syncVault(git as any, opts);
+  const opts: SyncOptions = { vaultPath: 'fake', conflictStrategy: 'keep-local-copy', commitMessage: 'sync', autoPush: true };
+
+  it('allows push if remote is private (HTTPS)', async () => {
+    const git = getFakeGit('https://github.com/owner/private-repo.git');
+    const res = await syncVault(git as any, { ...opts, allowPublicRemote: false });
     expect(res.status).toBe('ok');
     expect(git.push).toHaveBeenCalled();
+    expect(execFile).toHaveBeenCalledWith('gh', ['repo', 'view', 'owner/private-repo', '--json', 'isPrivate'], expect.anything());
+  });
+
+  it('allows push if remote is private (SSH)', async () => {
+    const git = getFakeGit('git@github.com:owner/private-repo.git');
+    const res = await syncVault(git as any, { ...opts, allowPublicRemote: false });
+    expect(res.status).toBe('ok');
+    expect(git.push).toHaveBeenCalled();
+    expect(execFile).toHaveBeenCalledWith('gh', ['repo', 'view', 'owner/private-repo', '--json', 'isPrivate'], expect.anything());
   });
 
   it('aborts push if remote is public', async () => {
-    const git = getFakeGit('https://github.com/user/public-repo');
-    const opts: SyncOptions = { vaultPath: 'public', conflictStrategy: 'keep-local-copy', commitMessage: 'sync', autoPush: true };
-    const res = await syncVault(git as any, opts);
+    const git = getFakeGit('https://github.com/owner/public-repo');
+    const res = await syncVault(git as any, { ...opts, allowPublicRemote: false });
     expect(res.status).toBe('error');
     expect(res.message).toContain('Repository is PUBLIC');
     expect(git.push).not.toHaveBeenCalled();
   });
 
-  it('aborts push if gh cli fails (e.g. not installed or unauthenticated)', async () => {
-    const git = getFakeGit('https://github.com/user/broken-repo');
-    const opts: SyncOptions = { vaultPath: 'broken', conflictStrategy: 'keep-local-copy', commitMessage: 'sync', autoPush: true };
-    const res = await syncVault(git as any, opts);
+  it('aborts push if non-GitHub remote is used', async () => {
+    const git = getFakeGit('https://gitlab.com/owner/repo.git');
+    const res = await syncVault(git as any, { ...opts, allowPublicRemote: false });
     expect(res.status).toBe('error');
-    expect(res.message).toContain('Could not verify if remote is private');
+    expect(res.message).toContain('not a recognized GitHub URL');
     expect(git.push).not.toHaveBeenCalled();
+    expect(execFile).not.toHaveBeenCalledWith('gh', expect.anything(), expect.anything());
   });
 
-  it('allows push if allowPublicRemote is true, regardless of visibility', async () => {
-    const git = getFakeGit('https://github.com/user/public-repo');
-    const optsTrue: SyncOptions = { vaultPath: 'public', conflictStrategy: 'keep-local-copy', commitMessage: 'sync', autoPush: true, allowPublicRemote: true };
-    const res = await syncVault(git as any, optsTrue);
-    expect(res.status).toBe('ok');
-    expect(git.push).toHaveBeenCalled();
+  it('aborts push if allowPublicRemote is undefined (treats as false)', async () => {
+    const git = getFakeGit('https://github.com/owner/public-repo');
+    const res = await syncVault(git as any, { ...opts, allowPublicRemote: undefined });
+    expect(res.status).toBe('error');
+    expect(res.message).toContain('Repository is PUBLIC');
+    expect(git.push).not.toHaveBeenCalled();
   });
 });
