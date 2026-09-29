@@ -50,7 +50,7 @@ function realResolve(p: string): string {
 }
 
 export function isDangerousPath(p: string, home: string = os.homedir()): boolean {
-  const cmp = (s: string) => (process.platform === 'win32' ? s.toLowerCase() : s);
+  const cmp = (s: string) => (process.platform === 'win32' || process.platform === 'darwin' ? s.toLowerCase() : s);
   const norm = realResolve(p);
   const h = realResolve(home);
   if (path.parse(norm).root === norm) return true;

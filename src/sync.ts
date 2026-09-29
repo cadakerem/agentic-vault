@@ -136,13 +136,23 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
           ...result,
           status: 'secrets-found',
           findings,
-          message: `${findings.length} potential secret(s) found. If in local commits, run: git reset --soft HEAD~1 (or your remote branch), remove secrets, and commit. If already pushed, ROTATE your keys immediately!`,
+          message: `${findings.length} potential secret(s) found. If in local commits, run: git reset --soft ${remote}/${branch}, remove secrets, and commit. If already pushed, ROTATE your keys immediately!`,
         };
       }
     }
 
-    const statusPorcelain = await git.raw(['status', '--porcelain']).catch(() => '');
-      const hasStaged = statusPorcelain.split('\n').some(line => /^[MARCD]/.test(line));
+    let hasStaged = false;
+      try {
+        const out = await git.raw(['diff', '--cached', '--name-only', '-z']);
+        hasStaged = out.length > 0;
+      } catch (e: any) {
+        if (e.message && e.message.includes("bad revision 'HEAD'")) {
+          const out = await git.raw(['ls-files', '-z']);
+          hasStaged = out.length > 0;
+        } else {
+          throw e;
+        }
+      }
     if (hasStaged) {
       await git.commit(opts.commitMessage);
       result.committed = true;
