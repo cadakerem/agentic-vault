@@ -71,6 +71,7 @@ const write = (dir: string, file: string, content: string) => {
 const read = (dir: string, file: string) => fs.readFileSync(path.join(dir, file), 'utf8');
 const opts = (dir: string, over: Partial<SyncOptions> = {}): SyncOptions => ({
   vaultPath: dir,
+  allowPublicRemote: true,
   commitMessage: 'auto sync',
   autoPush: true,
   ...over,

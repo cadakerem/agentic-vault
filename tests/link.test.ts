@@ -10,7 +10,7 @@ const target = () => path.join(home, '.gemini', 'config');
 beforeEach(() => {
   root = fs.mkdtempSync(path.join(os.tmpdir(), 'av-link-'));
   home = path.join(root, 'home');
-  source = path.join(root, 'vault', 'AI-Brain');
+  source = path.join(home, 'vault', 'AI-Brain');
   fs.mkdirSync(home, { recursive: true });
 });
 afterEach(() => fs.rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }));
@@ -71,7 +71,7 @@ describe('planLink / applyLink', () => {
   });
 
   it('replaces a link pointing elsewhere, without touching what it pointed to', () => {
-    const other = path.join(root, 'other');
+    const other = path.join(home, 'other');
     fs.mkdirSync(other);
     fs.writeFileSync(path.join(other, 'keep.txt'), 'keep');
     fs.mkdirSync(path.dirname(target()), { recursive: true });
