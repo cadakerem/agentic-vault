@@ -126,7 +126,7 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
 
       // Scan unpushed commits using git log -p
       try {
-        const unpushedDiff = await git.raw(['log', '-p', '--not', '--remotes=' + remote, 'HEAD']);
+        const unpushedDiff = await git.raw(['log', '-p', '-m', '--first-parent', '--format=', '--not', '--remotes=' + remote, 'HEAD']);
         findings = [...findings, ...scanDiff(unpushedDiff)];
       } catch (e) {}
 
