@@ -6379,11 +6379,21 @@ var SetupWizardModal = class extends import_obsidian2.Modal {
     });
     const vaultPath = getVaultPath(this.app);
     const brain = this.plugin.settings.vaultBrainFolder || "AI-Brain";
-    const candidates = [
+    const brainRules = [
       `${brain}/gemini/GEMINI.md`,
       `${brain}/claude/CLAUDE.md`,
       `${brain}/cursor/.cursorrules`,
-      `${brain}/gemini/.agents/skills/`,
+      `${brain}/copilot/.github/copilot-instructions.md`,
+      `${brain}/windsurf/.windsurfrules`,
+      `${brain}/Rules.md`
+    ];
+    const foundRule = brainRules.find((r2) => fs4.existsSync(path5.join(vaultPath, r2)));
+    if (foundRule && this.plugin.settings.ruleFilePath !== foundRule && this.plugin.settings.ruleFilePath === "AI-Brain/Rules.md") {
+      this.plugin.settings.ruleFilePath = foundRule;
+      void this.plugin.saveSettings();
+      new import_obsidian2.Notice(`Agentic Vault: Brain File Path auto-detected as ${foundRule}`);
+    }
+    const candidates = [
       `${brain}/gemini/plugins/`,
       `${brain}/system-prompts/`
     ];
@@ -6399,16 +6409,20 @@ var SetupWizardModal = class extends import_obsidian2.Modal {
         cls: "av-subtitle"
       });
       const checkList = contentEl.createDiv({ cls: "av-whitelist-suggestions" });
-      checkList.style.marginBottom = "15px";
-      checkList.style.background = "var(--background-secondary)";
-      checkList.style.padding = "10px";
-      checkList.style.borderRadius = "5px";
+      checkList.setCssStyles({
+        marginBottom: "15px",
+        background: "var(--background-secondary)",
+        padding: "10px",
+        borderRadius: "5px"
+      });
       newCandidates.forEach((c3) => {
         const label = checkList.createEl("label");
-        label.style.display = "block";
-        label.style.marginBottom = "5px";
+        label.setCssStyles({
+          display: "block",
+          marginBottom: "5px"
+        });
         const cb = label.createEl("input", { type: "checkbox" });
-        cb.style.marginRight = "8px";
+        cb.setCssStyles({ marginRight: "8px" });
         cb.onchange = () => {
           if (cb.checked) selectedWhitelist.push(c3);
           else selectedWhitelist = selectedWhitelist.filter((x2) => x2 !== c3);
@@ -6784,6 +6798,11 @@ var AgenticVaultSettingTab = class extends import_obsidian6.PluginSettingTab {
     __publicField(this, "remoteUrlInput", "");
     this.plugin = plugin;
   }
+  update() {
+    this.containerEl.empty();
+    this.containerEl.addClass("agentic-vault-settings");
+    super.update();
+  }
   getSettingDefinitions() {
     const vaultPath = getVaultPath(this.app);
     const isGitRepo = fs5.existsSync(path6.join(vaultPath, ".git"));
@@ -6911,21 +6930,25 @@ var AgenticVaultSettingTab = class extends import_obsidian6.PluginSettingTab {
             this.plugin.settings.excludedSyncPaths = v;
             await this.plugin.saveSettings();
           });
-          defs.push({
-            name: "Included Sync Paths (Whitelist Mode)",
-            desc: "If you excluded an entire folder above (e.g. AI-Brain/), list specific files/folders inside it to whitelist (one per line, e.g. AI-Brain/Rules.md). These will be enforced via .gitignore.",
-            render: (setting2, _group2) => {
-              setting2.setName("Included Sync Paths (Whitelist)").setDesc("Whitelist specific paths that were ignored by an excluded folder (one per line, e.g. AI-Brain/Rules.md).").addTextArea((t3) => {
-                t3.setPlaceholder("AI-Brain/Rules.md\nAI-Brain/skills/");
-                t3.setValue(this.plugin.settings.includedSyncPaths);
-                t3.onChange(async (v) => {
-                  this.plugin.settings.includedSyncPaths = v;
-                  await this.plugin.saveSettings();
-                });
-              });
-            }
-          });
         });
+      }
+    });
+    defs.push({
+      name: "Included Sync Paths (Whitelist Mode)",
+      desc: "If you excluded an entire folder above (e.g. AI-Brain/), list specific files/folders inside it to whitelist (one per line, e.g. AI-Brain/Rules.md). These will be enforced via .gitignore.",
+      render: (setting, _group) => {
+        setting.setName("Included Sync Paths (Whitelist)").setDesc("Whitelist specific paths that were ignored by an excluded folder (one per line, e.g. AI-Brain/Rules.md).").addTextArea((t2) => {
+          t2.setPlaceholder("AI-Brain/Rules.md\nAI-Brain/plugins/");
+          t2.setValue(this.plugin.settings.includedSyncPaths);
+          t2.onChange(async (v) => {
+            this.plugin.settings.includedSyncPaths = v;
+            await this.plugin.saveSettings();
+          });
+        }).addButton((btn) => btn.setButtonText("\u{1F504} Reset Dismissed").setTooltip("Reset the list of skipped whitelist suggestions so they appear in the Setup Wizard again.").onClick(async () => {
+          this.plugin.settings.dismissedWhitelistSuggestions = [];
+          await this.plugin.saveSettings();
+          new import_obsidian6.Notice("Dismissed suggestions reset. Run the Setup Wizard again to see them.");
+        }));
       }
     });
     defs.push({
@@ -6949,9 +6972,9 @@ var AgenticVaultSettingTab = class extends import_obsidian6.PluginSettingTab {
     });
     defs.push({
       name: "Brain File Path",
-      desc: "Markdown file where AI rules are stored (e.g. AI-Brain/Rules.md)",
+      desc: "Markdown file where AI rules are stored (e.g. AI-Brain/GEMINI.md or AI-Brain/CLAUDE.md)",
       render: (setting, _group) => {
-        setting.setName("Brain File Path").setDesc("Markdown file where AI rules are stored (e.g. AI-Brain/Rules.md)").addText((t2) => t2.setPlaceholder("AI-Brain/Rules.md").setValue(this.plugin.settings.ruleFilePath).onChange(async (v) => {
+        setting.setName("Brain File Path").setDesc("Markdown file where AI rules are stored (e.g. AI-Brain/gemini/GEMINI.md)").addText((t2) => t2.setPlaceholder("AI-Brain/Rules.md").setValue(this.plugin.settings.ruleFilePath).onChange(async (v) => {
           this.plugin.settings.ruleFilePath = v;
           await this.plugin.saveSettings();
         }));
@@ -7145,11 +7168,26 @@ var AgenticVaultPlugin = class extends import_obsidian7.Plugin {
     const gitignorePath = path7.join(vaultPath, ".gitignore");
     const brain = this.settings.vaultBrainFolder || "AI-Brain";
     const rules = [
+      ".obsidian/",
       "/workspace.json",
       "/workspace-mobile.json",
       "node_modules/",
       ".DS_Store",
       `${this.app.vault.configDir}/plugins/agentic-vault/secrets.json`,
+      // ZERO-TRUST ARCHITECTURE FOR AI-BRAIN
+      `${brain}/**/*`,
+      `!${brain}/**/`,
+      // AUTOMATIC WHITELIST (Pure text, safe instructions)
+      `!${brain}/**/skills/**`,
+      `!${brain}/**/.agents/skills/**`,
+      `!${brain}/**/CLAUDE.md`,
+      `!${brain}/**/GEMINI.md`,
+      `!${brain}/**/.cursorrules`,
+      `!${brain}/**/.cursor/rules/**`,
+      `!${brain}/**/copilot-instructions.md`,
+      `!${brain}/**/CONVENTIONS.md`,
+      `!${brain}/**/.windsurfrules`,
+      // HARD BLACKLIST (Always blocked even if someone whitelists them by mistake)
       `${brain}/**/*oauth*`,
       `${brain}/**/*token*`,
       `${brain}/**/*secret*`,
@@ -7172,7 +7210,7 @@ var AgenticVaultPlugin = class extends import_obsidian7.Plugin {
       }
       if (changed) {
         fs6.writeFileSync(gitignorePath, content);
-        new import_obsidian7.Notice("Agentic Vault: Updated .gitignore to prevent secret leaks.");
+        new import_obsidian7.Notice("Agentic Vault Security Update: Zero-Trust mode activated for AI-Brain. Unapproved files will no longer sync.", 1e4);
       }
       try {
         const lsFiles = await this.git.raw(["ls-files", "-ci", "--exclude-standard"]);
