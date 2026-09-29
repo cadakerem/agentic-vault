@@ -12,7 +12,7 @@ It bridges the gap between your local OS-level AI tools (Antigravity, Claude Cod
 - **🔄 Auto Git Sync:** Background auto-pull, commit, and push. Your vault acts as a seamless Git repository without needing terminal commands.
 - **☁️ Git Status Bar:** Live status in the bottom right corner showing your current branch, ahead/behind commits, and uncommitted changes (e.g., `☁ main ↑2 ✎3`).
 - **🛡️ Pattern-Based Secret Scanning:** A pre-commit scanning layer that helps prevent accidentally committing known API keys and tokens. Note that this is a pattern-based heuristic and not an absolute security guarantee.
-- **🔒 Zero-Trust Sync Architecture:** By default, only safe text files (prompts, rules, and skills) in your `AI-Brain` are synced to GitHub. Junk config files, AI chat histories, and locally cached secrets are automatically blocked by our Default-Deny whitelist engine.
+- **🔒 Best-Effort Secret-Leak Prevention Sync Architecture:** By default, only safe text files (prompts, rules, and skills) in your `AI-Brain` are synced to GitHub. Junk config files, AI chat histories, and locally cached secrets are automatically blocked by our Default-Deny whitelist engine.
 - **🔄 Smart Conflict Resolution (Dropbox-style):** If you make edits on your laptop and desktop at the same time, Agentic Vault cleanly handles Git merge conflicts by keeping the remote version and saving your local edits side-by-side as `.conflict-local` copies. No more broken Markdown files with Git markers!
 - **🌐 Universal AI Tool Support:** Natively links configurations for:
   - Antigravity / Gemini CLI (`~/.gemini/config`)
@@ -78,14 +78,14 @@ Agentic Vault is built for local-first automation. Because it creates symlinks a
 
 *All source code is public, and GitHub Actions guarantees that release assets match the repository code byte-for-byte.*
 
-### 🚨 Zero-Trust Security Architecture
+### 🚨 Best-Effort Secret-Leak Prevention Security Architecture
 **Agentic Vault is designed to sync your personal AI agent skills, rules, and configurations.** Because these environments often reside close to `.env` files, API keys, and sensitive prompts, Agentic Vault uses a three-layered defense system:
 
-1. **Zero-Trust Whitelist (.gitignore):** By default, your entire `AI-Brain` folder is blocked from syncing (Default-Deny). The plugin automatically whitelists only known, safe text formats (e.g. `GEMINI.md`, `CLAUDE.md`, `.cursorrules`, and `skills/`).
+1. **Best-Effort Secret-Leak Prevention Whitelist (.gitignore):** By default, your entire `AI-Brain` folder is blocked from syncing (Default-Deny). The plugin automatically whitelists only known, safe text formats (e.g. `GEMINI.md`, `CLAUDE.md`, `.cursorrules`, and `skills/`).
 2. **Setup Wizard Sandboxing:** Any custom plugins or settings folders you want to sync must be explicitly approved via the Setup Wizard's Whitelist Detection UI. The system will never silently sync unapproved files.
 3. **Content-based Defense (Secret Scanner):** Before every commit, a built-in scanner reads the actual content of the changed files. If it detects AWS keys, Slack tokens, private keys, or generic secret patterns, it blocks the commit.
 
-*(Disclaimer: While the Zero-Trust architecture blocks unknown files and we now block `.obsidian/` by default to prevent other plugins from leaking API keys in their `data.json` files, we still **STRONGLY** recommend keeping your GitHub repository Private.)*
+*(Disclaimer: While the Best-Effort Secret-Leak Prevention architecture blocks unknown files and we now block `.obsidian/` by default to prevent other plugins from leaking API keys in their `data.json` files, we still **STRONGLY** recommend keeping your GitHub repository Private.)*
 *(Note: The Secret Scanner cannot be disabled if you have 'Allow Public Remote' toggled off, ensuring 100% protection for private environments).*
 
 ---
@@ -102,3 +102,4 @@ Contributions, issues, and feature requests are welcome! Feel free to check the 
 This project is licensed under the [MIT License](LICENSE).
 
 
+\n\n## Known Limitations\n- **Inbound Sync Supply Chain Risk:** Sync automatically pulls from the remote. If a malicious actor compromises the remote repository and modifies agent instruction files (like skills or .md files), the AI agents might execute them (Prompt Injection / RCE). Always ensure your remote repository is strictly private and secure.
