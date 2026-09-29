@@ -144,7 +144,7 @@ export default class AgenticVaultPlugin extends Plugin {
 		const gitignorePath = path.join(vaultPath, '.gitignore');
 		const brain = this.settings.vaultBrainFolder || 'AI-Brain';
 		const rules = [
-			'.obsidian/',
+			`${this.app.vault.configDir}/`,
 			'/workspace.json',
 			'/workspace-mobile.json',
 			'node_modules/',
@@ -154,6 +154,7 @@ export default class AgenticVaultPlugin extends Plugin {
 			`${brain}/**/*`,
 			`!${brain}/**/`,
 			// AUTOMATIC WHITELIST (Pure text, safe instructions)
+			`!/${this.settings.ruleFilePath}`,
 			`!${brain}/**/skills/**`,
 			`!${brain}/**/.agents/skills/**`,
 			`!${brain}/**/CLAUDE.md`,
@@ -164,12 +165,16 @@ export default class AgenticVaultPlugin extends Plugin {
 			`!${brain}/**/CONVENTIONS.md`,
 			`!${brain}/**/.windsurfrules`,
 			// HARD BLACKLIST (Always blocked even if someone whitelists them by mistake)
-			`${brain}/**/*oauth*`,
-			`${brain}/**/*token*`,
-			`${brain}/**/*secret*`,
+			`${brain}/**/*[oO][aA][uU][tT][hH]*`,
+			`${brain}/**/*[tT][oO][kK][eE][nN]*`,
+			`${brain}/**/*[sS][eE][cC][rR][eE][tT]*`,
 			`${brain}/**/credentials`,
-			`${brain}/**/.env`,
-			`${brain}/**/*.key`
+			`${brain}/**/.env*`,
+			`${brain}/**/*.key`,
+			`${brain}/**/*.pem`,
+			`${brain}/**/*.p12`,
+			`${brain}/**/*.pfx`,
+			`${brain}/**/id_rsa*`
 		];
 		try {
 			let content = '';
@@ -189,17 +194,6 @@ export default class AgenticVaultPlugin extends Plugin {
 				new Notice('Agentic Vault Security Update: Zero-Trust mode activated for AI-Brain. Unapproved files will no longer sync.', 10000);
 			}
 			
-			// Check if any ignored files are still being tracked
-			try {
-				const lsFiles = await this.git.raw(['ls-files', '-ci', '--exclude-standard']);
-				const trackedIgnored = lsFiles.split('\n').map(l => l.trim()).filter(Boolean);
-				if (trackedIgnored.length > 0) {
-					new SecurityAlertModal(this.app, this.git, trackedIgnored).open();
-					console.warn('Tracked ignored files (DANGER):', trackedIgnored);
-				}
-			} catch {
-				// Ignore ls-files errors or index.lock race conditions safely
-			}
 		} catch (e) {
 			console.error("Failed to update .gitignore", e);
 			new Notice("Failed to update .gitignore. Check console.");

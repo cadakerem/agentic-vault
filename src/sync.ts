@@ -96,6 +96,18 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
       };
     }
 
+    
+    // 0. check for tracked ignored files (fail securely before doing anything)
+    const trackedStr = await git.raw(['ls-files', '-ci', '--exclude-standard', '-z']).catch(() => '');
+    const tracked = trackedStr.split('\0').filter(Boolean);
+    if (tracked.length > 0) {
+      return {
+        ...result,
+        status: 'error',
+        message: 'DANGER: Ignored files are still tracked by Git! Sync stopped to prevent secrets leaking. Please untrack them using git rm -r --cached.',
+      };
+    }
+
     // 1. commit local changes first
     const addArgs = ['.'];
     if (opts.excludedPaths && opts.excludedPaths.length > 0) {
@@ -105,13 +117,23 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
 
     // 1b. secret scan of what is about to be committed; on a hit, unstage everything and stop
     // If public remotes are NOT allowed, we FORCE secret scanning. It can only be disabled if allowPublicRemote is true.
-    const shouldScan = opts.allowPublicRemote === false ? true : opts.scanSecrets !== false;
+    const shouldScan = !opts.allowPublicRemote ? true : opts.scanSecrets !== false;
     if (shouldScan) {
+      
       const diff = await git.raw(['diff', '--cached', '-U0', '--no-color', '--no-ext-diff']);
-      const names = (await git.raw(['diff', '--cached', '--name-only', '--diff-filter=AM', '-z']))
-        .split('\0')
-        .filter(Boolean);
-      const findings = [...scanFileNames(names), ...scanDiff(diff)];
+      const names = (await git.raw(['diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z'])).split('\0').filter(Boolean);
+      let findings = [...scanFileNames(names), ...scanDiff(diff)];
+
+      // Scan unpushed commits
+      try {
+        const hasUpstream = !!(await git.status()).tracking;
+        if (hasUpstream) {
+          const unpushedDiff = await git.raw(['diff', '@{u}..HEAD', '-U0', '--no-color', '--no-ext-diff']);
+          const unpushedNames = (await git.raw(['diff', '@{u}..HEAD', '--name-only', '--diff-filter=ACMR', '-z'])).split('\0').filter(Boolean);
+          findings = [...findings, ...scanFileNames(unpushedNames), ...scanDiff(unpushedDiff)];
+        }
+      } catch (e) {}
+
       if (findings.length > 0) {
         await unstageAll(git);
         return {
@@ -123,7 +145,9 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
       }
     }
 
-    if (!(await git.status()).isClean()) {
+    let hasStaged = false;
+    try { await git.raw(['diff', '--cached', '--quiet']); } catch { hasStaged = true; }
+    if (hasStaged) {
       await git.commit(opts.commitMessage);
       result.committed = true;
     }

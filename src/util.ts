@@ -36,8 +36,12 @@ const EXACT_ONLY_DIRS = ['.config', 'Documents', 'Desktop', 'Downloads'];
 /** `home` is injectable so tests do not depend on the machine. */
 export function isDangerousPath(p: string, home: string = os.homedir()): boolean {
   const cmp = (s: string) => (process.platform === 'win32' ? s.toLowerCase() : s);
-  const norm = path.resolve(p);
-  const h = path.resolve(home);
+  
+  let norm = '';
+  try { norm = fs.realpathSync(p); } catch { norm = path.resolve(p); }
+  
+  let h = '';
+  try { h = fs.realpathSync(home); } catch { h = path.resolve(home); }
 
   if (path.parse(norm).root === norm) return true; // any filesystem/drive root
   if (cmp(norm) === cmp(h)) return true; // home itself
