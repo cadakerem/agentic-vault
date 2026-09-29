@@ -85,7 +85,7 @@ Agentic Vault is built for local-first automation. Because it creates symlinks a
 2. **Setup Wizard Sandboxing:** Any custom plugins or settings folders you want to sync must be explicitly approved via the Setup Wizard's Whitelist Detection UI. The system will never silently sync unapproved files.
 3. **Content-based Defense (Secret Scanner):** Before every commit, a built-in scanner reads the actual content of the changed files. If it detects AWS keys, Slack tokens, private keys, or generic secret patterns, it blocks the commit.
 
-*(Disclaimer: While the Zero-Trust architecture blocks unknown files, we still strongly recommend keeping your GitHub repository Private.)*
+*(Disclaimer: While the Zero-Trust architecture blocks unknown files and we now block `.obsidian/` by default to prevent other plugins from leaking API keys in their `data.json` files, we still **STRONGLY** recommend keeping your GitHub repository Private.)*
 *(Note: The Secret Scanner cannot be disabled if you have 'Allow Public Remote' toggled off, ensuring 100% protection for private environments).*
 
 ---
