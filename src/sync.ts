@@ -141,8 +141,8 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
       }
     }
 
-    let hasStaged = false;
-    try { await git.raw(['diff', '--cached', '--quiet']); } catch { hasStaged = true; }
+    const statusPorcelain = await git.raw(['status', '--porcelain']).catch(() => '');
+      const hasStaged = statusPorcelain.split('\n').some(line => /^[MARCD]/.test(line));
     if (hasStaged) {
       await git.commit(opts.commitMessage);
       result.committed = true;
