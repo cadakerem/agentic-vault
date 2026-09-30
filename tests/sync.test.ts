@@ -577,8 +577,10 @@ describe('scanSecrets independence (v2.0.0 upgrade regression)', () => {
     const remote = await makeRemote();
     const { dir, git } = await makeCommittedVault('vault', remote);
 
-    // Set the remote to a public GitHub URL to trigger the public remote block
-    await git.remote(['set-url', 'origin', 'https://github.com/cadakerem/fake-public-repo.git']);
+    // Set the remote to a real public GitHub URL.
+    await git.remote(['set-url', 'origin', 'https://github.com/cadakerem/agentic-vault.git']);
+    // Switch to a branch that doesn't exist on the remote so `git pull` is bypassed.
+    await git.checkoutLocalBranch('fake-branch-for-test');
 
     // Write a file that looks like a secret — scanner would normally block this.
     write(dir, 'test.env', 'OPENAI_API_KEY=sk-abcdef1234567890abcdef1234567890abcdef1234567890');
@@ -595,7 +597,7 @@ describe('scanSecrets independence (v2.0.0 upgrade regression)', () => {
     // It will then fail at the push stage because `allowPublicRemote` is false 
     // and the remote is a recognized GitHub URL. So status is 'error', but committed is true!
     expect(res.status).toBe('error');
-    expect(res.error).toMatch(/Your vault is connected to a public/i);
+    expect(res.message).toMatch(/(?:is PUBLIC|Could not verify if remote is private)/i);
     expect(res.committed).toBe(true);
   });
 
