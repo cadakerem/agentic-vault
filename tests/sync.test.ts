@@ -570,15 +570,18 @@ describe('scanSecrets independence (v2.0.0 upgrade regression)', () => {
     return { dir, git };
   }
 
-  it('scanSecrets:false is honoured even when allowPublicRemote:false (old lock removed)', async () => {
+  it('scanSecrets:false is honoured, but allowPublicRemote:false STILL blocks a public GitHub remote', async () => {
     // Scenario: user explicitly disables scanning AND keeps public-remote protection.
-    // Old code: allowPublicRemote=false forced shouldScan=true regardless of scanSecrets.
-    // New code: shouldScan = opts.scanSecrets !== false (independent).
+    // They then try to push to a PUBLIC GitHub repo. 
+    // The commit should succeed (scan bypassed), but the push must be blocked.
     const remote = await makeRemote();
     const { dir, git } = await makeCommittedVault('vault', remote);
 
+    // Set the remote to a public GitHub URL to trigger the public remote block
+    await git.remote(['set-url', 'origin', 'https://github.com/cadakerem/fake-public-repo.git']);
+
     // Write a file that looks like a secret — scanner would normally block this.
-    write(dir, 'test.env', 'OPENAI_API_KEY=sk-abcdef1234567890abcdef1234567890');
+    write(dir, 'test.env', 'OPENAI_API_KEY=sk-abcdef1234567890abcdef1234567890abcdef1234567890');
 
     const res = await syncVault(git, {
       vaultPath: dir,
@@ -588,10 +591,11 @@ describe('scanSecrets independence (v2.0.0 upgrade regression)', () => {
       autoPush: true,
     });
 
-    // With the NEW fix: commit goes through because scanner is genuinely disabled.
+    // The commit goes through because scanner is genuinely disabled.
     // It will then fail at the push stage because `allowPublicRemote` is false 
-    // and a local path remote is not a GitHub URL. So status is 'error', but committed is true!
+    // and the remote is a recognized GitHub URL. So status is 'error', but committed is true!
     expect(res.status).toBe('error');
+    expect(res.error).toMatch(/Your vault is connected to a public/i);
     expect(res.committed).toBe(true);
   });
 
@@ -637,8 +641,8 @@ describe('scanSecrets independence (v2.0.0 upgrade regression)', () => {
   });
 });
 
-describe('inbound sync (ters yön)', () => {
-  it('does not scan secrets pulled from the remote', async () => {
+describe('inbound sync (ters yön) - Known Limitations', () => {
+  it('KNOWN LIMITATION: does not scan secrets pulled from the remote', async () => {
     const remote = await makeRemote();
     await seedRemote(remote, { 'README.md': 'init' });
     const { dir: dirA, git: gitA } = await cloneVault(remote, 'vaultA');
@@ -658,7 +662,7 @@ describe('inbound sync (ters yön)', () => {
     expect(content).toContain('OPENAI_API_KEY');
   });
 
-  it('scans outbound but ignores inbound in the same sync (merge scenario)', async () => {
+  it('KNOWN LIMITATION: scans outbound but ignores inbound in the same sync (merge scenario)', async () => {
     const remote = await makeRemote();
     await seedRemote(remote, { 'README.md': 'init' });
     const { dir: dirA, git: gitA } = await cloneVault(remote, 'vaultA2');
