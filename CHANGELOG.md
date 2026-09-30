@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.1] - 2026-09-30
+### Fixed
+- **Upgrade Regression**: Fixed a bug where scanSecrets: false was ignored if llowPublicRemote was also alse. The core sync layer now respects the UI toggle.
+
 ## [2.0.0] - 2026-09-30
 
 ### Security
