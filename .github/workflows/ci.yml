@@ -23,7 +23,7 @@ jobs:
       - name: Reject BOM and control characters
         if: runner.os == 'Linux'
         run: |
-          ! grep -rlP '^\xEF\xBB\xBF|[\x00-\x08\x0B\x0C\x0E-\x1F]' --include='*.ts' --include='*.md' --include='*.json' . --exclude-dir=node_modules
+          ! LC_ALL=C grep -rlP '^\xEF\xBB\xBF|[\x00-\x08\x0B\x0C\x0E-\x1F]' --include='*.ts' --include='*.md' --include='*.json' . --exclude-dir=node_modules
       - name: Type check
         run: npx tsc --noEmit
       - name: Setup Git identity

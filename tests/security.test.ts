@@ -1,7 +1,7 @@
 import { simpleGit } from 'simple-git';
 import * as fs from 'fs';
 import * as path from 'path';
-﻿import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { syncVault, SyncOptions } from '../src/sync';
 import * as child_process from 'child_process';
 
