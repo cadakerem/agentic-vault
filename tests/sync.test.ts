@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+﻿import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import simpleGit, { SimpleGit } from 'simple-git';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -673,5 +673,31 @@ describe('inbound sync (ters yön) - Known Limitations', () => {
 
     expect(res.status).toBe('secrets-found');
     expect(res.committed).toBe(false);
+  });
+
+  describe('allowlist feature', () => {
+    it('(a1) bypasses scanning for allowed paths with normalization', async () => {
+      const remote = await makeRemote();
+      const { dir, git } = await makeVault('vault', remote);
+      write(dir, '.npmrc', 'fake');
+      write(dir, 'config/.env', 'fake');
+      
+      const res = await syncVault(git, opts(dir, { allowedPaths: ['.npmrc', '.\\config\\.env'] }));
+      expect(res.status).toBe('ok');
+      expect(res.skippedByAllowlist).toContain('.npmrc');
+      expect(res.skippedByAllowlist).toContain('config/.env');
+    });
+
+    it('(a2) still blocks sensitive files that are not explicitly allowed', async () => {
+      const remote = await makeRemote();
+      const { dir, git } = await makeVault('vault', remote);
+      write(dir, '.npmrc', 'fake');
+      write(dir, '.env', 'fake');
+      
+      const res = await syncVault(git, opts(dir, { allowedPaths: ['.npmrc'] }));
+      expect(res.status).toBe('secrets-found');
+      expect(res.skippedByAllowlist).toContain('.npmrc');
+      expect(res.findings?.map(f => f.file)).toContain('.env');
+    });
   });
 });
