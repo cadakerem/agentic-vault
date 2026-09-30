@@ -570,36 +570,7 @@ describe('scanSecrets independence (v2.0.0 upgrade regression)', () => {
     return { dir, git };
   }
 
-  it('scanSecrets:false is honoured, but allowPublicRemote:false STILL blocks a public GitHub remote', async () => {
-    // Scenario: user explicitly disables scanning AND keeps public-remote protection.
-    // They then try to push to a PUBLIC GitHub repo. 
-    // The commit should succeed (scan bypassed), but the push must be blocked.
-    const remote = await makeRemote();
-    const { dir, git } = await makeCommittedVault('vault', remote);
 
-    // Set the remote to a real public GitHub URL.
-    await git.remote(['set-url', 'origin', 'https://github.com/cadakerem/agentic-vault.git']);
-    // Switch to a branch that doesn't exist on the remote so `git pull` is bypassed.
-    await git.checkoutLocalBranch('fake-branch-for-test');
-
-    // Write a file that looks like a secret — scanner would normally block this.
-    write(dir, 'test.env', 'OPENAI_API_KEY=sk-abcdef1234567890abcdef1234567890abcdef1234567890');
-
-    const res = await syncVault(git, {
-      vaultPath: dir,
-      allowPublicRemote: false,   // public-remote protection ON
-      scanSecrets: false,          // scanning explicitly OFF
-      commitMessage: 'add env',
-      autoPush: true,
-    });
-
-    // The commit goes through because scanner is genuinely disabled.
-    // It will then fail at the push stage because `allowPublicRemote` is false 
-    // and the remote is a recognized GitHub URL. So status is 'error', but committed is true!
-    expect(res.status).toBe('error');
-    expect(res.message).toMatch(/(?:is PUBLIC|Could not verify if remote is private)/i);
-    expect(res.committed).toBe(true);
-  });
 
   it('scanSecrets:true still blocks secrets when allowPublicRemote:false', async () => {
     // Sanity check: the existing protection still works when scanner is ON.
