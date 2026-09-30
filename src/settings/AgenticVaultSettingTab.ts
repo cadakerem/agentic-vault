@@ -128,19 +128,22 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 
 		defs.push({
 			name: 'Enable Secret Scanner',
-			desc: 'Block commits if secrets (API keys, .env) are detected. (Cannot be disabled unless "Allow Public Remote" is ON).',
+			desc: 'Block commits if secrets (API keys, .env) are detected. Can be disabled independently of other settings — if you disable this, ensure you have an alternative safeguard (e.g. GitHub push protection).',
 			render: (setting: Setting, _group: SettingGroup) => {
 				setting.setName('Enable Secret Scanner')
-					.setDesc('Block commits if secrets (API keys, .env) are detected. (Cannot be disabled unless "Allow Public Remote" is ON).')
+					.setDesc('Block commits if secrets (API keys, .env) are detected. Can be disabled independently of other settings — if you disable this, ensure you have an alternative safeguard (e.g. GitHub push protection).')
 					.addToggle(t => {
 						t.setValue(this.plugin.settings.scanSecrets).onChange(async v => {
 							this.plugin.settings.scanSecrets = v;
 							await this.plugin.saveSettings();
+							if (!v) {
+								new Notice(
+									'⚠️ Secret scanner disabled. Pre-commit scanning is now OFF. ' +
+									'Ensure you have an alternative safeguard (e.g. GitHub push protection) before syncing.',
+									8000
+								);
+							}
 						});
-						if (!this.plugin.settings.allowPublicRemote) {
-							t.setValue(true);
-							t.setDisabled(true);
-						}
 					});
 			}
 		});
