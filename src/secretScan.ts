@@ -81,11 +81,15 @@ export function scanDiff(diff: string): Finding[] {
 }
 
 const SENSITIVE_NAMES = [
-  /^\.env(?:\..+)?$/i,
+  /^\.env(?:\..+)?$|\.env$|^\.envrc$/i,
   /^id_(?:rsa|dsa|ecdsa|ed25519)$/,
   /^oauth_creds\.json$/i,
   /^credentials(?:\.json)?$/i,
   /\.(?:pem|p12|pfx|key)$/i,
+  /^\.(?:npmrc|netrc|pgpass|git-credentials)$/i,
+  /\.(?:tfstate|tfvars)$/i,
+  /^kubeconfig$/i,
+  /^service-account-key\.json$/i,
 ];
 const SAFE_NAMES = /^\.env\.(?:example|sample|template)$/i;
 

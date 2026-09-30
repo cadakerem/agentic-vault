@@ -83,6 +83,21 @@ describe('scanFileNames', () => {
     const names = ['AI-Brain/oauth_creds.json', '.env', 'deep/dir/id_ed25519', 'certs/server.pem', 'x/credentials'];
     expect(scanFileNames(names).map((f) => f.file)).toEqual(names);
   });
+  
+  it.each(['.env', 'a/b/.env', 'prod.env', '.env.production', 'config/.envrc'])(
+    'flags sensitive file name: %s', (name) => {
+      expect(scanFileNames([name]).length).toBeGreaterThan(0);
+    }
+  );
+
+  it.each([
+    'id_rsa', 'id_ed25519', 'server.pem', 'cert.p12', 'cert.pfx',
+    '.npmrc', '.netrc', '.pgpass', '.git-credentials',
+    'terraform.tfstate', 'prod.tfvars', 'kubeconfig', 'service-account-key.json',
+  ])('flags additional sensitive file names: %s', (name) => {
+    expect(scanFileNames([name]).length).toBeGreaterThan(0);
+  });
+
   it('does not flag look-alikes or .env.example', () => {
     expect(scanFileNames(['.env.example', 'Credentials.md', 'keyboard.md', 'monkey.txt', 'notes/token-economy.md'])).toEqual([]);
   });
