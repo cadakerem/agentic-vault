@@ -1,4 +1,4 @@
-import {
+﻿import {
 	Notice, Plugin, addIcon
 } from 'obsidian';
 import simpleGit, { SimpleGit, StatusResult } from 'simple-git';
@@ -335,6 +335,9 @@ export default class AgenticVaultPlugin extends Plugin {
 			if (transition.notice && (!silent || manual)) {
 				new Notice(transition.notice, 10000);
 			} else if (result.status === 'ok' && !silent) {
+				if (result.skippedByAllowlist && result.skippedByAllowlist.length > 0) {
+					new Notice('⚠️ Secret Scanner: ' + result.skippedByAllowlist.length + ' file(s) bypassed via allowlist.', 8000);
+				}
 				if (result.pushed) new Notice('🚀 Pushed to GitHub!');
 				else if (result.committed) new Notice('✓ Changes committed.');
 				else new Notice('Agentic Vault: Nothing to commit.');

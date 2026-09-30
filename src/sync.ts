@@ -43,6 +43,7 @@ export interface SyncResult {
   committed: boolean;
   pushed: boolean;
   findings?: Finding[];
+  skippedByAllowlist?: string[];
   /** repo-relative paths of local versions that were saved because of a conflict (remote version was applied) */
   conflictCopies?: string[];
 }
@@ -133,7 +134,14 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
       }
 
       if (opts.allowedPaths && opts.allowedPaths.length > 0) {
-        findings = findings.filter(f => !opts.allowedPaths!.includes(f.file));
+        const normalize = (p: string) => p.replace(/\\/g, '/').replace(/^\.\//, '');
+        const normalizedAllowed = opts.allowedPaths.map(normalize);
+        const originalFindings = findings;
+        findings = findings.filter(f => !normalizedAllowed.includes(normalize(f.file)));
+        const skipped = originalFindings.filter(f => normalizedAllowed.includes(normalize(f.file))).map(f => f.file);
+        if (skipped.length > 0) {
+          result.skippedByAllowlist = [...new Set(skipped)];
+        }
       }
 
       if (findings.length > 0) {

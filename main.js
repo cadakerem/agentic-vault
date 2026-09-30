@@ -6134,7 +6134,14 @@ async function syncVault(git, opts) {
       } catch (e) {
       }
       if (opts.allowedPaths && opts.allowedPaths.length > 0) {
-        findings = findings.filter((f) => !opts.allowedPaths.includes(f.file));
+        const normalize2 = (p2) => p2.replace(/\\/g, "/").replace(/^\.\//, "");
+        const normalizedAllowed = opts.allowedPaths.map(normalize2);
+        const originalFindings = findings;
+        findings = findings.filter((f) => !normalizedAllowed.includes(normalize2(f.file)));
+        const skipped = originalFindings.filter((f) => normalizedAllowed.includes(normalize2(f.file))).map((f) => f.file);
+        if (skipped.length > 0) {
+          result.skippedByAllowlist = [...new Set(skipped)];
+        }
       }
       if (findings.length > 0) {
         await unstageAll(git);
@@ -7375,6 +7382,9 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
       if (transition.notice && (!silent || manual)) {
         new import_obsidian6.Notice(transition.notice, 1e4);
       } else if (result.status === "ok" && !silent) {
+        if (result.skippedByAllowlist && result.skippedByAllowlist.length > 0) {
+          new import_obsidian6.Notice("\u26A0\uFE0F Secret Scanner: " + result.skippedByAllowlist.length + " file(s) bypassed via allowlist.", 8e3);
+        }
         if (result.pushed) new import_obsidian6.Notice("\u{1F680} Pushed to GitHub!");
         else if (result.committed) new import_obsidian6.Notice("\u2713 Changes committed.");
         else new import_obsidian6.Notice("Agentic Vault: Nothing to commit.");
