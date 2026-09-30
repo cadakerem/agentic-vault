@@ -1,4 +1,4 @@
-﻿# 🧠 Agentic Vault for Obsidian
+# 🧠 Agentic Vault for Obsidian
 
 Agentic Vault is an Obsidian plugin for Git-backed AI configuration, automated vault synchronization, pattern-based secret scanning, and developer workflow integration.
 

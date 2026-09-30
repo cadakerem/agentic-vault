@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import simpleGit, { SimpleGit } from 'simple-git';
 import * as fs from 'fs';
 import * as os from 'os';
