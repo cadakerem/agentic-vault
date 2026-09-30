@@ -636,3 +636,64 @@ describe('scanSecrets independence (v2.0.0 upgrade regression)', () => {
     expect(res.committed).toBe(false);
   });
 });
+
+describe('inbound sync (ters yön)', () => {
+  it('does not scan secrets pulled from the remote', async () => {
+    const remote = await makeRemote();
+    await seedRemote(remote, { 'README.md': 'init' });
+    const { dir: dirA, git: gitA } = await cloneVault(remote, 'vaultA');
+    const { dir: dirB, git: gitB } = await cloneVault(remote, 'vaultB');
+
+    // User A commits a secret and pushes it (disabling their scanner to force it through)
+    write(dirA, 'inbound.env', 'OPENAI_API_KEY=sk-abcdef1234567890abcdef1234567890abcdef1234567890');
+    await syncVault(gitA, opts(dirA, { scanSecrets: false }));
+
+    // User B runs sync with scanning ENABLED. 
+    // They will pull User A's commit. It should succeed without blocking.
+    const res = await syncVault(gitB, opts(dirB, { scanSecrets: true }));
+
+    expect(res.status).toBe('ok');
+    // Verify the secret is now on User B's disk
+    const content = fs.readFileSync(path.join(dirB, 'inbound.env'), 'utf8');
+    expect(content).toContain('OPENAI_API_KEY');
+  });
+
+  it('scans outbound but ignores inbound in the same sync (merge scenario)', async () => {
+    const remote = await makeRemote();
+    await seedRemote(remote, { 'README.md': 'init' });
+    const { dir: dirA, git: gitA } = await cloneVault(remote, 'vaultA2');
+    const { dir: dirB, git: gitB } = await cloneVault(remote, 'vaultB2');
+
+    // A pushes a secret
+    write(dirA, 'inbound.env', 'OPENAI_API_KEY=sk-abcdef1234567890abcdef1234567890abcdef1234567890');
+    await syncVault(gitA, opts(dirA, { scanSecrets: false }));
+
+    // B has a LOCAL secret, and runs sync
+    write(dirB, 'outbound.env', 'OPENAI_API_KEY=sk-abcdef1234567890abcdef1234567890abcdef1234567890');
+    
+    // B's sync should fail because of their OUTBOUND secret.
+    const res = await syncVault(gitB, opts(dirB, { scanSecrets: true }));
+
+    expect(res.status).toBe('secrets-found');
+    expect(res.committed).toBe(false);
+  });
+
+  it('scanSecrets:true blocks secrets when allowPublicRemote:true', async () => {
+    // Sanity check: Explicitly testing the other side of the logic matrix.
+    const remote = await makeRemote();
+    const { dir, git } = await cloneVault(remote, 'vault-matrix');
+
+    write(dir, 'test.env', 'OPENAI_API_KEY=sk-abcdef1234567890abcdef1234567890abcdef1234567890');
+
+    const res = await syncVault(git, {
+      vaultPath: dir,
+      allowPublicRemote: true,
+      scanSecrets: true,
+      commitMessage: 'add env',
+      autoPush: true,
+    });
+
+    expect(res.status).toBe('secrets-found');
+    expect(res.committed).toBe(false);
+  });
+});
