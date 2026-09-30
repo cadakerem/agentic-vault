@@ -149,6 +149,22 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 		});
 
 		defs.push({
+			name: 'Allowed Secret Paths (Allowlist)',
+			desc: 'Files matching these relative paths will bypass the secret scanner even if they trigger a rule (e.g., config/.npmrc). Enter one path per line.',
+			render: (setting: Setting, _group: SettingGroup) => {
+				setting.setName('Allowed Secret Paths (Allowlist)')
+					.setDesc('Files matching these relative paths will bypass the secret scanner even if they trigger a rule (e.g., config/.npmrc). Enter one path per line.')
+					.addTextArea(text => text
+						.setPlaceholder('config/.npmrc\ntest.env')
+						.setValue(this.plugin.settings.allowedPaths)
+						.onChange(async (value) => {
+							this.plugin.settings.allowedPaths = value;
+							await this.plugin.saveSettings();
+						}));
+			}
+		});
+
+		defs.push({
 			name: 'Auto-Sync Interval (minutes)',
 			desc: 'How often to sync. Set to 0 to disable.',
 			render: (setting: Setting, _group: SettingGroup) => {
