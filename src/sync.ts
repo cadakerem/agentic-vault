@@ -133,11 +133,13 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
 
       if (findings.length > 0) {
         await unstageAll(git);
+        const files = [...new Set(findings.map(f => f.file))];
+        const filesStr = files.length > 2 ? `${files.slice(0, 2).join(', ')} and ${files.length - 2} more` : files.join(', ');
         return {
           ...result,
           status: 'secrets-found',
           findings,
-          message: `${findings.length} potential secret(s) found. If in local commits, run: git reset --soft origin/main, remove secrets, and commit. If already pushed, ROTATE your keys immediately!`,
+          message: `${findings.length} potential secret(s) found in: ${filesStr}. If false positive, add to .gitignore or disable scanning. If real, remove secrets and commit. If already pushed, ROTATE keys immediately!`,
         };
       }
     }
