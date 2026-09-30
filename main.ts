@@ -11,7 +11,7 @@ import { filterConflictCopies } from './src/conflict';
 import { SetupWizardModal } from './src/modals/SetupWizardModal';
 import { BrainManagerModal } from './src/modals/BrainManagerModal';
 import { CreateIssueModal } from './src/modals/CreateIssueModal';
-import { SecurityAlertModal } from './src/modals/SecurityAlertModal';
+
 import { AgenticVaultSettingTab } from './src/settings/AgenticVaultSettingTab';
 
 

@@ -5946,20 +5946,27 @@ function scanDiff(diff) {
   return findings;
 }
 var SENSITIVE_NAMES = [
-  /^\.env(?:\..+)?$/i,
+  /^\.env(?:\..+)?$|\.env$|^\.envrc$/i,
   /^id_(?:rsa|dsa|ecdsa|ed25519)$/,
   /^oauth_creds\.json$/i,
   /^credentials(?:\.json)?$/i,
-  /\.(?:pem|p12|pfx|key)$/i
+  /\.(?:pem|p12|pfx|key)$/i,
+  /^\.(?:npmrc|netrc|pgpass|git-credentials)$/i,
+  /\.(?:tfstate|tfvars)$/i,
+  /^kubeconfig$/i,
+  /^service-account-key\.json$/i
 ];
 var SAFE_NAMES = /^\.env\.(?:example|sample|template)$/i;
+var SENSITIVE_PATHS = [
+  /(?:^|[\\/])\.kube[\\/]config$/i
+];
 function scanFileNames(paths) {
   var _a2;
   const out = [];
   for (const p2 of paths) {
     const base = (_a2 = p2.split(/[\\/]/).pop()) != null ? _a2 : p2;
     if (SAFE_NAMES.test(base)) continue;
-    if (SENSITIVE_NAMES.some((re) => re.test(base))) {
+    if (SENSITIVE_NAMES.some((re) => re.test(base)) || SENSITIVE_PATHS.some((re) => re.test(p2))) {
       out.push({ file: p2, line: 0, rule: "sensitive-filename", confidence: "high", preview: base });
     }
   }
@@ -6128,11 +6135,13 @@ async function syncVault(git, opts) {
       }
       if (findings.length > 0) {
         await unstageAll(git);
+        const files = [...new Set(findings.map((f) => f.file))];
+        const filesStr = files.length > 2 ? `${files.slice(0, 2).join(", ")} and ${files.length - 2} more` : files.join(", ");
         return {
           ...result,
           status: "secrets-found",
           findings,
-          message: `${findings.length} potential secret(s) found. If in local commits, run: git reset --soft origin/main, remove secrets, and commit. If already pushed, ROTATE your keys immediately!`
+          message: `${findings.length} potential secret(s) found in: ${filesStr}. If false positive, untrack (git rm --cached <file>) and add to .gitignore. If real, remove secrets and commit. If already pushed, ROTATE keys!`
         };
       }
     }
@@ -6141,7 +6150,7 @@ async function syncVault(git, opts) {
       const out = await git.raw(["diff", "--cached", "--name-only", "-z"]);
       hasStaged = out.length > 0;
     } catch (e) {
-      if (e.message && e.message.includes("bad revision 'HEAD'")) {
+      if (e instanceof Error && e.message.includes("bad revision 'HEAD'")) {
         const out = await git.raw(["ls-files", "-z"]);
         hasStaged = out.length > 0;
       } else {

@@ -129,7 +129,9 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
       try {
         const unpushedDiff = await git.raw(['log', '-p', '-m', '--format=', 'HEAD', '--not', '--remotes=' + remote]);
         findings = [...findings, ...scanDiff(unpushedDiff)];
-      } catch (e) {}
+      } catch {
+        // Ignored if there are no commits yet
+      }
 
       if (findings.length > 0) {
         await unstageAll(git);
@@ -148,8 +150,8 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
       try {
         const out = await git.raw(['diff', '--cached', '--name-only', '-z']);
         hasStaged = out.length > 0;
-      } catch (e: any) {
-        if (e.message && e.message.includes("bad revision 'HEAD'")) {
+      } catch (e) {
+        if (e instanceof Error && e.message.includes("bad revision 'HEAD'")) {
           const out = await git.raw(['ls-files', '-z']);
           hasStaged = out.length > 0;
         } else {
