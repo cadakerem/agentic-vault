@@ -81,7 +81,7 @@ export function scanDiff(diff: string): Finding[] {
 }
 
 const SENSITIVE_NAMES = [
-  /^\.env(?:\..+)?$/i,
+  /^\.env(?:\..+)?$|\.env$|^\.envrc$/i,
   /^id_(?:rsa|dsa|ecdsa|ed25519)$/,
   /^oauth_creds\.json$/i,
   /^credentials(?:\.json)?$/i,
