@@ -92,4 +92,58 @@ describe('Public Remote Checks', () => {
     expect(res.message).toContain('Repository is PUBLIC');
     expect(git.push).not.toHaveBeenCalled();
   });
+
+  // ---- URL regex security boundary tests ----
+
+  it('[security] rejects evilgithub.com (no anchor bypass)', async () => {
+    const git = getFakeGit('https://evilgithub.com/owner/private-repo.git');
+    const res = await syncVault(git as any, { ...opts, allowPublicRemote: false });
+    expect(res.status).toBe('error');
+    expect(res.message).toContain('not a recognized GitHub URL');
+    expect(git.push).not.toHaveBeenCalled();
+  });
+
+  it('[security] rejects github.com.evil.com (subdomain spoof)', async () => {
+    const git = getFakeGit('https://github.com.evil.com/owner/repo.git');
+    const res = await syncVault(git as any, { ...opts, allowPublicRemote: false });
+    expect(res.status).toBe('error');
+    expect(res.message).toContain('not a recognized GitHub URL');
+    expect(git.push).not.toHaveBeenCalled();
+  });
+
+  it('accepts ssh:// scheme (ssh://git@github.com/user/repo)', async () => {
+    const git = getFakeGit('ssh://git@github.com/owner/private-repo.git');
+    const res = await syncVault(git as any, { ...opts, allowPublicRemote: false });
+    expect(res.status).toBe('ok');
+    expect(git.push).toHaveBeenCalled();
+  });
+
+  it('accepts HTTPS with token@ (https://token@github.com/user/repo)', async () => {
+    const git = getFakeGit('https://mytoken@github.com/owner/private-repo.git');
+    const res = await syncVault(git as any, { ...opts, allowPublicRemote: false });
+    expect(res.status).toBe('ok');
+    expect(git.push).toHaveBeenCalled();
+  });
+
+  it('accepts repo name with dots (my.repo, foo.js)', async () => {
+    const git = getFakeGit('https://github.com/owner/my.repo.git');
+    const res = await syncVault(git as any, { ...opts, allowPublicRemote: false });
+    expect(res.status).toBe('ok');
+    expect(git.push).toHaveBeenCalled();
+  });
+
+  it('accepts URL with trailing slash', async () => {
+    const git = getFakeGit('https://github.com/owner/private-repo/');
+    const res = await syncVault(git as any, { ...opts, allowPublicRemote: false });
+    expect(res.status).toBe('ok');
+    expect(git.push).toHaveBeenCalled();
+  });
+
+  it('rejects GitHub Enterprise URL (different host)', async () => {
+    const git = getFakeGit('https://github.mycompany.com/owner/repo.git');
+    const res = await syncVault(git as any, { ...opts, allowPublicRemote: false });
+    expect(res.status).toBe('error');
+    expect(res.message).toContain('not a recognized GitHub URL');
+    expect(git.push).not.toHaveBeenCalled();
+  });
 });

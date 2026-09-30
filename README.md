@@ -101,5 +101,12 @@ Contributions, issues, and feature requests are welcome! Feel free to check the 
 ### License
 This project is licensed under the [MIT License](LICENSE).
 
+---
 
-\n\n## Known Limitations\n- **Inbound Sync Supply Chain Risk:** Sync automatically pulls from the remote. If a malicious actor compromises the remote repository and modifies agent instruction files (like skills or .md files), the AI agents might execute them (Prompt Injection / RCE). Always ensure your remote repository is strictly private and secure.
+## Known Limitations
+
+- **Inbound sync is not scanned.** The secret scanner only inspects outbound changes. Files pulled from the remote are not scanned. If your remote is compromised, malicious content could be pulled without warning. **Always keep your remote repository private.**
+- **Pattern-based scanning is not a guarantee.** The scanner uses heuristics to detect common API key formats. Novel or obfuscated secrets may not be detected.
+- **GitHub only.** The public-remote protection works exclusively with github.com. Other forges (GitLab, Bitbucket, Gitea, self-hosted) are treated as unrecognized remotes and push is blocked unless you enable Allow Public Remote.
+- **GitHub Enterprise is not supported.** Repos on github.mycompany.com are not recognized. Support may be added in a future version.
+- **scanSecrets and allowPublicRemote are independent.** Disabling scanSecrets completely turns off pre-commit scanning regardless of the public-remote setting. Ensure you have an alternative safeguard before doing so.
