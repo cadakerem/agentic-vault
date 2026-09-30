@@ -1,25 +1,33 @@
-﻿# Changelog
+# Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.2] - 2026-09-30
+### Fixed
+- Removed BOM from source files to prevent linter and string parsing bugs.
+- Refined allowlist notification to trigger on silent syncs independently.
+- Added exclude pattern for plugin JSON files to prevent malicious .obsidian syncs.
+- CI hardening: updated runner to ubuntu-24.04, removed deprecated flags, added manifest/tag consistency check, and rejected BOM files.
+
 ## [2.1.1] - 2026-09-30
 ### Fixed
-- Stabilized llowedPaths (allowlist) behavior with input normalization (handling Windows \ and ./ prefixes).
+- Stabilized `allowedPaths` (allowlist) behavior with input normalization (handling Windows \ and ./ prefixes).
 - Added test coverage for the allowlist feature.
 - Show an Obsidian Notice when files are intentionally skipped by the secret scanner due to the allowlist.
 
 ## [2.1.0] - 2026-09-30
 ### Added
-- **Allowlist (Allowed Secret Paths)**: Users can now enter specific file paths (e.g. config/.npmrc) in the settings to bypass the Secret Scanner.
-- **Path-Based Scanning**: The secret scanner now supports full path evaluation, accurately catching files like .kube/config.
+- **Allowlist (Allowed Secret Paths)**: Users can now enter specific file paths (e.g. `config/.npmrc`) in the settings to bypass the Secret Scanner.
+- **Path-Based Scanning**: The secret scanner now supports full path evaluation, accurately catching files like `.kube/config`.
 
 ### Changed
-- Expanded the Secret Scanner to catch .npmrc, .netrc, .pgpass, kubeconfig, .tfvars, 	erraform.tfstate, and .git-credentials.
+- Expanded the Secret Scanner to catch `.npmrc`, `.netrc`, `.pgpass`, `kubeconfig`, `.tfvars`, `terraform.tfstate`, and `.git-credentials`.
 - Upgraded the secrets-found sync block message to provide the actual filenames that caused the block and actionable advice (git rm --cached <file>).
 - Linter and strict type hygiene fully resolved (0 warnings on Obsidian Plugin Scanner).
+
 ## [2.0.1] - 2026-09-30
 ### Fixed
-- **Upgrade Regression**: Fixed a bug where scanSecrets: false was ignored if llowPublicRemote was also alse. The core sync layer now respects the UI toggle.
+- **Upgrade Regression**: Fixed a bug where scanSecrets: false was ignored if `allowPublicRemote` was also `false`. The core sync layer now respects the UI toggle.
 
 ## [2.0.0] - 2026-09-30
 
