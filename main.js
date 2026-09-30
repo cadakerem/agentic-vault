@@ -6116,7 +6116,7 @@ async function syncVault(git, opts) {
       opts.excludedPaths.forEach((p2) => addArgs.push(`:(exclude)${p2}`));
     }
     await git.raw(["add", ...addArgs]);
-    const shouldScan = !opts.allowPublicRemote ? true : opts.scanSecrets !== false;
+    const shouldScan = opts.scanSecrets !== false;
     if (shouldScan) {
       const diff = await git.raw(["diff", "--cached", "-U0", "--no-color", "--no-ext-diff"]);
       const names = (await git.raw(["diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z"])).split("\0").filter(Boolean);
