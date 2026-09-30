@@ -95,31 +95,38 @@ describe('Public Remote Checks', () => {
 
   // ---- Matrix Tests / Deterministic Reverse Logic ----
   
-  it('matrix: scanSecrets:false is honoured, but public remote still blocks push (isPrivate: false)', async () => {
-    const git = getFakeGit('https://github.com/owner/public-repo');
+  const mkGitWithSecret = (remoteUrl: string) => {
+    const git = getFakeGit(remoteUrl);
     git.status.mockResolvedValue({ current: 'master', tracking: 'origin/master', isClean: () => false, files: [] } as any);
     git.raw.mockImplementation(async (args: string[]) => {
-      if (args[0] === 'diff' && args.includes('--name-only')) return 'test.env\0';
-      if (args[0] === 'remote' && args[1] === 'get-url') return 'https://github.com/owner/public-repo';
+      if (args[0] === 'remote' && args[1] === 'get-url') return remoteUrl;
+      if (args[0] === 'diff' && args.includes('--name-only')) return 'notes.md\0';
+      // Provide an actual secret to prove the scanner is evaluating the diff
+      if (args[0] === 'diff' && args.includes('-U0')) return '+++ b/notes.md\n@@ -0,0 +1 @@\n+OPENAI_API_KEY=sk-abcdef1234567890abcdef1234567890abcdef1234567890\n';
       return '';
     });
+    return git;
+  };
+
+  it('matrix: scanSecrets:false is honoured, but public remote still blocks push (isPrivate: false)', async () => {
+    // 1. Sanity check: verify that if scanner is ON (default), it actually catches the mock secret.
+    // This proves our mock fixture works and tests for regressions like the v2.0.0 bug.
+    const gitOn = mkGitWithSecret('https://github.com/owner/public-repo');
+    const resOn = await syncVault(gitOn as any, { ...opts, allowPublicRemote: false });
+    expect(resOn.status).toBe('secrets-found');
     
-    const res = await syncVault(git as any, { ...opts, allowPublicRemote: false, scanSecrets: false });
+    // 2. The real test: scanning explicitly off.
+    const gitOff = mkGitWithSecret('https://github.com/owner/public-repo');
+    const resOff = await syncVault(gitOff as any, { ...opts, allowPublicRemote: false, scanSecrets: false });
     
-    expect(res.status).toBe('error');
-    expect(res.message).toMatch(/Repository is PUBLIC/); // EXACT match, no alternatives
-    expect(res.committed).toBe(true); // Proves the scanner didn't block it
-    expect(git.push).not.toHaveBeenCalled(); // Proves the public-remote logic blocked it
+    expect(resOff.status).toBe('error');
+    expect(resOff.message).toMatch(/Repository is PUBLIC/); // EXACT match, no alternatives
+    expect(resOff.committed).toBe(true); // Proves the scanner didn't block it
+    expect(gitOff.push).not.toHaveBeenCalled(); // Proves the public-remote logic blocked it
   });
 
   it('matrix: push is aborted if gh verification fails (Could not verify)', async () => {
-    const git = getFakeGit('https://github.com/owner/broken-repo'); // 'broken' triggers mock error
-    git.status.mockResolvedValue({ current: 'master', tracking: 'origin/master', isClean: () => false, files: [] } as any);
-    git.raw.mockImplementation(async (args: string[]) => {
-      if (args[0] === 'diff' && args.includes('--name-only')) return 'test.env\0';
-      if (args[0] === 'remote' && args[1] === 'get-url') return 'https://github.com/owner/broken-repo';
-      return '';
-    });
+    const git = mkGitWithSecret('https://github.com/owner/broken-repo'); // 'broken' triggers mock error
     
     const res = await syncVault(git as any, { ...opts, allowPublicRemote: false, scanSecrets: false });
     
