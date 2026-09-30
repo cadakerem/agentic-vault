@@ -93,12 +93,16 @@ const SENSITIVE_NAMES = [
 ];
 const SAFE_NAMES = /^\.env\.(?:example|sample|template)$/i;
 
+const SENSITIVE_PATHS = [
+  /(?:^|[\\/])\.kube[\\/]config$/i,
+];
+
 export function scanFileNames(paths: string[]): Finding[] {
   const out: Finding[] = [];
   for (const p of paths) {
     const base = p.split(/[\\/]/).pop() ?? p;
     if (SAFE_NAMES.test(base)) continue;
-    if (SENSITIVE_NAMES.some((re) => re.test(base))) {
+    if (SENSITIVE_NAMES.some((re) => re.test(base)) || SENSITIVE_PATHS.some((re) => re.test(p))) {
       out.push({ file: p, line: 0, rule: 'sensitive-filename', confidence: 'high', preview: base });
     }
   }

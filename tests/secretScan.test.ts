@@ -76,6 +76,11 @@ describe('scanDiff', () => {
     expect(scanDiff('')).toEqual([]);
     expect(scanDiff(diffFor('a.md', ['just notes', 'nothing secret']))).toEqual([]);
   });
+
+  it('flags service-account JSON by content', () => {
+    const diff = '+++ b/my-proj-1a2b3c.json\n@@ -0,0 +1 @@\n+{"type":"service_account","private_key":"-----BEGIN PRIVATE KEY-----\\nabc"}';
+    expect(scanDiff(diff).length).toBeGreaterThan(0);
+  });
 });
 
 describe('scanFileNames', () => {
@@ -93,7 +98,7 @@ describe('scanFileNames', () => {
   it.each([
     'id_rsa', 'id_ed25519', 'server.pem', 'cert.p12', 'cert.pfx',
     '.npmrc', '.netrc', '.pgpass', '.git-credentials',
-    'terraform.tfstate', 'prod.tfvars', 'kubeconfig', 'service-account-key.json',
+    'terraform.tfstate', 'prod.tfvars', 'kubeconfig', '.kube/config', 'service-account-key.json',
   ])('flags additional sensitive file names: %s', (name) => {
     expect(scanFileNames([name]).length).toBeGreaterThan(0);
   });
