@@ -336,7 +336,7 @@ export default class AgenticVaultPlugin extends Plugin {
 				new Notice(transition.notice, 10000);
 			} 
 			if (result.skippedByAllowlist && result.skippedByAllowlist.length > 0) {
-				new Notice('⚠️ Secret Scanner: ' + result.skippedByAllowlist.length + ' file(s) bypassed via allowlist.', 8000);
+				new Notice('⚠️ Secret Scanner: ' + result.skippedByAllowlist.length + ' file(s) bypassed via allowlist.', 15000);
 			}
 
 			if (result.status === 'ok' && !silent) {

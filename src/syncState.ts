@@ -63,7 +63,7 @@ export function nextSyncState(
     const already = prev.lastNoticeKey === key;
     return {
       state: { ...prev, paused: true, pauseReason: status, lastNoticeKey: key },
-      notice: ctx.manual || !already ? NOTICE_TEXT[status] : null,
+      notice: ctx.manual || !already ? (status === 'secrets-found' && result.message ? `⚠️ ${result.message}` : NOTICE_TEXT[status]) : null,
       statusText: `⏸ paused: ${status}`,
     };
   }
