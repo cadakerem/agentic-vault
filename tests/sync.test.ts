@@ -269,7 +269,8 @@ describe('secret scan in the sync flow', () => {
 
     expect(res.status).toBe('secrets-found');
     expect(res.findings?.[0]).toMatchObject({ file: 'notes/keys.md', rule: 'github-token' });
-    expect(JSON.stringify(res)).not.toContain(FAKE_GH); // result/message never carries the secret
+    expect(res.message).toContain('notes/keys.md');
+      expect(JSON.stringify(res)).not.toContain(FAKE_GH); // result/message never carries the secret
     expect(res.committed).toBe(false);
     expect(res.pushed).toBe(false);
     expect((await git.status()).staged).toEqual([]); // unstaged again (files stay on disk)
