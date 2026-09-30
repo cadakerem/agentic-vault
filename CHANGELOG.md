@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.4] - 2026-10-01
+### Fixed
+- **UI UX Improvements:**
+  - Display dynamic detailed messages (including blocked filenames) directly in the UI Notice instead of a generic warning.
+  - Adjusted notification display durations for better readability: 15 seconds for critical blocked secrets, and 10 seconds for safe allowlist bypasses.
+
 ## [2.1.3] - 2026-09-30
 ### Fixed
 - Hardened .obsidian/plugins/agentic-vault/*.json exclusion to support alternative repo structures (e.g. tracking .obsidian itself).
