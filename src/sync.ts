@@ -139,7 +139,7 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
           ...result,
           status: 'secrets-found',
           findings,
-          message: `${findings.length} potential secret(s) found in: ${filesStr}. If false positive, add to .gitignore or disable scanning. If real, remove secrets and commit. If already pushed, ROTATE keys immediately!`,
+          message: `${findings.length} potential secret(s) found in: ${filesStr}. If false positive, untrack (git rm --cached <file>) and add to .gitignore. If real, remove secrets and commit. If already pushed, ROTATE keys!`,
         };
       }
     }
