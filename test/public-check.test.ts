@@ -93,6 +93,42 @@ describe('Public Remote Checks', () => {
     expect(git.push).not.toHaveBeenCalled();
   });
 
+  // ---- Matrix Tests / Deterministic Reverse Logic ----
+  
+  it('matrix: scanSecrets:false is honoured, but public remote still blocks push (isPrivate: false)', async () => {
+    const git = getFakeGit('https://github.com/owner/public-repo');
+    git.status.mockResolvedValue({ current: 'master', tracking: 'origin/master', isClean: () => false, files: [] } as any);
+    git.raw.mockImplementation(async (args: string[]) => {
+      if (args[0] === 'diff' && args.includes('--name-only')) return 'test.env\0';
+      if (args[0] === 'remote' && args[1] === 'get-url') return 'https://github.com/owner/public-repo';
+      return '';
+    });
+    
+    const res = await syncVault(git as any, { ...opts, allowPublicRemote: false, scanSecrets: false });
+    
+    expect(res.status).toBe('error');
+    expect(res.message).toMatch(/Repository is PUBLIC/); // EXACT match, no alternatives
+    expect(res.committed).toBe(true); // Proves the scanner didn't block it
+    expect(git.push).not.toHaveBeenCalled(); // Proves the public-remote logic blocked it
+  });
+
+  it('matrix: push is aborted if gh verification fails (Could not verify)', async () => {
+    const git = getFakeGit('https://github.com/owner/broken-repo'); // 'broken' triggers mock error
+    git.status.mockResolvedValue({ current: 'master', tracking: 'origin/master', isClean: () => false, files: [] } as any);
+    git.raw.mockImplementation(async (args: string[]) => {
+      if (args[0] === 'diff' && args.includes('--name-only')) return 'test.env\0';
+      if (args[0] === 'remote' && args[1] === 'get-url') return 'https://github.com/owner/broken-repo';
+      return '';
+    });
+    
+    const res = await syncVault(git as any, { ...opts, allowPublicRemote: false, scanSecrets: false });
+    
+    expect(res.status).toBe('error');
+    expect(res.message).toMatch(/Could not verify if remote is private/); // EXACT match for the fallback error
+    expect(res.committed).toBe(true);
+    expect(git.push).not.toHaveBeenCalled();
+  });
+
   // ---- URL regex security boundary tests ----
 
   it('[security] rejects evilgithub.com (no anchor bypass)', async () => {
