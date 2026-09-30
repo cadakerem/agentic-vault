@@ -106,7 +106,7 @@ This project is licensed under the [MIT License](LICENSE).
 ## Known Limitations
 
 - **Inbound sync is not scanned.** The secret scanner only inspects outbound changes. Files pulled from the remote are not scanned. If your remote is compromised, malicious content could be pulled without warning. **Always keep your remote repository private.**
-- **Pattern-based scanning is not a guarantee.** The scanner uses heuristics to detect common API key formats. Novel or obfuscated secrets may not be detected.
+- **Pattern-based scanning is not a guarantee.** The scanner uses heuristics (both by content and filename) to detect common API key formats and sensitive files. Novel or obfuscated secrets may not be detected. Conversely, harmless files like `.npmrc` or `.tfvars` might trigger false positives. Since any finding blocks the entire sync, you may need to temporarily disable scanning if this occurs (a path-based allowlist is planned for v2.0).
 - **GitHub only.** The public-remote protection works exclusively with github.com. Other forges (GitLab, Bitbucket, Gitea, self-hosted) are treated as unrecognized remotes and push is blocked unless you enable Allow Public Remote.
 - **GitHub Enterprise is not supported.** Repos on github.mycompany.com are not recognized. Support may be added in a future version.
 - **scanSecrets and allowPublicRemote are independent.** Disabling scanSecrets completely turns off pre-commit scanning regardless of the public-remote setting. Ensure you have an alternative safeguard before doing so.
