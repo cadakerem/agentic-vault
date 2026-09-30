@@ -6289,7 +6289,7 @@ function nextSyncState(prev, result, ctx) {
     const already2 = prev.lastNoticeKey === key2;
     return {
       state: { ...prev, paused: true, pauseReason: status, lastNoticeKey: key2 },
-      notice: ctx.manual || !already2 ? NOTICE_TEXT[status] : null,
+      notice: ctx.manual || !already2 ? status === "secrets-found" && result.message ? `\u26A0\uFE0F ${result.message}` : NOTICE_TEXT[status] : null,
       statusText: `\u23F8 paused: ${status}`
     };
   }
@@ -7383,7 +7383,7 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
         new import_obsidian6.Notice(transition.notice, 1e4);
       }
       if (result.skippedByAllowlist && result.skippedByAllowlist.length > 0) {
-        new import_obsidian6.Notice("\u26A0\uFE0F Secret Scanner: " + result.skippedByAllowlist.length + " file(s) bypassed via allowlist.", 8e3);
+        new import_obsidian6.Notice("\u26A0\uFE0F Secret Scanner: " + result.skippedByAllowlist.length + " file(s) bypassed via allowlist.", 15e3);
       }
       if (result.status === "ok" && !silent) {
         if (result.pushed) new import_obsidian6.Notice("\u{1F680} Pushed to GitHub!");
