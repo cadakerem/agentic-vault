@@ -516,3 +516,42 @@ describe('conflict copies', () => {
     expect((await treeOf(B.dir)).filter(isConflictCopy)).toEqual([]);
   });
 });
+
+// ---- regression: hasStaged must not throw on unborn HEAD ----
+describe('hasStaged on unborn repo (regression)', () => {
+  it('commits successfully when HEAD does not exist yet (first ever commit)', async () => {
+    // Regression for "bad revision HEAD" bug.
+    // Previously git diff --cached --quiet would throw on a fresh git init.
+    // Now we use git diff --cached --name-only -z + ls-files fallback.
+    const dir = path.join(root, 'unborn');
+    fs.mkdirSync(dir);
+    const git = simpleGit(dir);
+    await git.raw(['init', '-b', 'main']);
+    await git.addConfig('user.name', 'Test');
+    await git.addConfig('user.email', 'test@example.com');
+    await git.addConfig('commit.gpgsign', 'false');
+    await git.addConfig('core.autocrlf', 'false');
+
+    // Write + stage a file with no prior commit (unborn HEAD)
+    fs.writeFileSync(path.join(dir, 'hello.md'), 'world');
+
+    const res = await syncVault(git, {
+      vaultPath: dir,
+      commitMessage: 'init',
+      autoPush: false,
+      scanSecrets: false,
+      conflictStrategy: 'keep-local-copy',
+    });
+
+    // When there's no remote, status is 'no-remote' (same as test (d)).
+    // The key regression check: 'committed' must be true — the old bug caused
+    // "git diff --cached --quiet" to throw on unborn HEAD, so nothing was committed.
+    expect(res.status).toBe('no-remote');
+    expect(res.committed).toBe(true);
+    expect(res.pushed).toBe(false);
+
+    const log = await git.log();
+    expect(log.total).toBe(1);
+    expect(log.latest?.message).toBe('init');
+  });
+});
