@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.3] - 2026-09-30
+### Fixed
+- Hardened .obsidian/plugins/agentic-vault/*.json exclusion to support alternative repo structures (e.g. tracking .obsidian itself).
+- CI BOM scanner updated to run reliably under UTF-8 locales (LC_ALL=C).
+
 ## [2.1.2] - 2026-09-30
 ### Fixed
 - Removed BOM from source files to prevent linter and string parsing bugs.
