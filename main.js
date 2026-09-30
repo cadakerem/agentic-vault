@@ -6133,6 +6133,9 @@ async function syncVault(git, opts) {
         findings = [...findings, ...scanDiff(unpushedDiff)];
       } catch (e) {
       }
+      if (opts.allowedPaths && opts.allowedPaths.length > 0) {
+        findings = findings.filter((f) => !opts.allowedPaths.includes(f.file));
+      }
       if (findings.length > 0) {
         await unstageAll(git);
         const files = [...new Set(findings.map((f) => f.file))];
@@ -6926,6 +6929,16 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       }
     });
     defs.push({
+      name: "Allowed Secret Paths (Allowlist)",
+      desc: "Files matching these relative paths will bypass the secret scanner even if they trigger a rule (e.g., config/.npmrc). Enter one path per line.",
+      render: (setting, _group) => {
+        setting.setName("Allowed Secret Paths (Allowlist)").setDesc("Files matching these relative paths will bypass the secret scanner even if they trigger a rule (e.g., config/.npmrc). Enter one path per line.").addTextArea((text) => text.setPlaceholder("config/.npmrc\ntest.env").setValue(this.plugin.settings.allowedPaths).onChange(async (value) => {
+          this.plugin.settings.allowedPaths = value;
+          await this.plugin.saveSettings();
+        }));
+      }
+    });
+    defs.push({
       name: "Auto-Sync Interval (minutes)",
       desc: "How often to sync. Set to 0 to disable.",
       render: (setting, _group) => {
@@ -7104,6 +7117,7 @@ var DEFAULT_SETTINGS = {
   scriptsFolder: "AI-Agent-System/scripts",
   allowPublicRemote: false,
   scanSecrets: true,
+  allowedPaths: "",
   excludedSyncPaths: "",
   includedSyncPaths: "",
   dismissedWhitelistSuggestions: [],
@@ -7347,6 +7361,7 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
         autoPush: this.settings.gitAutoPush,
         allowPublicRemote: this.settings.allowPublicRemote,
         scanSecrets: this.settings.scanSecrets,
+        allowedPaths: this.settings.allowedPaths.split("\n").map((p2) => p2.trim()).filter(Boolean),
         excludedPaths: this.settings.excludedSyncPaths.split("\n").map((p2) => p2.trim()).filter(Boolean),
         includedPaths: this.settings.includedSyncPaths.split("\n").map((p2) => p2.trim()).filter(Boolean),
         device: this.settings.deviceName
