@@ -6118,7 +6118,7 @@ async function syncVault(git, opts) {
         message: "DANGER: Ignored files are still tracked by Git! Sync stopped to prevent secrets leaking. Please untrack them using git rm -r --cached."
       };
     }
-    const addArgs = ["."];
+    const addArgs = [".", ":(exclude).obsidian/plugins/agentic-vault/*.json"];
     if (opts.excludedPaths && opts.excludedPaths.length > 0) {
       opts.excludedPaths.forEach((p2) => addArgs.push(`:(exclude)${p2}`));
     }
@@ -7381,10 +7381,11 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
       }
       if (transition.notice && (!silent || manual)) {
         new import_obsidian6.Notice(transition.notice, 1e4);
-      } else if (result.status === "ok" && !silent) {
-        if (result.skippedByAllowlist && result.skippedByAllowlist.length > 0) {
-          new import_obsidian6.Notice("\u26A0\uFE0F Secret Scanner: " + result.skippedByAllowlist.length + " file(s) bypassed via allowlist.", 8e3);
-        }
+      }
+      if (result.skippedByAllowlist && result.skippedByAllowlist.length > 0) {
+        new import_obsidian6.Notice("\u26A0\uFE0F Secret Scanner: " + result.skippedByAllowlist.length + " file(s) bypassed via allowlist.", 8e3);
+      }
+      if (result.status === "ok" && !silent) {
         if (result.pushed) new import_obsidian6.Notice("\u{1F680} Pushed to GitHub!");
         else if (result.committed) new import_obsidian6.Notice("\u2713 Changes committed.");
         else new import_obsidian6.Notice("Agentic Vault: Nothing to commit.");
