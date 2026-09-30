@@ -135,4 +135,23 @@ describe('planLink / applyLink', () => {
     const plan = planLink(source, target(), home);
     expect(() => applyLink(source, target(), plan, 'win32')).not.toThrow();
   });
+
+  it('replaces an EXISTING junction/symlink without EPERM (covers Windows fallback rmdirSync)', () => {
+    // Create source and an existing link pointing somewhere else
+    fs.mkdirSync(source, { recursive: true });
+    const other = path.join(root, 'other-source');
+    fs.mkdirSync(other);
+    // Create an existing link at target() pointing to 'other'
+    fs.mkdirSync(path.dirname(target()), { recursive: true });
+    const linkType = process.platform === 'win32' ? 'junction' : 'dir';
+    fs.symlinkSync(path.resolve(other), target(), linkType);
+    expect(fs.lstatSync(target()).isSymbolicLink() || (process.platform === 'win32')).toBe(true);
+
+    // Now applyLink should replace it without throwing
+    const plan = planLink(source, target(), home);
+    expect(plan.action).toBe('replace-link'); // existing link pointing elsewhere → replace
+    expect(() => applyLink(source, target(), plan)).not.toThrow();
+    // After: target points to source
+    expect(fs.realpathSync(target())).toBe(fs.realpathSync(source));
+  });
 });

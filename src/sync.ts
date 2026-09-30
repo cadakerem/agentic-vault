@@ -215,7 +215,9 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
             };
           }
 
-          const match = remoteUrl.match(/github\.com[:/]([^/]+\/[^/.]+?)(\.git)?$/i);
+          // Anchored to prevent evilgithub.com / github.com.evil.com from matching.
+          // Supports HTTPS, SSH (git@), ssh:// and token@ forms. Dots allowed in repo names.
+          const match = remoteUrl.match(/^(?:https?:\/\/(?:[^@/]+@)?|ssh:\/\/(?:[^@/]+@)?|(?:[^@/]+@)?)github\.com[:/]([^/]+\/[^/]+?)(?:\.git)?\/?$/i);
           if (match) repoPath = match[1];
           if (!repoPath) {
             return {
