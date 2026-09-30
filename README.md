@@ -98,7 +98,7 @@ Developed by **Kerem Barbaros Karnabat** (@cadakerem).
 
 Contributions, issues, and feature requests are welcome! Feel free to check the [Issues page](https://github.com/cadakerem/agentic-vault/issues).
 
-### License
+### 📜 License
 This project is licensed under the [MIT License](LICENSE).
 
 ---
@@ -112,14 +112,3 @@ This project is licensed under the [MIT License](LICENSE).
 - **scanSecrets and allowPublicRemote are independent.** Disabling scanSecrets completely turns off pre-commit scanning regardless of the public-remote setting. Ensure you have an alternative safeguard before doing so.
 
 
-## 🤝 Contributing
-Contributions, issues, and feature requests are welcome!
-
-1. Fork the repository.
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
-4. Push to the branch (`git push origin feature/AmazingFeature`).
-5. Open a Pull Request.
-
-## 📜 License
-This project is licensed under the [MIT License](LICENSE).
