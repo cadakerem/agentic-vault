@@ -90,6 +90,14 @@ describe('scanFileNames', () => {
     }
   );
 
+  it.each([
+    'id_rsa', 'id_ed25519', 'server.pem', 'cert.p12', 'cert.pfx',
+    '.npmrc', '.netrc', '.pgpass', '.git-credentials',
+    'terraform.tfstate', 'prod.tfvars', 'kubeconfig', 'service-account-key.json',
+  ])('flags additional sensitive file names: %s', (name) => {
+    expect(scanFileNames([name]).length).toBeGreaterThan(0);
+  });
+
   it('does not flag look-alikes or .env.example', () => {
     expect(scanFileNames(['.env.example', 'Credentials.md', 'keyboard.md', 'monkey.txt', 'notes/token-economy.md'])).toEqual([]);
   });
