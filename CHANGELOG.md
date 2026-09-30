@@ -2,6 +2,48 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.0] - 2026-09-30
+
+### Security
+- **Anchored GitHub URL regex** (`src/sync.ts`): The public-remote check regex had no start
+  anchor, allowing spoofed hosts like `evilgithub.com/user/repo` or `github.com.evil.com` to
+  match and bypass the protection. Fixed by adding a strict host anchor.
+- **Repo names with dots** (`[^/.]+?` → `[^/]+?`): Repos named `my.repo` or `foo.js` were
+  incorrectly rejected as "not a recognized GitHub URL". Now accepted.
+- Added 9 URL boundary tests covering evil host bypass, subdomain spoof, ssh://, token@,
+  dot in repo name, trailing slash, and GitHub Enterprise rejection.
+
+### Fixed
+- **Windows junction/symlink replace** (`src/link.ts`): `applyLink` now falls back from
+  `fs.unlinkSync` to `fs.rmdirSync` when replacing a junction to avoid EPERM errors.
+- **Unborn HEAD / first-ever commit** (`src/sync.ts`): `hasStaged` no longer throws on a
+  brand-new `git init` with no commits. Replaced `git diff --cached --quiet` (which throws
+  on unborn HEAD) with `git diff --cached --name-only -z` and a `git ls-files -z` fallback.
+- **Dynamic branch name in push warning**: Security warning no longer hardcodes "main" —
+  now uses the actual current branch name.
+- **URL unreachable vs. not GitHub**: Split into two distinct error messages for clarity.
+
+### Changed
+- **`scanSecrets` and `allowPublicRemote` are now fully independent** (`src/settings/`):
+  Previously, `scanSecrets` was locked to `true` whenever `allowPublicRemote` was `false`.
+  Now both toggles can be changed independently. Disabling the scanner shows an 8-second
+  warning Notice reminding users to have an alternative safeguard.
+
+### Tests
+- 122 tests across 11 files (up from 103 before v2 work began).
+- New: `tests/security.test.ts`, URL boundary tests in `test/public-check.test.ts`,
+  junction replace and sym_ssh safety tests in `tests/link.test.ts`,
+  unborn-HEAD regression test in `tests/sync.test.ts`.
+- CI: `ubuntu-24.04` pinned (replaces `ubuntu-latest`), all actions updated to `@v5`.
+
+### Infrastructure
+- Removed all `patch*.js` and `test_*.js` one-off scripts from the repository root.
+- Removed accidental `test_cp_t/` directory from git tracking.
+
+### Documentation
+- README: Added "Known Limitations" section (inbound sync risk, pattern-based scanning
+  caveats, GitHub-only protection, GitHub Enterprise not supported, scanner independence).
+
 ## [1.5.2] - 2026-09-26
 ### Fixed
 - **Code Quality:** Removed an unused variable in the public remote check logic reported by code analysis.

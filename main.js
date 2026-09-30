@@ -5884,7 +5884,7 @@ var path7 = __toESM(require("path"));
 var os6 = __toESM(require("os"));
 
 // src/sync.ts
-var fs3 = __toESM(require("fs"));
+var fs2 = __toESM(require("fs"));
 var path2 = __toESM(require("path"));
 var os = __toESM(require("os"));
 var import_child_process2 = require("child_process");
@@ -5967,7 +5967,7 @@ function scanFileNames(paths) {
 }
 
 // src/conflict.ts
-var fs2 = __toESM(require("fs"));
+var fs = __toESM(require("fs"));
 var path = __toESM(require("path"));
 function sanitizeDevice(name) {
   const s = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 20);
@@ -6005,14 +6005,14 @@ function parseUnmergedStages(out) {
   }
   return map;
 }
-var midRebase = (vaultPath) => ["rebase-merge", "rebase-apply"].some((d) => fs2.existsSync(path.join(vaultPath, ".git", d)));
+var midRebase = (vaultPath) => ["rebase-merge", "rebase-apply"].some((d) => fs.existsSync(path.join(vaultPath, ".git", d)));
 async function resolveRebaseConflicts(git, opts) {
   var _a2, _b;
   const when = (_a2 = opts.now) != null ? _a2 : /* @__PURE__ */ new Date();
   const copies = [];
   let orig = "";
   try {
-    orig = fs2.readFileSync(path.join(opts.vaultPath, ".git", "rebase-merge", "orig-head"), "utf8").trim();
+    orig = fs.readFileSync(path.join(opts.vaultPath, ".git", "rebase-merge", "orig-head"), "utf8").trim();
   } catch (e) {
     orig = (await git.raw(["rev-parse", "--verify", "ORIG_HEAD"]).catch(() => "")).trim();
   }
@@ -6023,10 +6023,10 @@ async function resolveRebaseConflicts(git, opts) {
     for (const [file, st] of unmerged) {
       if (!st.has2 && !st.has3) throw new Error(`Unsupported conflict type for ${file}`);
       if (st.has3) {
-        const copyRel = conflictCopyName(file, opts.device, when, (c3) => copies.includes(c3) || fs2.existsSync(path.join(opts.vaultPath, c3)));
+        const copyRel = conflictCopyName(file, opts.device, when, (c3) => copies.includes(c3) || fs.existsSync(path.join(opts.vaultPath, c3)));
         const blob = await git.binaryCatFile(["blob", `:3:${file}`]);
-        fs2.mkdirSync(path.dirname(path.join(opts.vaultPath, copyRel)), { recursive: true });
-        fs2.writeFileSync(path.join(opts.vaultPath, copyRel), new Uint8Array(blob));
+        fs.mkdirSync(path.dirname(path.join(opts.vaultPath, copyRel)), { recursive: true });
+        fs.writeFileSync(path.join(opts.vaultPath, copyRel), new Uint8Array(blob));
         copies.push(copyRel);
         fresh.push(copyRel);
       }
@@ -6065,11 +6065,11 @@ function maskSecrets(msg) {
 }
 function isMidRebase(vaultPath) {
   const gitDir = path2.join(vaultPath, ".git");
-  return ["rebase-merge", "rebase-apply"].some((d) => fs3.existsSync(path2.join(gitDir, d)));
+  return ["rebase-merge", "rebase-apply"].some((d) => fs2.existsSync(path2.join(gitDir, d)));
 }
 async function currentBranch(git) {
   try {
-    return (await git.raw(["symbolic-ref", "--short", "HEAD"])).trim() || "main";
+    return (await git.raw(["symbolic-ref", "--short", "HEAD"]).catch(() => "")).trim() || "main";
   } catch (e) {
     return "main";
   }
@@ -6122,7 +6122,7 @@ async function syncVault(git, opts) {
       const names = (await git.raw(["diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z"])).split("\0").filter(Boolean);
       let findings = [...scanFileNames(names), ...scanDiff(diff)];
       try {
-        const unpushedDiff = await git.raw(["log", "-p", "--not", "--remotes=" + remote, "HEAD"]);
+        const unpushedDiff = await git.raw(["log", "-p", "-m", "--format=", "HEAD", "--not", "--remotes=" + remote]);
         findings = [...findings, ...scanDiff(unpushedDiff)];
       } catch (e) {
       }
@@ -6132,15 +6132,21 @@ async function syncVault(git, opts) {
           ...result,
           status: "secrets-found",
           findings,
-          message: `${findings.length} potential secret(s) found. Nothing was committed or pushed.`
+          message: `${findings.length} potential secret(s) found. If in local commits, run: git reset --soft origin/main, remove secrets, and commit. If already pushed, ROTATE your keys immediately!`
         };
       }
     }
     let hasStaged = false;
     try {
-      await git.raw(["diff", "--cached", "--quiet"]);
+      const out = await git.raw(["diff", "--cached", "--name-only", "-z"]);
+      hasStaged = out.length > 0;
     } catch (e) {
-      hasStaged = true;
+      if (e.message && e.message.includes("bad revision 'HEAD'")) {
+        const out = await git.raw(["ls-files", "-z"]);
+        hasStaged = out.length > 0;
+      } else {
+        throw e;
+      }
     }
     if (hasStaged) {
       await git.commit(opts.commitMessage);
@@ -6181,8 +6187,27 @@ async function syncVault(git, opts) {
     if (conflictCopies.length > 0) result.conflictCopies = conflictCopies;
     if (opts.autoPush) {
       if (!opts.allowPublicRemote) {
+        let repoPath = "";
+        const remoteUrlStr = await git.raw(["remote", "get-url", remote]).catch(() => "");
+        const remoteUrl = remoteUrlStr.trim();
+        if (!remoteUrl) {
+          return {
+            ...result,
+            status: "error",
+            message: `Push aborted: Could not fetch URL for remote "${remote}". Enable "Allow Public Remote" to bypass.`
+          };
+        }
+        const match = remoteUrl.match(/^(?:https?:\/\/(?:[^@/]+@)?|ssh:\/\/(?:[^@/]+@)?|(?:[^@/]+@)?)github\.com[:/]([^/]+\/[^/]+?)(?:\.git)?\/?$/i);
+        if (match) repoPath = match[1];
+        if (!repoPath) {
+          return {
+            ...result,
+            status: "error",
+            message: `Push aborted: Remote "${remote}" (${remoteUrl}) is not a recognized GitHub URL. Enable "Allow Public Remote" to bypass.`
+          };
+        }
         try {
-          const { stdout } = await execFileAsync("gh", ["repo", "view", "--json", "isPrivate"], { cwd: opts.vaultPath });
+          const { stdout } = await execFileAsync("gh", ["repo", "view", repoPath, "--json", "isPrivate"], { cwd: opts.vaultPath });
           const data = JSON.parse(stdout);
           if (data && data.isPrivate === false) {
             return {
@@ -6271,6 +6296,7 @@ var os3 = __toESM(require("os"));
 var path4 = __toESM(require("path"));
 
 // src/util.ts
+var fs3 = __toESM(require("fs"));
 var os2 = __toESM(require("os"));
 var path3 = __toESM(require("path"));
 function section(content, title) {
@@ -6302,11 +6328,11 @@ ${r2.coding}
 var SECRET_DIRS = [".ssh", ".aws", ".gnupg", ".kube", ".docker"];
 var EXACT_ONLY_DIRS = [".config", "Documents", "Desktop", "Downloads"];
 function realResolve(p2) {
-  let cur = path3.resolve(p2);
+  let cur = path3.resolve(path3.dirname(p2));
   const tail = [];
   for (; ; ) {
     try {
-      return path3.join(fs.realpathSync(cur), ...tail.reverse());
+      return path3.join(fs3.realpathSync.native(cur), ...tail.reverse(), path3.basename(p2));
     } catch (e) {
       const parent = path3.dirname(cur);
       if (parent === cur) return path3.resolve(p2);
@@ -6316,15 +6342,17 @@ function realResolve(p2) {
   }
 }
 function isDangerousPath(p2, home = os2.homedir()) {
-  const cmp = (s) => process.platform === "win32" ? s.toLowerCase() : s;
+  const cmp = (s) => process.platform === "win32" || process.platform === "darwin" ? s.toLowerCase() : s;
   const norm = realResolve(p2);
   const h2 = realResolve(home);
   if (path3.parse(norm).root === norm) return true;
   if (cmp(norm) === cmp(h2)) return true;
-  if (!cmp(norm).startsWith(cmp(h2) + path3.sep)) return true;
-  const parts = path3.relative(h2, norm).split(path3.sep);
-  if (SECRET_DIRS.some((d) => cmp(d) === cmp(parts[0]))) return true;
-  if (parts.length === 1 && EXACT_ONLY_DIRS.some((d) => cmp(d) === cmp(parts[0]))) return true;
+  if (!cmp(norm).startsWith(cmp(h2))) return true;
+  if (cmp(norm).length === cmp(h2).length) return true;
+  if (cmp(norm)[cmp(h2).length] !== "\\" && cmp(norm)[cmp(h2).length] !== "/") return true;
+  const parts = cmp(norm).substring(cmp(h2).length + 1).split(/[\\/]/);
+  if (SECRET_DIRS.some((d) => cmp(d) === parts[0])) return true;
+  if (parts.length === 1 && EXACT_ONLY_DIRS.some((d) => cmp(d) === parts[0])) return true;
   return false;
 }
 
@@ -6373,7 +6401,12 @@ function applyLink(source, target, plan, platform3 = process.platform) {
   fs4.mkdirSync(path4.dirname(t2), { recursive: true });
   let backup;
   if (plan.action === "replace-link") {
-    fs4.unlinkSync(t2);
+    try {
+      fs4.unlinkSync(t2);
+    } catch (e) {
+      if (e.code === "EPERM" || e.code === "EISDIR") fs4.rmdirSync(t2);
+      else throw e;
+    }
   } else if (plan.action === "backup-and-create") {
     backup = plan.backup;
     fs4.renameSync(t2, backup);
@@ -6867,17 +6900,19 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
     });
     defs.push({
       name: "Enable Secret Scanner",
-      desc: 'Block commits if secrets (API keys, .env) are detected. (Cannot be disabled unless "Allow Public Remote" is ON).',
+      desc: "Block commits if secrets (API keys, .env) are detected. Can be disabled independently of other settings \u2014 if you disable this, ensure you have an alternative safeguard (e.g. GitHub push protection).",
       render: (setting, _group) => {
-        setting.setName("Enable Secret Scanner").setDesc('Block commits if secrets (API keys, .env) are detected. (Cannot be disabled unless "Allow Public Remote" is ON).').addToggle((t2) => {
+        setting.setName("Enable Secret Scanner").setDesc("Block commits if secrets (API keys, .env) are detected. Can be disabled independently of other settings \u2014 if you disable this, ensure you have an alternative safeguard (e.g. GitHub push protection).").addToggle((t2) => {
           t2.setValue(this.plugin.settings.scanSecrets).onChange(async (v) => {
             this.plugin.settings.scanSecrets = v;
             await this.plugin.saveSettings();
+            if (!v) {
+              new import_obsidian5.Notice(
+                "\u26A0\uFE0F Secret scanner disabled. Pre-commit scanning is now OFF. Ensure you have an alternative safeguard (e.g. GitHub push protection) before syncing.",
+                8e3
+              );
+            }
           });
-          if (!this.plugin.settings.allowPublicRemote) {
-            t2.setValue(true);
-            t2.setDisabled(true);
-          }
         });
       }
     });
