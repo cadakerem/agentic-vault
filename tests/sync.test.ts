@@ -555,3 +555,84 @@ describe('hasStaged on unborn repo (regression)', () => {
     expect(log.latest?.message).toBe('init');
   });
 });
+
+// ---- upgrade / settings-independence tests (v2.0.0 regression) ----
+// These tests verify that scanSecrets and allowPublicRemote are truly independent,
+// both at the sync logic level (sync.ts shouldScan) and in the upgrade path
+// where an old data.json may be missing the scanSecrets field.
+describe('scanSecrets independence (v2.0.0 upgrade regression)', () => {
+  async function makeCommittedVault(name: string, remote: string) {
+    const { dir, git } = await makeVault(name, remote);
+    write(dir, 'note.md', 'hello');
+    await git.add('.');
+    await git.commit('init');
+    await git.push(['-u', 'origin', 'main']);
+    return { dir, git };
+  }
+
+  it('scanSecrets:false is honoured even when allowPublicRemote:false (old lock removed)', async () => {
+    // Scenario: user explicitly disables scanning AND keeps public-remote protection.
+    // Old code: allowPublicRemote=false forced shouldScan=true regardless of scanSecrets.
+    // New code: shouldScan = opts.scanSecrets !== false (independent).
+    const remote = await makeRemote();
+    const { dir, git } = await makeCommittedVault('vault', remote);
+
+    // Write a file that looks like a secret — scanner would normally block this.
+    write(dir, 'test.env', 'OPENAI_API_KEY=sk-abcdef1234567890abcdef1234567890');
+
+    const res = await syncVault(git, {
+      vaultPath: dir,
+      allowPublicRemote: false,   // public-remote protection ON
+      scanSecrets: false,          // scanning explicitly OFF
+      commitMessage: 'add env',
+      autoPush: true,
+    });
+
+    // With the NEW fix: commit goes through because scanner is genuinely disabled.
+    // It will then fail at the push stage because `allowPublicRemote` is false 
+    // and a local path remote is not a GitHub URL. So status is 'error', but committed is true!
+    expect(res.status).toBe('error');
+    expect(res.committed).toBe(true);
+  });
+
+  it('scanSecrets:true still blocks secrets when allowPublicRemote:false', async () => {
+    // Sanity check: the existing protection still works when scanner is ON.
+    const remote = await makeRemote();
+    const { dir, git } = await makeCommittedVault('vault2', remote);
+
+    write(dir, 'test.env', 'OPENAI_API_KEY=sk-abcdef1234567890abcdef1234567890');
+
+    const res = await syncVault(git, {
+      vaultPath: dir,
+      allowPublicRemote: false,
+      scanSecrets: true,
+      commitMessage: 'add env',
+      autoPush: true,
+    });
+
+    expect(res.status).toBe('secrets-found');
+    expect(res.committed).toBe(false);
+  });
+
+  it('upgrade path: old data.json without scanSecrets field defaults to scanning ON', async () => {
+    // Simulates an old data.json that never had scanSecrets written to it.
+    // Object.assign({}, DEFAULT_SETTINGS, savedData) means scanSecrets gets the default (true).
+    // Here we pass undefined explicitly to mirror that scenario at the sync layer.
+    const remote = await makeRemote();
+    const { dir, git } = await makeCommittedVault('vault3', remote);
+
+    write(dir, 'test.env', 'OPENAI_API_KEY=sk-abcdef1234567890abcdef1234567890');
+
+    const res = await syncVault(git, {
+      vaultPath: dir,
+      allowPublicRemote: true,
+      scanSecrets: undefined,   // missing from old data.json → should default to true (scan ON)
+      commitMessage: 'add env',
+      autoPush: true,
+    });
+
+    // undefined means opt-in: scanning should block
+    expect(res.status).toBe('secrets-found');
+    expect(res.committed).toBe(false);
+  });
+});
