@@ -28,6 +28,7 @@ export interface SyncOptions {
   remote?: string; // default: origin
   scanSecrets?: boolean; // default: true
   allowPublicRemote?: boolean;
+  allowedPaths?: string[];
   excludedPaths?: string[];
   includedPaths?: string[];
   /** 'keep-local-copy' (default): remote wins, local version saved as *.conflict-local-*. 'abort': old behaviour. */
@@ -116,8 +117,6 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
     await git.raw(['add', ...addArgs]);
 
     // 1b. secret scan of what is about to be committed; on a hit, unstage everything and stop
-    // scanSecrets is now independent of allowPublicRemote (v2.0.0: both toggles decoupled).
-    // Default to true if unset (scanSecrets?: boolean — undefined means opt-in).
     const shouldScan = opts.scanSecrets !== false;
     if (shouldScan) {
       
@@ -131,6 +130,10 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
         findings = [...findings, ...scanDiff(unpushedDiff)];
       } catch {
         // Ignored if there are no commits yet
+      }
+
+      if (opts.allowedPaths && opts.allowedPaths.length > 0) {
+        findings = findings.filter(f => !opts.allowedPaths!.includes(f.file));
       }
 
       if (findings.length > 0) {

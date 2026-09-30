@@ -26,6 +26,7 @@ export interface AgenticVaultSettings {
 	scriptsFolder: string;
 	allowPublicRemote: boolean;
 	scanSecrets: boolean;
+	allowedPaths: string;
 	excludedSyncPaths: string;
 	includedSyncPaths: string;
 	dismissedWhitelistSuggestions: string[];
