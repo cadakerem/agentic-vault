@@ -1,4 +1,4 @@
-# 🧠 Agentic Vault for Obsidian
+﻿# 🧠 Agentic Vault for Obsidian
 
 Agentic Vault is an Obsidian plugin for Git-backed AI configuration, automated vault synchronization, pattern-based secret scanning, and developer workflow integration.
 
@@ -103,9 +103,9 @@ Agentic Vault is built for local-first automation. Because it creates symlinks a
 ## 🧑‍💻 Developer & Contributions
 Developed by Kerem Barbaros Karnabat ([@cadakerem](https://github.com/cadakerem)).
 
-> **Note on Repository Structure:** The core logic for this autonomous AI agent framework resides in the `src/` directory, while configuration and prompt schemas are maintained at the root level. All build artifacts and distribution files are generated in the `dist/` directory.
+> **Note on Repository Structure:** The core logic for this Obsidian plugin resides in the `src/` directory, while configuration and prompt schemas are maintained at the root level. All build artifacts and distribution files are generated in the `dist/` directory.
 
-Contributions, issues, and feature requests are welcome! Feel free to check the [Issues page](../../issues).
+Contributions, issues, and feature requests are welcome! Feel free to check the [Issues page](https://github.com/cadakerem/agentic-vault/issues).
 
 ## 📜 License
 This project is licensed under the [MIT License](LICENSE).
