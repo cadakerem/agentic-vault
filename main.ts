@@ -145,7 +145,7 @@ export default class AgenticVaultPlugin extends Plugin {
 		const gitignorePath = path.join(vaultPath, '.gitignore');
 		const brain = this.settings.vaultBrainFolder || 'AI-Brain';
 		const rules = [
-			`${this.app.vault.configDir}/`,
+			`${this.app.vault.configDir}/*`,
 			'/workspace.json',
 			'/workspace-mobile.json',
 			'node_modules/',
