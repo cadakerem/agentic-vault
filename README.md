@@ -6,26 +6,6 @@ It bridges the gap between your local OS-level AI tools (Antigravity, Claude Cod
 
 ---
 
-## ✨ Features
-
-- **💻 New Machine Setup Wizard:** Got a new laptop? Just open Obsidian, click the wizard, and it automatically creates OS-level symlinks (`junction`/`dir`) connecting your local AI agents to your vault's `AI-Brain` folder.
-- **🔄 Auto Git Sync:** Background auto-pull, commit, and push. Your vault acts as a seamless Git repository without needing terminal commands.
-- **☁️ Git Status Bar:** Live status in the bottom right corner showing your current branch, ahead/behind commits, and uncommitted changes (e.g., `☁ main ↑2 ✎3`).
-- **🛡️ Pattern-Based Secret Scanning:** A pre-commit scanning layer that helps prevent accidentally committing known API keys and tokens. Note that this is a pattern-based heuristic and not an absolute security guarantee.
-- **🔒 Best-Effort Secret-Leak Prevention Sync Architecture:** By default, only safe text files (prompts, rules, and skills) in your `AI-Brain` are synced to GitHub. Junk config files, AI chat histories, and locally cached secrets are automatically blocked by our Default-Deny whitelist engine.
-- **🔄 Smart Conflict Resolution (Dropbox-style):** If you make edits on your laptop and desktop at the same time, Agentic Vault cleanly handles Git merge conflicts by keeping the remote version and saving your local edits side-by-side as `.conflict-local` copies. No more broken Markdown files with Git markers!
-- **🌐 Universal AI Tool Support:** Natively links configurations for:
-  - Antigravity / Gemini CLI (`~/.gemini/config`)
-  - Claude Code (`~/.claude`)
-  - Cursor (`AppData/Roaming/Cursor/User`)
-  - Windsurf
-  - VS Code / Copilot
-  *(Fully customizable: you can edit the exact Windows or Mac/Linux path for each tool in the plugin settings!)*
-- **🧠 Brain Manager:** A dedicated visual editor to manage your AI System Prompts, Project Rules, and Coding Standards. All rules are auto-tracked in Git.
-- **🚀 Issue-Driven Development:** Create GitHub Issues directly from inside Obsidian without ever opening a browser.
-
----
-
 ## 🛠️ How to Install
 
 Agentic Vault is officially available in the Obsidian Community Plugins directory!
@@ -41,6 +21,33 @@ Agentic Vault is officially available in the Obsidian Community Plugins director
 2. Extract the files (`main.js`, `manifest.json`, `styles.css`) into your vault: 
    `YourVault/.obsidian/plugins/agentic-vault/`
 3. Restart Obsidian and enable **Agentic Vault** in Community Plugins.
+
+---
+
+## 🚀 Getting Started
+
+### 1. Initialize Git (If you haven't already)
+- Go to **Settings > Agentic Vault**.
+- Under the **Git & Sync** section, paste your GitHub Repository URL.
+- Click **Initialize & Connect**. The plugin will `git init`, set up the main branch, and connect to your remote.
+
+### 2. Setting Up a New Machine (Setup Wizard)
+When moving to a new computer, you can restore your entire AI ecosystem in seconds:
+1. **Clone your vault:** Open your terminal and download your existing Obsidian vault from GitHub:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/YOUR_VAULT_REPO.git ~/ObsidianVault
+   ```
+2. **Open in Obsidian:** Launch Obsidian and open the downloaded folder as a vault.
+3. **Run the Wizard:** Click the **Laptop Icon (💻)** in the left ribbon and click **Start Setup**.
+*Agentic Vault will automatically back up any existing local configs and create symlinks directly to your vault. Your AI tools will instantly remember all your rules and scripts!*
+
+### 3. Manage Your AI Brain
+- Click the **Brain Manager** button in settings or use the Command Palette (`Ctrl+P` -> `Open AI Brain Manager`).
+- Edit your System, Project, and Coding rules.
+- Click **Save & Sync**. The changes are immediately saved to markdown and pushed to GitHub.
+
+> **💡 Pro-Tip for Users:**
+> The Setup Wizard now features **Smart Auto-Detection**. It will automatically scan your vault for known AI rule files (e.g., `GEMINI.md`, `CLAUDE.md`, `.cursorrules`) and set your **Brain File Path** for you!
 
 ---
 
@@ -73,30 +80,23 @@ Agentic Vault is built for local-first automation. Because it creates symlinks a
 
 
 
-## 🚀 Getting Started
+## ✨ Features
 
-### 1. Initialize Git (If you haven't already)
-- Go to **Settings > Agentic Vault**.
-- Under the **Git & Sync** section, paste your GitHub Repository URL.
-- Click **Initialize & Connect**. The plugin will `git init`, set up the main branch, and connect to your remote.
-
-### 2. Setting Up a New Machine (Setup Wizard)
-When moving to a new computer, you can restore your entire AI ecosystem in seconds:
-1. **Clone your vault:** Open your terminal and download your existing Obsidian vault from GitHub:
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/YOUR_VAULT_REPO.git ~/ObsidianVault
-   ```
-2. **Open in Obsidian:** Launch Obsidian and open the downloaded folder as a vault.
-3. **Run the Wizard:** Click the **Laptop Icon (💻)** in the left ribbon and click **Start Setup**.
-*Agentic Vault will automatically back up any existing local configs and create symlinks directly to your vault. Your AI tools will instantly remember all your rules and scripts!*
-
-### 3. Manage Your AI Brain
-- Click the **Brain Manager** button in settings or use the Command Palette (`Ctrl+P` -> `Open AI Brain Manager`).
-- Edit your System, Project, and Coding rules.
-- Click **Save & Sync**. The changes are immediately saved to markdown and pushed to GitHub.
-
-> **💡 Pro-Tip for Users:**
-> The Setup Wizard now features **Smart Auto-Detection**. It will automatically scan your vault for known AI rule files (e.g., `GEMINI.md`, `CLAUDE.md`, `.cursorrules`) and set your **Brain File Path** for you!
+- **💻 New Machine Setup Wizard:** Got a new laptop? Just open Obsidian, click the wizard, and it automatically creates OS-level symlinks (`junction`/`dir`) connecting your local AI agents to your vault's `AI-Brain` folder.
+- **🔄 Auto Git Sync:** Background auto-pull, commit, and push. Your vault acts as a seamless Git repository without needing terminal commands.
+- **☁️ Git Status Bar:** Live status in the bottom right corner showing your current branch, ahead/behind commits, and uncommitted changes (e.g., `☁ main ↑2 ✎3`).
+- **🛡️ Pattern-Based Secret Scanning:** A pre-commit scanning layer that helps prevent accidentally committing known API keys and tokens. Note that this is a pattern-based heuristic and not an absolute security guarantee.
+- **🔒 Best-Effort Secret-Leak Prevention Sync Architecture:** By default, only safe text files (prompts, rules, and skills) in your `AI-Brain` are synced to GitHub. Junk config files, AI chat histories, and locally cached secrets are automatically blocked by our Default-Deny whitelist engine.
+- **🔄 Smart Conflict Resolution (Dropbox-style):** If you make edits on your laptop and desktop at the same time, Agentic Vault cleanly handles Git merge conflicts by keeping the remote version and saving your local edits side-by-side as `.conflict-local` copies. No more broken Markdown files with Git markers!
+- **🌐 Universal AI Tool Support:** Natively links configurations for:
+  - Antigravity / Gemini CLI (`~/.gemini/config`)
+  - Claude Code (`~/.claude`)
+  - Cursor (`AppData/Roaming/Cursor/User`)
+  - Windsurf
+  - VS Code / Copilot
+  *(Fully customizable: you can edit the exact Windows or Mac/Linux path for each tool in the plugin settings!)*
+- **🧠 Brain Manager:** A dedicated visual editor to manage your AI System Prompts, Project Rules, and Coding Standards. All rules are auto-tracked in Git.
+- **🚀 Issue-Driven Development:** Create GitHub Issues directly from inside Obsidian without ever opening a browser.
 
 ---
 
