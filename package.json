@@ -1,46 +1,46 @@
 {
-  "name": "agentic-vault",
-  "version": "2.1.5",
-  "description": "The ultimate Obsidian plugin to automate Git sync, manage AI system prompts, and enable Issue-Driven Development directly from your vault.",
-  "main": "main.js",
-  "scripts": {
-    "dev": "node esbuild.config.mjs",
-    "build": "node esbuild.config.mjs production",
-    "test": "vitest run"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/cadakerem/agentic-vault.git"
-  },
-  "keywords": [
-    "obsidian",
-    "obsidian-plugin",
-    "ai",
-    "git",
-    "automation",
-    "github",
-    "issue-driven-development"
-  ],
-  "author": "Kerem (@cadakerem)",
-  "license": "MIT",
-  "dependencies": {
-    "simple-git": "^3.27.0"
-  },
-  "devDependencies": {
-    "@codemirror/state": "6.5.0",
-    "@codemirror/view": "6.38.6",
-    "@types/jest": "^30.0.0",
-    "@types/node": "^22.12.0",
-    "@typescript-eslint/eslint-plugin": "^5.29.0",
-    "@typescript-eslint/parser": "^5.29.0",
-    "@vitest/coverage-v8": "^5.0.2",
-    "esbuild": "^0.28.2",
-    "jest": "^30.5.2",
-    "obsidian": "^1.13.1",
-    "ts-jest": "^29.4.12",
-    "tslib": "2.4.0",
-    "typescript": "^5.9.3",
-    "vite": "^8.3.1",
-    "vitest": "^5.0.2"
-  }
+    "name":  "agentic-vault",
+    "version":  "2.1.6",
+    "description":  "The ultimate Obsidian plugin to automate Git sync, manage AI system prompts, and enable Issue-Driven Development directly from your vault.",
+    "main":  "main.js",
+    "scripts":  {
+                    "dev":  "node esbuild.config.mjs",
+                    "build":  "node esbuild.config.mjs production",
+                    "test":  "vitest run"
+                },
+    "repository":  {
+                       "type":  "git",
+                       "url":  "https://github.com/cadakerem/agentic-vault.git"
+                   },
+    "keywords":  [
+                     "obsidian",
+                     "obsidian-plugin",
+                     "ai",
+                     "git",
+                     "automation",
+                     "github",
+                     "issue-driven-development"
+                 ],
+    "author":  "Kerem (@cadakerem)",
+    "license":  "MIT",
+    "dependencies":  {
+                         "simple-git":  "^3.27.0"
+                     },
+    "devDependencies":  {
+                            "@codemirror/state":  "6.5.0",
+                            "@codemirror/view":  "6.38.6",
+                            "@types/jest":  "^30.0.0",
+                            "@types/node":  "^22.12.0",
+                            "@typescript-eslint/eslint-plugin":  "^5.29.0",
+                            "@typescript-eslint/parser":  "^5.29.0",
+                            "@vitest/coverage-v8":  "^5.0.2",
+                            "esbuild":  "^0.28.2",
+                            "jest":  "^30.5.2",
+                            "obsidian":  "^1.13.1",
+                            "ts-jest":  "^29.4.12",
+                            "tslib":  "2.4.0",
+                            "typescript":  "^5.9.3",
+                            "vite":  "^8.3.1",
+                            "vitest":  "^5.0.2"
+                        }
 }
