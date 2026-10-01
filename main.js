@@ -7209,7 +7209,7 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
     const gitignorePath = path7.join(vaultPath, ".gitignore");
     const brain = this.settings.vaultBrainFolder || "AI-Brain";
     const rules = [
-      `${this.app.vault.configDir}/`,
+      `${this.app.vault.configDir}/*`,
       "/workspace.json",
       "/workspace-mobile.json",
       "node_modules/",
@@ -7380,10 +7380,10 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
         console.error("Agentic Vault - Secrets blocked from commit:\n", result.findings);
       }
       if (transition.notice && (!silent || manual)) {
-        new import_obsidian6.Notice(transition.notice, 1e4);
+        new import_obsidian6.Notice(transition.notice, 15e3);
       }
       if (result.skippedByAllowlist && result.skippedByAllowlist.length > 0) {
-        new import_obsidian6.Notice("\u26A0\uFE0F Secret Scanner: " + result.skippedByAllowlist.length + " file(s) bypassed via allowlist.", 15e3);
+        new import_obsidian6.Notice("\u26A0\uFE0F Secret Scanner: " + result.skippedByAllowlist.length + " file(s) bypassed via allowlist.", 1e4);
       }
       if (result.status === "ok" && !silent) {
         if (result.pushed) new import_obsidian6.Notice("\u{1F680} Pushed to GitHub!");
