@@ -103,7 +103,7 @@ When moving to a new computer, you can restore your entire AI ecosystem in secon
 ## 🧑‍💻 Developer & Contributions
 Developed by Kerem Barbaros Karnabat (@cadakerem).
 
-> **Note on Repository Structure:** [TODO: Add any specific notes about the repository structure here, e.g., source vs build artifacts.]
+> **Note on Repository Structure:** The core logic for this autonomous AI agent framework resides in the `src/` directory, while configuration and prompt schemas are maintained at the root level. All build artifacts and distribution files are generated in the `dist/` directory.
 
 Contributions, issues, and feature requests are welcome! Feel free to check the [Issues page](../../issues).
 
