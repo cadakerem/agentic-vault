@@ -44,6 +44,35 @@ Agentic Vault is officially available in the Obsidian Community Plugins director
 
 ---
 
+## 🔒 Permissions & Security
+Agentic Vault is built for local-first automation. Because it creates symlinks and runs Git commands, it requires:
+- **Node.js `fs` module:** To read/write outside the Obsidian sandbox (strictly for creating symlinks to `~/.agents`, `~/.claude`, etc.).
+- **Node.js `child_process`:** To execute `git` and `gh` (GitHub CLI) commands securely in the background.
+
+*All source code is public, and GitHub Actions guarantees that release assets match the repository code byte-for-byte.*
+
+### 🚨 Best-Effort Secret-Leak Prevention Security Architecture
+**Agentic Vault is designed to sync your personal AI agent skills, rules, and configurations.** Because these environments often reside close to `.env` files, API keys, and sensitive prompts, Agentic Vault uses a three-layered defense system:
+
+1. **Best-Effort Secret-Leak Prevention Whitelist (.gitignore):** By default, your entire `AI-Brain` folder is blocked from syncing (Default-Deny). The plugin automatically whitelists only known, safe text formats (e.g. `GEMINI.md`, `CLAUDE.md`, `.cursorrules`, and `skills/`).
+2. **Setup Wizard Sandboxing:** Any custom plugins or settings folders you want to sync must be explicitly approved via the Setup Wizard's Whitelist Detection UI. The system will never silently sync unapproved files.
+3. **Content-based Defense (Secret Scanner):** Before every commit, a built-in scanner reads the actual content of the changed files. If it detects AWS keys, Slack tokens, private keys, or generic secret patterns, it blocks the commit.
+
+*(Disclaimer: While the Best-Effort Secret-Leak Prevention architecture blocks unknown files and we now block `.obsidian/` by default to prevent other plugins from leaking API keys in their `data.json` files, we still **STRONGLY** recommend keeping your GitHub repository Private.)*
+*(Note: The Secret Scanner cannot be disabled if you have 'Allow Public Remote' toggled off, ensuring 100% protection for private environments).*
+
+---
+
+## Known Limitations
+
+- **Inbound sync is not scanned.** The secret scanner only inspects outbound changes. Files pulled from the remote are not scanned. If your remote is compromised, malicious content could be pulled without warning. **Always keep your remote repository private.**
+- **Pattern-based scanning is not a guarantee.** The scanner uses heuristics (both by content and filename) to detect common API key formats and sensitive files. Novel or obfuscated secrets may not be detected. Conversely, harmless files like `.npmrc` or `.tfvars` might trigger false positives. Since any finding blocks the entire sync, you can add false positives (e.g. config/.npmrc) to the **Allowed Secret Paths (Allowlist)** in settings, or completely untrack them via git rm --cached <file> and .gitignore.
+- **GitHub only.** The public-remote protection works exclusively with github.com. Other forges (GitLab, Bitbucket, Gitea, self-hosted) are treated as unrecognized remotes and push is blocked unless you enable Allow Public Remote.
+- **GitHub Enterprise is not supported.** Repos on github.mycompany.com are not recognized. Support may be added in a future version.
+- **scanSecrets and allowPublicRemote are independent.** Disabling scanSecrets completely turns off pre-commit scanning regardless of the public-remote setting. Ensure you have an alternative safeguard before doing so.
+
+
+
 ## 🚀 Getting Started
 
 ### 1. Initialize Git (If you haven't already)
@@ -71,44 +100,12 @@ When moving to a new computer, you can restore your entire AI ecosystem in secon
 
 ---
 
-## 🔒 Permissions & Security
-Agentic Vault is built for local-first automation. Because it creates symlinks and runs Git commands, it requires:
-- **Node.js `fs` module:** To read/write outside the Obsidian sandbox (strictly for creating symlinks to `~/.agents`, `~/.claude`, etc.).
-- **Node.js `child_process`:** To execute `git` and `gh` (GitHub CLI) commands securely in the background.
-
-*All source code is public, and GitHub Actions guarantees that release assets match the repository code byte-for-byte.*
-
-### 🚨 Best-Effort Secret-Leak Prevention Security Architecture
-**Agentic Vault is designed to sync your personal AI agent skills, rules, and configurations.** Because these environments often reside close to `.env` files, API keys, and sensitive prompts, Agentic Vault uses a three-layered defense system:
-
-1. **Best-Effort Secret-Leak Prevention Whitelist (.gitignore):** By default, your entire `AI-Brain` folder is blocked from syncing (Default-Deny). The plugin automatically whitelists only known, safe text formats (e.g. `GEMINI.md`, `CLAUDE.md`, `.cursorrules`, and `skills/`).
-2. **Setup Wizard Sandboxing:** Any custom plugins or settings folders you want to sync must be explicitly approved via the Setup Wizard's Whitelist Detection UI. The system will never silently sync unapproved files.
-3. **Content-based Defense (Secret Scanner):** Before every commit, a built-in scanner reads the actual content of the changed files. If it detects AWS keys, Slack tokens, private keys, or generic secret patterns, it blocks the commit.
-
-*(Disclaimer: While the Best-Effort Secret-Leak Prevention architecture blocks unknown files and we now block `.obsidian/` by default to prevent other plugins from leaking API keys in their `data.json` files, we still **STRONGLY** recommend keeping your GitHub repository Private.)*
-*(Note: The Secret Scanner cannot be disabled if you have 'Allow Public Remote' toggled off, ensuring 100% protection for private environments).*
-
----
-
 ## 🧑‍💻 Developer & Contributions
+Developed by Kerem Barbaros Karnabat (@cadakerem).
 
-Developed by **Kerem Barbaros Karnabat** (@cadakerem). 
+> **Note on Repository Structure:** [TODO: Add any specific notes about the repository structure here, e.g., source vs build artifacts.]
 
-> **Note on Repository Structure:** You may notice both `src/main.ts` and `main.js` in the repository root. `src/main.ts` (along with the `src/` folder) contains the actual TypeScript source code. `main.js` is the compiled build artifact required by Obsidian for distribution.
+Contributions, issues, and feature requests are welcome! Feel free to check the [Issues page](../../issues).
 
-Contributions, issues, and feature requests are welcome! Feel free to check the [Issues page](https://github.com/cadakerem/agentic-vault/issues).
-
-### 📜 License
+## 📜 License
 This project is licensed under the [MIT License](LICENSE).
-
----
-
-## Known Limitations
-
-- **Inbound sync is not scanned.** The secret scanner only inspects outbound changes. Files pulled from the remote are not scanned. If your remote is compromised, malicious content could be pulled without warning. **Always keep your remote repository private.**
-- **Pattern-based scanning is not a guarantee.** The scanner uses heuristics (both by content and filename) to detect common API key formats and sensitive files. Novel or obfuscated secrets may not be detected. Conversely, harmless files like `.npmrc` or `.tfvars` might trigger false positives. Since any finding blocks the entire sync, you can add false positives (e.g. config/.npmrc) to the **Allowed Secret Paths (Allowlist)** in settings, or completely untrack them via git rm --cached <file> and .gitignore.
-- **GitHub only.** The public-remote protection works exclusively with github.com. Other forges (GitLab, Bitbucket, Gitea, self-hosted) are treated as unrecognized remotes and push is blocked unless you enable Allow Public Remote.
-- **GitHub Enterprise is not supported.** Repos on github.mycompany.com are not recognized. Support may be added in a future version.
-- **scanSecrets and allowPublicRemote are independent.** Disabling scanSecrets completely turns off pre-commit scanning regardless of the public-remote setting. Ensure you have an alternative safeguard before doing so.
-
-
