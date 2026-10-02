@@ -275,6 +275,30 @@ export default class AgenticVaultPlugin extends Plugin {
 			const found = savedTools.find(t => t.id === def.id);
 			return found ? { ...def, ...found } : { ...def };
 		});
+
+		// Migrate the legacy per-tool master rule to the single canonical vault rule.
+		let vaultPath: string | null = null;
+		try {
+			vaultPath = getVaultPath(this.app);
+		} catch {
+			// A lightweight test adapter may not expose a filesystem base path.
+		}
+		const legacyRulePaths = new Set([
+			`${this.settings.vaultBrainFolder}/gemini/GEMINI.md`,
+			`${this.settings.vaultBrainFolder}/claude/CLAUDE.md`,
+			`${this.settings.vaultBrainFolder}/cursor/.cursorrules`,
+			`${this.settings.vaultBrainFolder}/copilot/.github/copilot-instructions.md`,
+			`${this.settings.vaultBrainFolder}/windsurf/.windsurfrules`,
+		]);
+		let settingsMigrated = false;
+		if (vaultPath && legacyRulePaths.has(this.settings.ruleFilePath)) {
+			const canonicalRulePath = path.join(vaultPath, DEFAULT_SETTINGS.ruleFilePath);
+			if (fs.existsSync(canonicalRulePath)) {
+				this.settings.ruleFilePath = DEFAULT_SETTINGS.ruleFilePath;
+				settingsMigrated = true;
+			}
+		}
+
 		try {
 			const secretsPath = this.manifest.dir + '/secrets.json';
 			if (await this.app.vault.adapter.exists(secretsPath)) {
@@ -325,7 +349,7 @@ export default class AgenticVaultPlugin extends Plugin {
 				}
 			}
 		}
-		if (migrated || migratedState) {
+		if (migrated || migratedState || settingsMigrated) {
 			await this.saveSettings();
 		}
 	}

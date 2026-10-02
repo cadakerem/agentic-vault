@@ -47,26 +47,32 @@ class SetupWizardModal extends Modal {
 		const vaultPath = getVaultPath(this.app);
 		const brain = this.plugin.settings.vaultBrainFolder || 'AI-Brain';
 		const brainRules = [
+			`${brain}/Rules.md`,
 			`${brain}/gemini/GEMINI.md`,
 			`${brain}/claude/CLAUDE.md`,
 			`${brain}/cursor/.cursorrules`,
 			`${brain}/copilot/.github/copilot-instructions.md`,
-			`${brain}/windsurf/.windsurfrules`,
-			`${brain}/Rules.md`
+			`${brain}/windsurf/.windsurfrules`
 		];
 		
 		const foundRule = brainRules.find(r => fs.existsSync(path.join(vaultPath, r)));
-		if (foundRule && this.plugin.settings.ruleFilePath !== foundRule && this.plugin.settings.ruleFilePath === 'AI-Brain/Rules.md') {
+		const legacyRulePaths = new Set([
+			`${brain}/gemini/GEMINI.md`,
+			`${brain}/claude/CLAUDE.md`,
+			`${brain}/cursor/.cursorrules`,
+			`${brain}/copilot/.github/copilot-instructions.md`,
+			`${brain}/windsurf/.windsurfrules`
+		]);
+		if (foundRule && this.plugin.settings.ruleFilePath !== foundRule && legacyRulePaths.has(this.plugin.settings.ruleFilePath)) {
 			this.plugin.settings.ruleFilePath = foundRule;
 			void this.plugin.saveSettings();
-			new Notice(`Agentic Vault: Brain File Path auto-detected as ${foundRule}`);
+			new Notice(`Agentic Vault: Migrated master rule path to ${foundRule}`);
 		}
 
 		// --- Whitelist Detection UI ---
 		// Note: Core rule files (GEMINI.md, CLAUDE.md, .cursorrules) and skills/ are automatically whitelisted by default in .gitignore.
 		// We only suggest extra non-standard directories here.
 		const candidates = [
-			`${brain}/gemini/plugins/`,
 			`${brain}/system-prompts/`
 		];
 		
@@ -188,13 +194,6 @@ class SetupWizardModal extends Modal {
 
 		// Scripts symlink
 		addSymlinkStep('⚡ Link Scripts Folder', path.join(vaultPath, this.plugin.settings.scriptsFolder), path.join(os.homedir(), '.agents', 'scripts'));
-
-		// AI tools symlinks
-		for (const tool of this.plugin.settings.aiTools) {
-			if (!tool.enabled) continue;
-			const dstRel = isWin ? tool.windowsPath : tool.unixPath;
-			addSymlinkStep(`🤖 Link ${tool.name}`, path.join(vaultPath, this.plugin.settings.vaultBrainFolder, tool.id), path.join(os.homedir(), dstRel));
-		}
 
 		// Master Rules Sync
 		steps.push({
