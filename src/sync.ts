@@ -125,6 +125,11 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
     }
     await git.raw(['add', ...addArgs]);
 
+      if (opts.includedPaths && opts.includedPaths.length > 0) {
+        await git.raw(['add', '--force', ...opts.includedPaths]);
+      }
+
+
     // 1b. secret scan of what is about to be committed; on a hit, unstage everything and stop
     const shouldScan = opts.scanSecrets !== false;
     if (shouldScan) {

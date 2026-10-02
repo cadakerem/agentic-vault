@@ -6,16 +6,16 @@ const WHEN = new Date(Date.UTC(2026, 8, 24, 10, 15, 0)); // 2026-09-24 10:15:00 
 
 describe('conflictCopyName', () => {
   it('inserts the marker before the extension', () => {
-    expect(conflictCopyName('note.md', 'Kerem-PC', WHEN)).toBe('note.conflict-local-kerem-pc-20260924-101500.md');
+    expect(conflictCopyName('note.md', 'Kerem-PC', WHEN)).toBe('note.conflict-local-kerem-pc-20260924-101500000.md');
   });
   it('keeps the directory (also with backslashes)', () => {
-    expect(conflictCopyName('Projects/2026/plan.md', 'pc', WHEN)).toBe('Projects/2026/plan.conflict-local-pc-20260924-101500.md');
-    expect(conflictCopyName('Projects\\plan.md', 'pc', WHEN)).toBe('Projects/plan.conflict-local-pc-20260924-101500.md');
+    expect(conflictCopyName('Projects/2026/plan.md', 'pc', WHEN)).toBe('Projects/2026/plan.conflict-local-pc-20260924-101500000.md');
+    expect(conflictCopyName('Projects\\plan.md', 'pc', WHEN)).toBe('Projects/plan.conflict-local-pc-20260924-101500000.md');
   });
   it('handles multiple dots, no extension and dotfiles', () => {
-    expect(conflictCopyName('a.b.md', 'pc', WHEN)).toBe('a.b.conflict-local-pc-20260924-101500.md');
-    expect(conflictCopyName('README', 'pc', WHEN)).toBe('README.conflict-local-pc-20260924-101500');
-    expect(conflictCopyName('.hidden', 'pc', WHEN)).toBe('.hidden.conflict-local-pc-20260924-101500');
+    expect(conflictCopyName('a.b.md', 'pc', WHEN)).toBe('a.b.conflict-local-pc-20260924-101500000.md');
+    expect(conflictCopyName('README', 'pc', WHEN)).toBe('README.conflict-local-pc-20260924-101500000');
+    expect(conflictCopyName('.hidden', 'pc', WHEN)).toBe('.hidden.conflict-local-pc-20260924-101500000');
   });
   it('never collides: appends -2, -3 ...', () => {
     const taken = new Set<string>();
@@ -25,9 +25,9 @@ describe('conflictCopyName', () => {
     taken.add(b);
     const c = conflictCopyName('n.md', 'pc', WHEN, (x) => taken.has(x));
     expect([a, b, c]).toEqual([
-      'n.conflict-local-pc-20260924-101500.md',
-      'n.conflict-local-pc-20260924-101500-2.md',
-      'n.conflict-local-pc-20260924-101500-3.md',
+      'n.conflict-local-pc-20260924-101500000.md',
+      'n.conflict-local-pc-20260924-101500000-2.md',
+      'n.conflict-local-pc-20260924-101500000-3.md',
     ]);
   });
   it('sanitizes odd device names', () => {
@@ -41,16 +41,16 @@ describe('conflictCopyName', () => {
 describe('isConflictCopy / filterConflictCopies', () => {
   it('recognises generated names (with and without extension / suffix)', () => {
     for (const p of [
-      'a.conflict-local-pc-20260924-101500.md',
-      'dir/a.conflict-local-my-laptop-20260924-101500-2.md',
-      'README.conflict-local-pc-20260924-101500',
+      'a.conflict-local-pc-20260924-101500000.md',
+      'dir/a.conflict-local-my-laptop-20260924-101500000-2.md',
+      'README.conflict-local-pc-20260924-101500000',
     ]) expect(isConflictCopy(p)).toBe(true);
   });
   it('does not match ordinary notes', () => {
     for (const p of ['a.md', 'conflict-local notes.md', 'my.conflict-local.md', 'x.conflict-local-pc-2026.md']) expect(isConflictCopy(p)).toBe(false);
   });
   it('filters a list', () => {
-    expect(filterConflictCopies(['a.md', 'a.conflict-local-pc-20260924-101500.md'])).toEqual(['a.conflict-local-pc-20260924-101500.md']);
+    expect(filterConflictCopies(['a.md', 'a.conflict-local-pc-20260924-101500000.md'])).toEqual(['a.conflict-local-pc-20260924-101500000.md']);
   });
   it('round-trips with the generator', () => {
     expect(isConflictCopy(conflictCopyName('Some Dir/My Note.md', 'Work PC', WHEN))).toBe(true);
@@ -72,9 +72,9 @@ describe('parseUnmergedStages', () => {
 
 describe('nextSyncState with conflict copies', () => {
   it('ok + copies: unpaused, but ALWAYS notifies (even on silent runs) and shows a count', () => {
-    const t = nextSyncState(initialSyncState, { status: 'ok', conflictCopies: ['a.conflict-local-pc-20260924-101500.md'] }, { manual: false, now: 1 });
+    const t = nextSyncState(initialSyncState, { status: 'ok', conflictCopies: ['a.conflict-local-pc-20260924-101500000.md'] }, { manual: false, now: 1 });
     expect(t.state.paused).toBe(false);
-    expect(t.notice).toContain('a.conflict-local-pc-20260924-101500.md');
+    expect(t.notice).toContain('a.conflict-local-pc-20260924-101500000.md');
     expect(t.statusText).toBe('☁ synced · 1 conflict copy');
   });
   it('mentions how many more copies there are', () => {

@@ -16,7 +16,7 @@ export function sanitizeDevice(name: string): string {
 
 function stamp(d: Date): string {
   const p = (n: number, w = 2) => String(n).padStart(w, '0');
-  return `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}-${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}`;
+  return `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}-${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}${p(d.getUTCMilliseconds(), 3)}`;
 }
 
 /** rel is a git-style path (forward slashes). `exists` lets the caller avoid collisions. */
@@ -34,7 +34,7 @@ export function conflictCopyName(rel: string, device: string, when: Date, exists
   throw new Error('Could not find a free conflict-copy name');
 }
 
-const COPY_RE = /\.conflict-local-[a-z0-9-]+-\d{8}-\d{6}(?:-\d+)?(?:\.[^./\\]+)?$/;
+const COPY_RE = /\.conflict-local-[a-z0-9-]+-\d{8}-\d{9}(?:-\d+)?(?:\.[^./\\]+)?$/;
 export const isConflictCopy = (p: string): boolean => COPY_RE.test(p);
 export const filterConflictCopies = (paths: string[]): string[] => paths.filter(isConflictCopy);
 
@@ -85,7 +85,7 @@ export async function resolveRebaseConflicts(git: SimpleGit, opts: ResolveOption
   } catch {
     orig = (await git.raw(['rev-parse', '--verify', 'ORIG_HEAD']).catch(() => '')).trim();
   }
-  if (orig) await git.raw(['update-ref', `refs/av-backup/conflict-${stamp(when)}`, orig]);
+  if (orig) await git.raw(['update-ref', `refs/av-backup/conflict-${stamp(when)}-${Math.random().toString(36).substring(2, 8)}`, orig]);
 
   for (let round = 0; round < (opts.maxRounds ?? 100); round++) {
     const unmerged = parseUnmergedStages(await git.raw(['ls-files', '-u', '-z']));

@@ -341,7 +341,7 @@ import { isConflictCopy } from '../src/conflict';
 
 const FIXED = () => new Date(Date.UTC(2026, 8, 24, 10, 15, 0));
 const copts = (dir: string, over: Partial<SyncOptions> = {}) => opts(dir, { device: 'Kerem-PC', now: FIXED, ...over });
-const COPY = (base: string, ext = '.md') => `${base}.conflict-local-kerem-pc-20260924-101500${ext}`;
+const COPY = (base: string, ext = '.md') => `${base}.conflict-local-kerem-pc-20260924-101500000${ext}`;
 const twoClones = async (files: Record<string, string | Buffer>) => {
   const remote = await makeRemote();
   await seedRemote(remote, files as Record<string, string>);
@@ -380,8 +380,8 @@ describe('conflict copies', () => {
     await syncVault(B.git, copts(B.dir));
 
     const refs = (await B.git.raw(['for-each-ref', '--format=%(refname)', 'refs/av-backup'])).trim();
-    expect(refs).toMatch(/^refs\/av-backup\/conflict-20260924-101500$/);
-    const backupContent = await B.git.raw(['show', 'refs/av-backup/conflict-20260924-101500:shared.md']);
+    expect(refs).toMatch(/^refs\/av-backup\/conflict-20260924-101500000-[a-z0-9]+$/m);
+    const backupContent = await B.git.raw(['show', refs + ':shared.md']);
     expect(backupContent).toBe('B');
   });
 

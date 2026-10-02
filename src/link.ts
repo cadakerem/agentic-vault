@@ -1,5 +1,12 @@
 import * as fs from 'fs';
 import * as os from 'os';
+
+export function isPathInsideVault(vaultPath: string, targetPath: string): boolean {
+  const resolvedVault = path.resolve(vaultPath);
+  const resolvedTarget = path.resolve(targetPath);
+  return resolvedTarget.startsWith(resolvedVault + path.sep) || resolvedTarget === resolvedVault;
+}
+
 import * as path from 'path';
 import { isDangerousPath } from './util';
 
@@ -81,16 +88,18 @@ export function applyLink(source: string, target: string, plan: LinkPlan, platfo
 }
 export function syncMasterRules(vaultPath: string, ruleFilePath: string, aiTools: { id: string, enabled: boolean }[], brainFolder: string): { linkedCount: number, error?: string } {
   if (!ruleFilePath) return { linkedCount: 0 };
-  const masterRuleSrc = path.join(vaultPath, ruleFilePath);
+  const masterRuleSrc = path.resolve(vaultPath, ruleFilePath);
+  if (!isPathInsideVault(vaultPath, masterRuleSrc)) return { linkedCount: 0, error: 'Path traversal detected' };
   if (!fs.existsSync(masterRuleSrc)) return { linkedCount: 0, error: 'Master rule file not found' };
 
-  const brain = brainFolder || 'AI-Brain';
+const home = os.homedir();
+  const isWin = os.platform() === 'win32';
   const toolRules: Record<string, string> = {
-    'gemini': `${brain}/gemini/GEMINI.md`,
-    'claude': `${brain}/claude/CLAUDE.md`,
-    'cursor': `${brain}/cursor/.cursorrules`,
-    'windsurf': `${brain}/windsurf/.windsurfrules`,
-    'vscode': `${brain}/vscode/copilot-instructions.md`
+    'gemini': path.join(home, '.gemini', 'config', 'Rules.md'),
+    'claude': path.join(home, '.claude', 'CLAUDE.md'),
+    'cursor': path.join(home, isWin ? 'AppData/Roaming/Cursor/User' : '.cursor', '.cursorrules'),
+    'windsurf': path.join(home, isWin ? 'AppData/Roaming/Windsurf/User' : '.windsurf', '.windsurfrules'),
+    'vscode': path.join(home, isWin ? 'AppData/Roaming/Code/User' : '.config/Code/User', 'copilot-instructions.md')
   };
 
   let linkedCount = 0;
@@ -99,10 +108,16 @@ export function syncMasterRules(vaultPath: string, ruleFilePath: string, aiTools
     const relPath = toolRules[tool.id];
     if (!relPath) continue;
 
-    const targetPath = path.join(vaultPath, relPath);
+    const targetPath = path.resolve(relPath);
     if (path.resolve(masterRuleSrc) === path.resolve(targetPath)) continue;
 
-    if (fs.existsSync(targetPath)) {
+    
+      const targetDir = path.dirname(targetPath);
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+
+      if (fs.existsSync(targetPath)) {
       const statMaster = fs.statSync(masterRuleSrc);
       const statTarget = fs.statSync(targetPath);
       // Already hardlinked and same inode
