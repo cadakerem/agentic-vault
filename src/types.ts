@@ -15,6 +15,11 @@ export interface AIToolConfig {
 	enabled: boolean;
 }
 
+export interface LocalState {
+	deviceName: string;
+	syncState: SyncState;
+}
+
 export interface AgenticVaultSettings {
 	gitAutoPush: boolean;
 	syncIntervalMinutes: number;
@@ -30,6 +35,4 @@ export interface AgenticVaultSettings {
 	excludedSyncPaths: string;
 	includedSyncPaths: string;
 	dismissedWhitelistSuggestions: string[];
-	deviceName: string;
-	syncState: SyncState;
 }

@@ -103,11 +103,11 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
     const trackedStr = await git.raw(['ls-files', '-ci', '--exclude-standard', '-z']); // removed .catch() so it fails closed
     let tracked = trackedStr.split('\0').filter(Boolean);
     
-    // Auto-fix for 2.1.6/2.1.7 migration: if only plugin JSON files are tracked-ignored, untrack them automatically
-    const pluginJsonFiles = tracked.filter(f => f.match(/^(\.obsidian\/)?plugins\/agentic-vault\/.*\.json$/));
+    // Auto-fix for 2.1.6/2.1.7 migration: if only harmless plugin JSON files are tracked-ignored, untrack them automatically
+    const pluginJsonFiles = tracked.filter(f => f.match(/^(\.obsidian\/)?plugins\/agentic-vault\/(data|manifest)\.json$/));
     if (pluginJsonFiles.length > 0) {
       await git.raw(['rm', '--cached', '--ignore-unmatch', ...pluginJsonFiles]);
-      tracked = tracked.filter(f => !f.match(/^(\.obsidian\/)?plugins\/agentic-vault\/.*\.json$/));
+      tracked = tracked.filter(f => !f.match(/^(\.obsidian\/)?plugins\/agentic-vault\/(data|manifest)\.json$/));
     }
 
     if (tracked.length > 0) {
