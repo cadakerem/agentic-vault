@@ -28,15 +28,15 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 		const defs: SettingDefinitionRender[] = [];
 
 		defs.push({
-			name: 'âš™ï¸ Git & Sync',
-			desc: isGitRepo ? 'âœ… Vault is connected to Git.' : 'âš ï¸ Not a Git repository yet. Add a GitHub URL and click Initialize.',
+			name: '⚙️ Git & Sync',
+			desc: isGitRepo ? '✅ Vault is connected to Git.' : '⚠️ Not a Git repository yet. Add a GitHub URL and click Initialize.',
 			render: (setting: Setting, _group: SettingGroup) => {
-				setting.setHeading().setName('âš™ï¸ Git & Sync');
+				setting.setHeading().setName('⚙️ Git & Sync');
 				setting.settingEl.classList.add('av-setting-margin-top');
 
 				const frag = createFragment((f) => {
 					createEl('p', {
-						text: isGitRepo ? 'âœ… Vault is connected to Git.' : 'âš ï¸ Not a Git repository yet. Add a GitHub URL and click Initialize.',
+						text: isGitRepo ? '✅ Vault is connected to Git.' : '⚠️ Not a Git repository yet. Add a GitHub URL and click Initialize.',
 						cls: `av-status-msg ${isGitRepo ? 'av-status-success' : 'av-status-error'}`,
 						parent: f
 					});
@@ -60,7 +60,7 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 			render: (setting: Setting, _group: SettingGroup) => {
 				setting.setName(isGitRepo ? 'Update Remote URL' : 'Initialize Repository')
 					.addButton(btn => btn
-						.setButtonText(isGitRepo ? 'ğŸ”— Update Remote' : 'ğŸš€ Initialize & Connect')
+						.setButtonText(isGitRepo ? '🔗 Update Remote' : '🚀 Initialize & Connect')
 						.setCta()
 						.onClick(async () => {
 							try {
@@ -75,7 +75,7 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 										await this.plugin.git.addRemote('origin', this.remoteUrlInput);
 									}
 								}
-								new Notice('âœ… Git setup complete!');
+								new Notice('✅ Git setup complete!');
 								this.update();
 							} catch (err: unknown) {
 								new Notice('Failed to init Git. Check console.');
@@ -92,7 +92,7 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 			render: (setting: Setting, _group: SettingGroup) => {
 				setting.setName('AI Brain Manager')
 					.setDesc('Open the visual editor for your AI rules.')
-					.addButton(btn => btn.setButtonText('ğŸ§  Open Editor').setCta().onClick(() => {
+					.addButton(btn => btn.setButtonText('🧠 Open Editor').setCta().onClick(() => {
 						new BrainManagerModal(this.app, this.plugin).open();
 					}));
 			}
@@ -128,17 +128,17 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 
 		defs.push({
 			name: 'Enable Secret Scanner',
-			desc: 'Block commits if secrets (API keys, .env) are detected. Can be disabled independently of other settings â€” if you disable this, ensure you have an alternative safeguard (e.g. GitHub push protection).',
+			desc: 'Block commits if secrets (API keys, .env) are detected. Can be disabled independently of other settings — if you disable this, ensure you have an alternative safeguard (e.g. GitHub push protection).',
 			render: (setting: Setting, _group: SettingGroup) => {
 				setting.setName('Enable Secret Scanner')
-					.setDesc('Block commits if secrets (API keys, .env) are detected. Can be disabled independently of other settings â€” if you disable this, ensure you have an alternative safeguard (e.g. GitHub push protection).')
+					.setDesc('Block commits if secrets (API keys, .env) are detected. Can be disabled independently of other settings — if you disable this, ensure you have an alternative safeguard (e.g. GitHub push protection).')
 					.addToggle(t => {
 						t.setValue(this.plugin.settings.scanSecrets).onChange(async v => {
 							this.plugin.settings.scanSecrets = v;
 							await this.plugin.saveSettings();
 							if (!v) {
 								new Notice(
-									'âš ï¸ Secret scanner disabled. Pre-commit scanning is now OFF. ' +
+									'⚠️ Secret scanner disabled. Pre-commit scanning is now OFF. ' +
 									'Ensure you have an alternative safeguard (e.g. GitHub push protection) before syncing.',
 									8000
 								);
@@ -212,7 +212,7 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 							await this.plugin.saveSettings();
 						});
 					})
-					.addButton(btn => btn.setButtonText('ğŸ”„ Reset Dismissed').setTooltip('Reset the list of skipped whitelist suggestions so they appear in the Setup Wizard again.').onClick(async () => {
+					.addButton(btn => btn.setButtonText('🔄 Reset Dismissed').setTooltip('Reset the list of skipped whitelist suggestions so they appear in the Setup Wizard again.').onClick(async () => {
 						this.plugin.settings.dismissedWhitelistSuggestions = [];
 						await this.plugin.saveSettings();
 						new Notice('Dismissed suggestions reset. Run the Setup Wizard again to see them.');
@@ -258,9 +258,9 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 		});
 
 		defs.push({
-			name: 'ğŸ–¥ï¸ New Machine Setup',
+			name: '🖥️ New Machine Setup',
 			render: (setting: Setting, _group: SettingGroup) => {
-				setting.setHeading().setName('ğŸ–¥ï¸ New Machine Setup');
+				setting.setHeading().setName('🖥️ New Machine Setup');
 			}
 		});
 
@@ -270,7 +270,7 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 			render: (setting: Setting, _group: SettingGroup) => {
 				setting.setName('Run Setup Wizard')
 					.setDesc('Create all symlinks for skills, scripts, and AI tools on this machine.')
-					.addButton(btn => btn.setButtonText('ğŸš€ Open Wizard').setCta().onClick(() => {
+					.addButton(btn => btn.setButtonText('🚀 Open Wizard').setCta().onClick(() => {
 						new SetupWizardModal(this.app, this.plugin).open();
 					}));
 			}
@@ -303,11 +303,11 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 		});
 
 		defs.push({
-			name: 'ğŸ¤– AI Tools to Sync',
+			name: '🤖 AI Tools to Sync',
 			desc: 'Select which AI tools should be linked to your vault. Each tool\'s config folder becomes a symlink pointing to your vault.',
 			render: (setting: Setting, _group: SettingGroup) => {
 				setting.setHeading()
-					.setName('ğŸ¤– AI Tools to Sync')
+					.setName('🤖 AI Tools to Sync')
 					.setDesc('Select which AI tools should be linked to your vault. Each tool\'s config folder becomes a symlink pointing to your vault.');
 			}
 		});
@@ -336,7 +336,7 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 					desc: 'Relative to User Home (~/)',
 					render: (setting: Setting) => {
 						setting.settingEl.classList.add('av-nested-setting');
-						setting.setName('â†³ Windows Path')
+						setting.setName('↳ Windows Path')
 							.setDesc('Relative to User Home (~/)')
 							.addText(t => t.setValue(tool.windowsPath).onChange(async v => {
 								tool.windowsPath = v;
@@ -350,7 +350,7 @@ class AgenticVaultSettingTab extends PluginSettingTab {
 					desc: 'Relative to User Home (~/)',
 					render: (setting: Setting) => {
 						setting.settingEl.classList.add('av-nested-setting');
-						setting.setName('â†³ Mac/Linux Path')
+						setting.setName('↳ Mac/Linux Path')
 							.setDesc('Relative to User Home (~/)')
 							.addText(t => t.setValue(tool.unixPath).onChange(async v => {
 								tool.unixPath = v;
