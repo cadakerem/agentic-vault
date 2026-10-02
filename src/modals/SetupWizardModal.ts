@@ -196,6 +196,13 @@ class SetupWizardModal extends Modal {
 			addSymlinkStep(`🤖 Link ${tool.name}`, path.join(vaultPath, this.plugin.settings.vaultBrainFolder, tool.id), path.join(os.homedir(), dstRel));
 		}
 
+		// Master Rules Sync
+		steps.push({
+			label: '🔗 Sync Master Rules',
+			status: 'pending',
+			detail: 'Hardlink master rule file to all enabled AI tools',
+		});
+
 		// Git check
 		steps.push({ label: '🔀 Verify Git Repository', status: 'pending', detail: 'Check vault is connected to GitHub' });
 
@@ -233,7 +240,48 @@ class SetupWizardModal extends Modal {
 			stepIdx++;
 		}
 
-		// Final — Git check
+				// Master Rules Sync
+		const rulesStepIdx = this.steps.findIndex(s => s.label === '🔗 Sync Master Rules');
+		if (rulesStepIdx !== -1) {
+			this.setStepStatus(rulesStepIdx, 'running');
+			try {
+				const masterRuleSrc = path.join(vaultPath, this.plugin.settings.ruleFilePath);
+				if (fs.existsSync(masterRuleSrc)) {
+					const brain = this.plugin.settings.vaultBrainFolder || 'AI-Brain';
+					const toolRules: Record<string, string> = {
+						'gemini': `${brain}/gemini/GEMINI.md`,
+						'claude': `${brain}/claude/CLAUDE.md`,
+						'cursor': `${brain}/cursor/.cursorrules`,
+						'windsurf': `${brain}/windsurf/.windsurfrules`,
+						'vscode': `${brain}/vscode/copilot-instructions.md`
+					};
+					let linkedCount = 0;
+					for (const tool of this.plugin.settings.aiTools) {
+						if (!tool.enabled) continue;
+						const relPath = toolRules[tool.id];
+						if (!relPath) continue;
+						const targetPath = path.join(vaultPath, relPath);
+						if (fs.existsSync(targetPath)) {
+							const statMaster = fs.statSync(masterRuleSrc);
+							const statTarget = fs.statSync(targetPath);
+							if (statMaster.ino === statTarget.ino && statTarget.ino !== 0) { linkedCount++; continue; }
+							fs.unlinkSync(targetPath);
+						} else {
+							fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+						}
+						fs.linkSync(masterRuleSrc, targetPath);
+						linkedCount++;
+					}
+					this.setStepStatus(rulesStepIdx, 'done', `Hardlinked master rule to ${linkedCount} tool(s)`);
+				} else {
+					this.setStepStatus(rulesStepIdx, 'skipped', 'Master rule file not found');
+				}
+			} catch (err: any) {
+				this.setStepStatus(rulesStepIdx, 'error', err.message || String(err));
+			}
+		}
+
+// Final — Git check
 		this.setStepStatus(stepIdx, 'running');
 		try {
 			const isRepo = fs.existsSync(path.join(vaultPath, '.git'));
