@@ -4,6 +4,9 @@
 
 ### Fixed
 - **Gemini Hardlink Path:** Fixed a typo where the target hardlink for Gemini was erroneously named Rules.md instead of GEMINI.md.
+- **Master Rule Migration:** Legacy per-tool rule settings now migrate to the canonical `AI-Brain/Rules.md` when it exists.
+- **Legacy Directory Recreation:** New Machine Setup no longer recreates `AI-Brain/gemini` or `AI-Brain/claude` directory links; only file-level master-rule links are maintained.
+- **Whitelist Cleanup:** Removed the obsolete `AI-Brain/gemini/plugins/` whitelist suggestion so an empty `includedSyncPaths` stays empty.
 
 
 ## [2.4.0] - 2026-10-02

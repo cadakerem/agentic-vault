@@ -9,6 +9,7 @@ import { syncVault } from './src/sync';
 import { initialSyncState, shouldRun, nextSyncState } from './src/syncState';
 import { filterConflictCopies } from './src/conflict';
 import { syncMasterRules } from './src/link';
+import { migrateLegacyRulePath } from './src/ruleMigration';
 import { SetupWizardModal } from './src/modals/SetupWizardModal';
 import { BrainManagerModal } from './src/modals/BrainManagerModal';
 import { CreateIssueModal } from './src/modals/CreateIssueModal';
@@ -275,6 +276,15 @@ export default class AgenticVaultPlugin extends Plugin {
 			const found = savedTools.find(t => t.id === def.id);
 			return found ? { ...def, ...found } : { ...def };
 		});
+
+		// Migrate the legacy per-tool master rule to the single canonical vault rule.
+		let settingsMigrated = false;
+		try {
+			settingsMigrated = migrateLegacyRulePath(this.settings, getVaultPath(this.app));
+		} catch {
+			// A lightweight test adapter may not expose a filesystem base path.
+		}
+
 		try {
 			const secretsPath = this.manifest.dir + '/secrets.json';
 			if (await this.app.vault.adapter.exists(secretsPath)) {
@@ -325,7 +335,7 @@ export default class AgenticVaultPlugin extends Plugin {
 				}
 			}
 		}
-		if (migrated || migratedState) {
+		if (migrated || migratedState || settingsMigrated) {
 			await this.saveSettings();
 		}
 	}
