@@ -111,7 +111,7 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
     }
 
     // 1. commit local changes first
-    const addArgs = ['.', ':(exclude,glob)**/plugins/agentic-vault/*.json'];
+    const addArgs = ['.', ':(exclude,glob)**/plugins/agentic-vault/secrets.json'];
     if (opts.excludedPaths && opts.excludedPaths.length > 0) {
       opts.excludedPaths.forEach(p => addArgs.push(`:(exclude)${p}`));
     }
