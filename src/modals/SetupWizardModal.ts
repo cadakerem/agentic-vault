@@ -240,44 +240,19 @@ class SetupWizardModal extends Modal {
 			stepIdx++;
 		}
 
-				// Master Rules Sync
-		const rulesStepIdx = this.steps.findIndex(s => s.label === '🔗 Sync Master Rules');
+						// Master Rules Sync
+		const rulesStepIdx = this.steps.findIndex(s => s.label.includes('Sync Master Rules'));
 		if (rulesStepIdx !== -1) {
 			this.setStepStatus(rulesStepIdx, 'running');
 			try {
-				const masterRuleSrc = path.join(vaultPath, this.plugin.settings.ruleFilePath);
-				if (fs.existsSync(masterRuleSrc)) {
-					const brain = this.plugin.settings.vaultBrainFolder || 'AI-Brain';
-					const toolRules: Record<string, string> = {
-						'gemini': `${brain}/gemini/GEMINI.md`,
-						'claude': `${brain}/claude/CLAUDE.md`,
-						'cursor': `${brain}/cursor/.cursorrules`,
-						'windsurf': `${brain}/windsurf/.windsurfrules`,
-						'vscode': `${brain}/vscode/copilot-instructions.md`
-					};
-					let linkedCount = 0;
-					for (const tool of this.plugin.settings.aiTools) {
-						if (!tool.enabled) continue;
-						const relPath = toolRules[tool.id];
-						if (!relPath) continue;
-						const targetPath = path.join(vaultPath, relPath);
-						if (fs.existsSync(targetPath)) {
-							const statMaster = fs.statSync(masterRuleSrc);
-							const statTarget = fs.statSync(targetPath);
-							if (statMaster.ino === statTarget.ino && statTarget.ino !== 0) { linkedCount++; continue; }
-							fs.unlinkSync(targetPath);
-						} else {
-							fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-						}
-						fs.linkSync(masterRuleSrc, targetPath);
-						linkedCount++;
-					}
-					this.setStepStatus(rulesStepIdx, 'done', `Hardlinked master rule to ${linkedCount} tool(s)`);
+				const linkRes = syncMasterRules(vaultPath, this.plugin.settings.ruleFilePath, this.plugin.settings.aiTools, this.plugin.settings.vaultBrainFolder);
+				if (linkRes.error) {
+					this.setStepStatus(rulesStepIdx, 'skipped', linkRes.error);
 				} else {
-					this.setStepStatus(rulesStepIdx, 'skipped', 'Master rule file not found');
+					this.setStepStatus(rulesStepIdx, 'done', `Hardlinked master rule to ${linkRes.linkedCount} tool(s)`);
 				}
-			} catch (err: any) {
-				this.setStepStatus(rulesStepIdx, 'error', err.message || String(err));
+			} catch (err: unknown) {
+				this.setStepStatus(rulesStepIdx, 'error', err instanceof Error ? err.message : String(err));
 			}
 		}
 

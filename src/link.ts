@@ -115,7 +115,7 @@ export function syncMasterRules(vaultPath: string, ruleFilePath: string, aiTools
         try {
            const backupPath = targetPath + '.bak';
            fs.copyFileSync(targetPath, backupPath);
-        } catch (e) {}
+        } catch { /* ignore */ }
       }
       try { fs.unlinkSync(targetPath); } catch (e) { console.error('Failed to unlink target', e); continue; }
     } else {
@@ -124,8 +124,9 @@ export function syncMasterRules(vaultPath: string, ruleFilePath: string, aiTools
 
     try {
       fs.linkSync(masterRuleSrc, targetPath);
-    } catch (e: any) {
-      if (e.code === 'EXDEV' || e.code === 'EPERM') {
+    } catch (e: unknown) {
+      const err = e as NodeJS.ErrnoException;
+      if (err.code === 'EXDEV' || err.code === 'EPERM') {
         // Fallback to copy if hardlink fails (cross-device or permission issue)
         fs.copyFileSync(masterRuleSrc, targetPath);
       } else {
