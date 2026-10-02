@@ -3,7 +3,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
 import AgenticVaultPlugin from '../../main';
-import { planLink, applyLink, LinkPlan } from '../link';
+import { planLink, applyLink, LinkPlan, syncMasterRules } from '../link';
 import { getVaultPath } from '../obsidian-util';
 
 // ─────────────────────────────────────────────
