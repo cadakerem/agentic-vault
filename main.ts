@@ -9,6 +9,7 @@ import { syncVault } from './src/sync';
 import { initialSyncState, shouldRun, nextSyncState } from './src/syncState';
 import { filterConflictCopies } from './src/conflict';
 import { syncMasterRules } from './src/link';
+import { migrateLegacyRulePath } from './src/ruleMigration';
 import { SetupWizardModal } from './src/modals/SetupWizardModal';
 import { BrainManagerModal } from './src/modals/BrainManagerModal';
 import { CreateIssueModal } from './src/modals/CreateIssueModal';
@@ -277,26 +278,11 @@ export default class AgenticVaultPlugin extends Plugin {
 		});
 
 		// Migrate the legacy per-tool master rule to the single canonical vault rule.
-		let vaultPath: string | null = null;
+		let settingsMigrated = false;
 		try {
-			vaultPath = getVaultPath(this.app);
+			settingsMigrated = migrateLegacyRulePath(this.settings, getVaultPath(this.app));
 		} catch {
 			// A lightweight test adapter may not expose a filesystem base path.
-		}
-		const legacyRulePaths = new Set([
-			`${this.settings.vaultBrainFolder}/gemini/GEMINI.md`,
-			`${this.settings.vaultBrainFolder}/claude/CLAUDE.md`,
-			`${this.settings.vaultBrainFolder}/cursor/.cursorrules`,
-			`${this.settings.vaultBrainFolder}/copilot/.github/copilot-instructions.md`,
-			`${this.settings.vaultBrainFolder}/windsurf/.windsurfrules`,
-		]);
-		let settingsMigrated = false;
-		if (vaultPath && legacyRulePaths.has(this.settings.ruleFilePath)) {
-			const canonicalRulePath = path.join(vaultPath, DEFAULT_SETTINGS.ruleFilePath);
-			if (fs.existsSync(canonicalRulePath)) {
-				this.settings.ruleFilePath = DEFAULT_SETTINGS.ruleFilePath;
-				settingsMigrated = true;
-			}
 		}
 
 		try {
