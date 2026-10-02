@@ -6118,7 +6118,7 @@ async function syncVault(git, opts) {
         message: "DANGER: Ignored files are still tracked by Git! Sync stopped to prevent secrets leaking. Please untrack them using git rm -r --cached."
       };
     }
-    const addArgs = [".", ":(exclude,glob)**/plugins/agentic-vault/*.json"];
+    const addArgs = [".", ":(exclude,glob)**/plugins/agentic-vault/secrets.json"];
     if (opts.excludedPaths && opts.excludedPaths.length > 0) {
       opts.excludedPaths.forEach((p2) => addArgs.push(`:(exclude)${p2}`));
     }
