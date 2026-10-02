@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.1] - 2026-10-02
+### Fixed
+- **Source Code Cleanup**: Resolved strict ESLint warnings raised by the Obsidian community review bot.
+- **Migration Typings**: Replaced `any` typing with `Record<string, unknown>` during legacy state migration.
+- **Unicode Restoration**: Restored UI status bar emojis that were mangled into irregular whitespace.
+
+## [2.2.0] - 2026-10-02
+### Added
+- **3-File Architecture (Zero-Conflict)**: Separated plugin configuration into three distinct files to eliminate sync conflicts and device state loss:
+  1. `data.json` (Tracked & Synced): Pure UI configuration and global settings (e.g., aiTools, gitAutoPush). Safe to sync across multiple machines.
+  2. `local-state.json` (Ignored): Device-specific volatile state like `deviceName`, `syncState.lastOkAt`, and `paused`. Prevents infinite Git conflicts when multiple devices sync simultaneously.
+  3. `secrets.json` (Ignored): API keys.
+### Fixed
+- Removed tracking exceptions for `data.json`, ensuring global settings sync consistently without causing unstaged change errors or silent device state deletions during Git pulls.
+- Implemented `--autostash` across all rebase operations, ensuring the plugin won't crash even if a tracked file is manually excluded via `excludedPaths`.
+
+## [2.1.8] - 2026-10-02
+### Fixed
+- Fixed BOM (Byte Order Mark) issues caused by PowerShell on Windows for JSON files.
+- Added silent migration to untrack data.json for users upgrading from 2.1.6.
 
 ## [2.1.7] - 2026-10-02
 ### Fixed
@@ -52,7 +72,7 @@ All notable changes to this project will be documented in this file.
 - **Anchored GitHub URL regex** (`src/sync.ts`): The public-remote check regex had no start
   anchor, allowing spoofed hosts like `evilgithub.com/user/repo` or `github.com.evil.com` to
   match and bypass the protection. Fixed by adding a strict host anchor.
-- **Repo names with dots** (`[^/.]+?` â†’ `[^/]+?`): Repos named `my.repo` or `foo.js` were
+- **Repo names with dots** (`[^/.]+?` Ã¢â€ â€™ `[^/]+?`): Repos named `my.repo` or `foo.js` were
   incorrectly rejected as "not a recognized GitHub URL". Now accepted.
 - Added 9 URL boundary tests covering evil host bypass, subdomain spoof, ssh://, token@,
   dot in repo name, trailing slash, and GitHub Enterprise rejection.
@@ -63,7 +83,7 @@ All notable changes to this project will be documented in this file.
 - **Unborn HEAD / first-ever commit** (`src/sync.ts`): `hasStaged` no longer throws on a
   brand-new `git init` with no commits. Replaced `git diff --cached --quiet` (which throws
   on unborn HEAD) with `git diff --cached --name-only -z` and a `git ls-files -z` fallback.
-- **Dynamic branch name in push warning**: Security warning no longer hardcodes "main" â€”
+- **Dynamic branch name in push warning**: Security warning no longer hardcodes "main" Ã¢â‚¬â€
   now uses the actual current branch name.
 - **URL unreachable vs. not GitHub**: Split into two distinct error messages for clarity.
 
@@ -117,18 +137,18 @@ All notable changes to this project will be documented in this file.
 
 ## [1.4.6] - 2026-09-25
 ### Fixed
-- **Type safety:** Fixed `@typescript-eslint/no-unsafe-member-access` on `err.message` in `main.ts` â€” now uses `instanceof Error` guard.
-- **Type safety:** Fixed `@typescript-eslint/no-unsafe-assignment` on `JSON.parse()` result in `src/sync.ts` â€” cast to `{ isPrivate?: boolean } | null`.
-- **Type safety:** Fixed `@typescript-eslint/no-unsafe-assignment` and `no-unsafe-argument` on `binaryCatFile()` result in `src/conflict.ts` â€” cast to `Buffer`.
-- **Lint:** Fixed unused `catch (e)` â†’ `catch {}` in `src/sync.ts`.
+- **Type safety:** Fixed `@typescript-eslint/no-unsafe-member-access` on `err.message` in `main.ts` Ã¢â‚¬â€ now uses `instanceof Error` guard.
+- **Type safety:** Fixed `@typescript-eslint/no-unsafe-assignment` on `JSON.parse()` result in `src/sync.ts` Ã¢â‚¬â€ cast to `{ isPrivate?: boolean } | null`.
+- **Type safety:** Fixed `@typescript-eslint/no-unsafe-assignment` and `no-unsafe-argument` on `binaryCatFile()` result in `src/conflict.ts` Ã¢â‚¬â€ cast to `Buffer`.
+- **Lint:** Fixed unused `catch (e)` Ã¢â€ â€™ `catch {}` in `src/sync.ts`.
 
 ## [1.4.5] - 2026-09-25
 ### Fixed
-- **Critical init bug:** Ribbon icons, commands, settings tab, and auto-sync were accidentally placed inside `clearPause()` instead of `initialize()`. On a fresh install where `syncState.paused = false`, `clearPause()` is never called â€” making the entire plugin UI invisible to the user. Moved all registration to `initialize()`.
+- **Critical init bug:** Ribbon icons, commands, settings tab, and auto-sync were accidentally placed inside `clearPause()` instead of `initialize()`. On a fresh install where `syncState.paused = false`, `clearPause()` is never called Ã¢â‚¬â€ making the entire plugin UI invisible to the user. Moved all registration to `initialize()`.
 - **Dead code removal:** Removed unused `resolvePath()` function from `main.ts`.
-- **Lint:** Fixed unused `catch (e)` â†’ `catch {}` where the error variable was never read.
+- **Lint:** Fixed unused `catch (e)` Ã¢â€ â€™ `catch {}` where the error variable was never read.
 - **Lint:** Converted `require()` style imports in `src/sync.ts` to proper ES6 `import` statements.
-- **Type safety:** Fixed `syncState: Record<string, unknown>` regression in `src/types.ts` â€” restored to `syncState: SyncState`.
+- **Type safety:** Fixed `syncState: Record<string, unknown>` regression in `src/types.ts` Ã¢â‚¬â€ restored to `syncState: SyncState`.
 
 ## [1.4.4] - 2026-09-24
 ### Refactored
