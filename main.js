@@ -6110,7 +6110,12 @@ async function syncVault(git, opts) {
       };
     }
     const trackedStr = await git.raw(["ls-files", "-ci", "--exclude-standard", "-z"]);
-    const tracked = trackedStr.split("\0").filter(Boolean);
+    let tracked = trackedStr.split("\0").filter(Boolean);
+    const pluginJsonFiles = tracked.filter((f) => f.match(/^(\.obsidian\/)?plugins\/agentic-vault\/(data|manifest)\.json$/));
+    if (pluginJsonFiles.length > 0) {
+      await git.raw(["rm", "--cached", "--ignore-unmatch", ...pluginJsonFiles]);
+      tracked = tracked.filter((f) => !f.match(/^(\.obsidian\/)?plugins\/agentic-vault\/(data|manifest)\.json$/));
+    }
     if (tracked.length > 0) {
       return {
         ...result,
@@ -6181,10 +6186,10 @@ async function syncVault(git, opts) {
     let conflictCopies = [];
     try {
       if (hasUpstream) {
-        await git.pull(["--rebase"]);
+        await git.pull(["--rebase", "--autostash"]);
       } else {
         const heads = await git.listRemote(["--heads", remote, branch]);
-        if (heads.trim() !== "") await git.pull(remote, branch, ["--rebase"]);
+        if (heads.trim() !== "") await git.pull(remote, branch, ["--rebase", "--autostash"]);
       }
     } catch (e) {
       if (!isMidRebase(opts.vaultPath)) throw e;
@@ -6836,14 +6841,14 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
     const isGitRepo = fs6.existsSync(path6.join(vaultPath, ".git"));
     const defs = [];
     defs.push({
-      name: "\u2699\uFE0F Git & Sync",
-      desc: isGitRepo ? "\u2705 Vault is connected to Git." : "\u26A0\uFE0F Not a Git repository yet. Add a GitHub URL and click Initialize.",
+      name: "\xE2\u0161\u2122\xEF\xB8\x8F Git & Sync",
+      desc: isGitRepo ? "\xE2\u0153\u2026 Vault is connected to Git." : "\xE2\u0161\xA0\xEF\xB8\x8F Not a Git repository yet. Add a GitHub URL and click Initialize.",
       render: (setting, _group) => {
-        setting.setHeading().setName("\u2699\uFE0F Git & Sync");
+        setting.setHeading().setName("\xE2\u0161\u2122\xEF\xB8\x8F Git & Sync");
         setting.settingEl.classList.add("av-setting-margin-top");
         const frag = createFragment((f) => {
           createEl("p", {
-            text: isGitRepo ? "\u2705 Vault is connected to Git." : "\u26A0\uFE0F Not a Git repository yet. Add a GitHub URL and click Initialize.",
+            text: isGitRepo ? "\xE2\u0153\u2026 Vault is connected to Git." : "\xE2\u0161\xA0\xEF\xB8\x8F Not a Git repository yet. Add a GitHub URL and click Initialize.",
             cls: `av-status-msg ${isGitRepo ? "av-status-success" : "av-status-error"}`,
             parent: f
           });
@@ -6863,7 +6868,7 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
     defs.push({
       name: isGitRepo ? "Update Remote URL" : "Initialize Repository",
       render: (setting, _group) => {
-        setting.setName(isGitRepo ? "Update Remote URL" : "Initialize Repository").addButton((btn) => btn.setButtonText(isGitRepo ? "\u{1F517} Update Remote" : "\u{1F680} Initialize & Connect").setCta().onClick(async () => {
+        setting.setName(isGitRepo ? "Update Remote URL" : "Initialize Repository").addButton((btn) => btn.setButtonText(isGitRepo ? "\u011F\u0178\u201D\u2014 Update Remote" : "\u011F\u0178\u0161\u20AC Initialize & Connect").setCta().onClick(async () => {
           try {
             if (!isGitRepo) {
               await this.plugin.git.init();
@@ -6876,7 +6881,7 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
                 await this.plugin.git.addRemote("origin", this.remoteUrlInput);
               }
             }
-            new import_obsidian5.Notice("\u2705 Git setup complete!");
+            new import_obsidian5.Notice("\xE2\u0153\u2026 Git setup complete!");
             this.update();
           } catch (err) {
             new import_obsidian5.Notice("Failed to init Git. Check console.");
@@ -6890,7 +6895,7 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       name: "AI Brain Manager",
       desc: "Open the visual editor for your AI rules.",
       render: (setting, _group) => {
-        setting.setName("AI Brain Manager").setDesc("Open the visual editor for your AI rules.").addButton((btn) => btn.setButtonText("\u{1F9E0} Open Editor").setCta().onClick(() => {
+        setting.setName("AI Brain Manager").setDesc("Open the visual editor for your AI rules.").addButton((btn) => btn.setButtonText("\u011F\u0178\xA7\xA0 Open Editor").setCta().onClick(() => {
           new BrainManagerModal(this.app, this.plugin).open();
         }));
       }
@@ -6919,15 +6924,15 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
     });
     defs.push({
       name: "Enable Secret Scanner",
-      desc: "Block commits if secrets (API keys, .env) are detected. Can be disabled independently of other settings \u2014 if you disable this, ensure you have an alternative safeguard (e.g. GitHub push protection).",
+      desc: "Block commits if secrets (API keys, .env) are detected. Can be disabled independently of other settings \xE2\u20AC\u201D if you disable this, ensure you have an alternative safeguard (e.g. GitHub push protection).",
       render: (setting, _group) => {
-        setting.setName("Enable Secret Scanner").setDesc("Block commits if secrets (API keys, .env) are detected. Can be disabled independently of other settings \u2014 if you disable this, ensure you have an alternative safeguard (e.g. GitHub push protection).").addToggle((t2) => {
+        setting.setName("Enable Secret Scanner").setDesc("Block commits if secrets (API keys, .env) are detected. Can be disabled independently of other settings \xE2\u20AC\u201D if you disable this, ensure you have an alternative safeguard (e.g. GitHub push protection).").addToggle((t2) => {
           t2.setValue(this.plugin.settings.scanSecrets).onChange(async (v) => {
             this.plugin.settings.scanSecrets = v;
             await this.plugin.saveSettings();
             if (!v) {
               new import_obsidian5.Notice(
-                "\u26A0\uFE0F Secret scanner disabled. Pre-commit scanning is now OFF. Ensure you have an alternative safeguard (e.g. GitHub push protection) before syncing.",
+                "\xE2\u0161\xA0\xEF\xB8\x8F Secret scanner disabled. Pre-commit scanning is now OFF. Ensure you have an alternative safeguard (e.g. GitHub push protection) before syncing.",
                 8e3
               );
             }
@@ -6984,7 +6989,7 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
             this.plugin.settings.includedSyncPaths = v;
             await this.plugin.saveSettings();
           });
-        }).addButton((btn) => btn.setButtonText("\u{1F504} Reset Dismissed").setTooltip("Reset the list of skipped whitelist suggestions so they appear in the Setup Wizard again.").onClick(async () => {
+        }).addButton((btn) => btn.setButtonText("\u011F\u0178\u201D\u201E Reset Dismissed").setTooltip("Reset the list of skipped whitelist suggestions so they appear in the Setup Wizard again.").onClick(async () => {
           this.plugin.settings.dismissedWhitelistSuggestions = [];
           await this.plugin.saveSettings();
           new import_obsidian5.Notice("Dismissed suggestions reset. Run the Setup Wizard again to see them.");
@@ -7004,8 +7009,8 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       name: "Device Name",
       desc: "Used to identify this device in conflict resolution copies (e.g. .conflict-local-[deviceName]-2024...).",
       render: (setting, _group) => {
-        setting.setName("Device Name").setDesc("Used to identify this device in conflict resolution copies (e.g. .conflict-local-[deviceName]-2024...).").addText((t2) => t2.setPlaceholder(os5.hostname()).setValue(this.plugin.settings.deviceName).onChange(async (v) => {
-          this.plugin.settings.deviceName = v || os5.hostname();
+        setting.setName("Device Name").setDesc("Used to identify this device in conflict resolution copies (e.g. .conflict-local-[deviceName]-2024...).").addText((t2) => t2.setPlaceholder(os5.hostname()).setValue(this.plugin.localState.deviceName).onChange(async (v) => {
+          this.plugin.localState.deviceName = v || os5.hostname();
           await this.plugin.saveSettings();
         }));
       }
@@ -7021,16 +7026,16 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       }
     });
     defs.push({
-      name: "\u{1F5A5}\uFE0F New Machine Setup",
+      name: "\u011F\u0178\u2013\xA5\xEF\xB8\x8F New Machine Setup",
       render: (setting, _group) => {
-        setting.setHeading().setName("\u{1F5A5}\uFE0F New Machine Setup");
+        setting.setHeading().setName("\u011F\u0178\u2013\xA5\xEF\xB8\x8F New Machine Setup");
       }
     });
     defs.push({
       name: "Run Setup Wizard",
       desc: "Create all symlinks for skills, scripts, and AI tools on this machine.",
       render: (setting, _group) => {
-        setting.setName("Run Setup Wizard").setDesc("Create all symlinks for skills, scripts, and AI tools on this machine.").addButton((btn) => btn.setButtonText("\u{1F680} Open Wizard").setCta().onClick(() => {
+        setting.setName("Run Setup Wizard").setDesc("Create all symlinks for skills, scripts, and AI tools on this machine.").addButton((btn) => btn.setButtonText("\u011F\u0178\u0161\u20AC Open Wizard").setCta().onClick(() => {
           new SetupWizardModal(this.app, this.plugin).open();
         }));
       }
@@ -7056,10 +7061,10 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
       }
     });
     defs.push({
-      name: "\u{1F916} AI Tools to Sync",
+      name: "\u011F\u0178\xA4\u2013 AI Tools to Sync",
       desc: "Select which AI tools should be linked to your vault. Each tool's config folder becomes a symlink pointing to your vault.",
       render: (setting, _group) => {
-        setting.setHeading().setName("\u{1F916} AI Tools to Sync").setDesc("Select which AI tools should be linked to your vault. Each tool's config folder becomes a symlink pointing to your vault.");
+        setting.setHeading().setName("\u011F\u0178\xA4\u2013 AI Tools to Sync").setDesc("Select which AI tools should be linked to your vault. Each tool's config folder becomes a symlink pointing to your vault.");
       }
     });
     for (const tool of this.plugin.settings.aiTools) {
@@ -7082,7 +7087,7 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
           desc: "Relative to User Home (~/)",
           render: (setting) => {
             setting.settingEl.classList.add("av-nested-setting");
-            setting.setName("\u21B3 Windows Path").setDesc("Relative to User Home (~/)").addText((t2) => t2.setValue(tool.windowsPath).onChange(async (v) => {
+            setting.setName("\xE2\u2020\xB3 Windows Path").setDesc("Relative to User Home (~/)").addText((t2) => t2.setValue(tool.windowsPath).onChange(async (v) => {
               tool.windowsPath = v;
               await this.plugin.saveSettings();
             }));
@@ -7093,7 +7098,7 @@ var AgenticVaultSettingTab = class extends import_obsidian5.PluginSettingTab {
           desc: "Relative to User Home (~/)",
           render: (setting) => {
             setting.settingEl.classList.add("av-nested-setting");
-            setting.setName("\u21B3 Mac/Linux Path").setDesc("Relative to User Home (~/)").addText((t2) => t2.setValue(tool.unixPath).onChange(async (v) => {
+            setting.setName("\xE2\u2020\xB3 Mac/Linux Path").setDesc("Relative to User Home (~/)").addText((t2) => t2.setValue(tool.unixPath).onChange(async (v) => {
               tool.unixPath = v;
               await this.plugin.saveSettings();
             }));
@@ -7127,9 +7132,7 @@ var DEFAULT_SETTINGS = {
   allowedPaths: "",
   excludedSyncPaths: "",
   includedSyncPaths: "",
-  dismissedWhitelistSuggestions: [],
-  deviceName: os6.hostname(),
-  syncState: initialSyncState
+  dismissedWhitelistSuggestions: []
 };
 var DEFAULT_SECRETS = {
   openAIApiKey: "",
@@ -7140,6 +7143,7 @@ var DEFAULT_SECRETS = {
 var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
   constructor() {
     super(...arguments);
+    __publicField(this, "localState", { deviceName: os6.hostname(), syncState: initialSyncState });
     __publicField(this, "git");
     __publicField(this, "initPromise", null);
     __publicField(this, "syncIntervalId", null);
@@ -7160,7 +7164,7 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
     this.git = esm_default(vaultPath);
     await this.ensureGitignore(vaultPath);
     this.statusBarEl = this.addStatusBarItem();
-    this.statusBarEl.setText("\u27F3 Agentic Vault");
+    this.statusBarEl.setText("\xC3\u0192\xC2\xA2\xC3\u2026\xC2\xB8\xC3\u201A\xC2\xB3 Agentic Vault");
     this.addRibbonIcon("git-commit-vertical", "Force Git Sync", () => {
       void this.performDynamicCommit(false, true);
     });
@@ -7182,13 +7186,13 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
     } });
     this.addSettingTab(new AgenticVaultSettingTab(this.app, this));
     this.startAutoSync();
-    new import_obsidian6.Notice("\u2705 Agentic Vault Loaded Successfully!", 5e3);
+    new import_obsidian6.Notice("\xC3\u0192\xC2\xA2\xC3\u2026\xE2\u20AC\u0153\xC3\xA2\xE2\u201A\xAC\xC2\xA6 Agentic Vault Loaded Successfully!", 5e3);
     await this.verifyPauseState(vaultPath);
     void this.updateStatusBar();
   }
   async verifyPauseState(vaultPath) {
-    if (!this.settings.syncState.paused) return;
-    const r2 = this.settings.syncState.pauseReason;
+    if (!this.localState.syncState.paused) return;
+    const r2 = this.localState.syncState.pauseReason;
     if (r2 === "not-a-repo") {
       if (await this.git.checkIsRepo()) this.clearPause();
     } else if (r2 === "no-remote") {
@@ -7200,9 +7204,9 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
     }
   }
   clearPause() {
-    this.settings.syncState.paused = false;
-    this.settings.syncState.pauseReason = void 0;
-    this.settings.syncState.lastNoticeKey = void 0;
+    this.localState.syncState.paused = false;
+    this.localState.syncState.pauseReason = void 0;
+    this.localState.syncState.lastNoticeKey = void 0;
     void this.saveSettings();
   }
   async ensureGitignore(vaultPath) {
@@ -7215,6 +7219,7 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
       "node_modules/",
       ".DS_Store",
       `${this.app.vault.configDir}/plugins/agentic-vault/secrets.json`,
+      `${this.app.vault.configDir}/plugins/agentic-vault/local-state.json`,
       // ZERO-TRUST ARCHITECTURE FOR AI-BRAIN
       `${brain}/**/*`,
       `!${brain}/**/`,
@@ -7292,23 +7297,23 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
       const behind = status.behind;
       const dirty = status.files.length;
       const copies = filterConflictCopies(status.files.map((f) => f.path));
-      let text = `\u2601 ${branch}`;
+      let text = `\xC3\u0192\xC2\xA2\xC3\u2039\xC5\u201C\xC3\u201A\xC2\x81 ${branch}`;
       if (transitionStatus) {
         text += ` ${transitionStatus}`;
-      } else if (this.settings.syncState.paused) {
-        text += ` \u23F8 paused`;
+      } else if (this.localState.syncState.paused) {
+        text += ` \xC3\u0192\xC2\xA2\xC3\u201A\xC2\x8F\xC3\u201A\xC2\xB8 paused`;
       } else if (this.lastErrorMsg) {
-        text += ` \u26A0\uFE0F Error`;
+        text += ` \xC3\u0192\xC2\xA2\xC3\u2026\xC2\xA1\xC3\u201A\xC2\xA0\xC3\u0192\xC2\xAF\xC3\u201A\xC2\xB8\xC3\u201A\xC2\x8F Error`;
       } else if (copies.length > 0) {
-        text += ` \xB7 ${copies.length} conflict cop${copies.length === 1 ? "y" : "ies"}`;
+        text += ` \xC3\u0192\xE2\u20AC\u0161\xC3\u201A\xC2\xB7 ${copies.length} conflict cop${copies.length === 1 ? "y" : "ies"}`;
       } else {
-        if (ahead) text += ` \u2191${ahead}`;
-        if (behind) text += ` \u2193${behind}`;
-        if (dirty) text += ` \u270E${dirty}`;
+        if (ahead) text += ` \xC3\u0192\xC2\xA2\xC3\xA2\xE2\u201A\xAC\xC2\xA0\xC3\xA2\xE2\u201A\xAC\xCB\u0153${ahead}`;
+        if (behind) text += ` \xC3\u0192\xC2\xA2\xC3\xA2\xE2\u201A\xAC\xC2\xA0\xC3\xA2\xE2\u201A\xAC\xC5\u201C${behind}`;
+        if (dirty) text += ` \xC3\u0192\xC2\xA2\xC3\u2026\xE2\u20AC\u0153\xC3\u201A\xC2\x8E${dirty}`;
       }
       this.statusBarEl.setText(text);
     } catch (e) {
-      this.statusBarEl.setText("\u2601 git?");
+      this.statusBarEl.setText("\xC3\u0192\xC2\xA2\xC3\u2039\xC5\u201C\xC3\u201A\xC2\x81 git?");
     }
   }
   async loadSettings() {
@@ -7331,6 +7336,27 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
     } catch (e) {
       this.secrets = Object.assign({}, DEFAULT_SECRETS);
     }
+    try {
+      const localStatePath = this.manifest.dir + "/local-state.json";
+      if (await this.app.vault.adapter.exists(localStatePath)) {
+        const data = await this.app.vault.adapter.read(localStatePath);
+        const parsed = JSON.parse(data);
+        if (parsed.deviceName) this.localState.deviceName = parsed.deviceName;
+        if (parsed.syncState) this.localState.syncState = parsed.syncState;
+      }
+    } catch (e) {
+    }
+    let migratedState = false;
+    if (saved && saved.deviceName !== void 0) {
+      this.localState.deviceName = saved.deviceName;
+      delete this.settings.deviceName;
+      migratedState = true;
+    }
+    if (saved && saved.syncState !== void 0) {
+      this.localState.syncState = saved.syncState;
+      delete this.settings.syncState;
+      migratedState = true;
+    }
     let migrated = false;
     if (saved) {
       for (const key of Object.keys(DEFAULT_SECRETS)) {
@@ -7341,7 +7367,7 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
         }
       }
     }
-    if (migrated) {
+    if (migrated || migratedState) {
       await this.saveSettings();
     }
   }
@@ -7350,6 +7376,8 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
     try {
       const secretsPath = this.manifest.dir + "/secrets.json";
       await this.app.vault.adapter.write(secretsPath, JSON.stringify(this.secrets, null, 2));
+      const localStatePath = this.manifest.dir + "/local-state.json";
+      await this.app.vault.adapter.write(localStatePath, JSON.stringify(this.localState, null, 2));
     } catch (e) {
       console.error("Failed to save secrets", e);
     }
@@ -7359,7 +7387,7 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
       if (this.initPromise) {
         await this.initPromise;
       }
-      if (!shouldRun(this.settings.syncState, { manual, isSyncing: this.isSyncing })) return;
+      if (!shouldRun(this.localState.syncState, { manual, isSyncing: this.isSyncing })) return;
       this.isSyncing = true;
       const vaultPath = getVaultPath(this.app);
       const result = await syncVault(this.git, {
@@ -7371,10 +7399,10 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
         allowedPaths: this.settings.allowedPaths.split("\n").map((p2) => p2.trim()).filter(Boolean),
         excludedPaths: this.settings.excludedSyncPaths.split("\n").map((p2) => p2.trim()).filter(Boolean),
         includedPaths: this.settings.includedSyncPaths.split("\n").map((p2) => p2.trim()).filter(Boolean),
-        device: this.settings.deviceName
+        device: this.localState.deviceName
       });
-      const transition = nextSyncState(this.settings.syncState, result, { manual });
-      this.settings.syncState = transition.state;
+      const transition = nextSyncState(this.localState.syncState, result, { manual });
+      this.localState.syncState = transition.state;
       await this.saveSettings();
       if (result.status === "secrets-found" && "findings" in result) {
         console.error("Agentic Vault - Secrets blocked from commit:\n", result.findings);
@@ -7383,11 +7411,11 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
         new import_obsidian6.Notice(transition.notice, 15e3);
       }
       if (result.skippedByAllowlist && result.skippedByAllowlist.length > 0) {
-        new import_obsidian6.Notice("\u26A0\uFE0F Secret Scanner: " + result.skippedByAllowlist.length + " file(s) bypassed via allowlist.", 1e4);
+        new import_obsidian6.Notice("\xC3\u0192\xC2\xA2\xC3\u2026\xC2\xA1\xC3\u201A\xC2\xA0\xC3\u0192\xC2\xAF\xC3\u201A\xC2\xB8\xC3\u201A\xC2\x8F Secret Scanner: " + result.skippedByAllowlist.length + " file(s) bypassed via allowlist.", 1e4);
       }
       if (result.status === "ok" && !silent) {
-        if (result.pushed) new import_obsidian6.Notice("\u{1F680} Pushed to GitHub!");
-        else if (result.committed) new import_obsidian6.Notice("\u2713 Changes committed.");
+        if (result.pushed) new import_obsidian6.Notice("\xC3\u201E\xC5\xB8\xC3\u2026\xC2\xB8\xC3\u2026\xC2\xA1\xC3\xA2\xE2\u20AC\u0161\xC2\xAC Pushed to GitHub!");
+        else if (result.committed) new import_obsidian6.Notice("\xC3\u0192\xC2\xA2\xC3\u2026\xE2\u20AC\u0153\xC3\xA2\xE2\u201A\xAC\xC5\u201C Changes committed.");
         else new import_obsidian6.Notice("Agentic Vault: Nothing to commit.");
       }
       void this.updateStatusBar(transition.statusText);
