@@ -190,10 +190,10 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
     let conflictCopies: string[] = [];
     try {
       if (hasUpstream) {
-        await git.pull(['--rebase']);
+        await git.pull(['--rebase', '--autostash']);
       } else {
         const heads = await git.listRemote(['--heads', remote, branch]);
-        if (heads.trim() !== '') await git.pull(remote, branch, ['--rebase']);
+        if (heads.trim() !== '') await git.pull(remote, branch, ['--rebase', '--autostash']);
       }
     } catch (e) {
       if (!isMidRebase(opts.vaultPath)) throw e;

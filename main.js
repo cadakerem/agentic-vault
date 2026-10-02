@@ -6181,10 +6181,10 @@ async function syncVault(git, opts) {
     let conflictCopies = [];
     try {
       if (hasUpstream) {
-        await git.pull(["--rebase"]);
+        await git.pull(["--rebase", "--autostash"]);
       } else {
         const heads = await git.listRemote(["--heads", remote, branch]);
-        if (heads.trim() !== "") await git.pull(remote, branch, ["--rebase"]);
+        if (heads.trim() !== "") await git.pull(remote, branch, ["--rebase", "--autostash"]);
       }
     } catch (e) {
       if (!isMidRebase(opts.vaultPath)) throw e;
@@ -7214,7 +7214,7 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
       "/workspace-mobile.json",
       "node_modules/",
       ".DS_Store",
-      `${this.app.vault.configDir}/plugins/agentic-vault/secrets.json`,
+      `${this.app.vault.configDir}/plugins/agentic-vault/*.json`,
       // ZERO-TRUST ARCHITECTURE FOR AI-BRAIN
       `${brain}/**/*`,
       `!${brain}/**/`,

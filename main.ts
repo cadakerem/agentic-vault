@@ -150,7 +150,7 @@ export default class AgenticVaultPlugin extends Plugin {
 			'/workspace-mobile.json',
 			'node_modules/',
 			'.DS_Store',
-			`${this.app.vault.configDir}/plugins/agentic-vault/secrets.json`,
+			`${this.app.vault.configDir}/plugins/agentic-vault/*.json`,
 			// ZERO-TRUST ARCHITECTURE FOR AI-BRAIN
 			`${brain}/**/*`,
 			`!${brain}/**/`,
