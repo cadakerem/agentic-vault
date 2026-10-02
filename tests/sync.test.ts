@@ -702,30 +702,30 @@ describe('inbound sync (ters yön) - Known Limitations', () => {
   });
 
   describe('plugin files exclusion', () => {
-    it('excludes plugin data.json when the repo is at vault root', async () => {
+    it('excludes plugin secrets.json when the repo is at vault root', async () => {
       const remote = await makeRemote();
       const { dir, git } = await makeVault('vault', remote);
       write(dir, 'README.md', 'test');
-      write(dir, '.obsidian/plugins/agentic-vault/data.json', 'secret');
+      write(dir, '.obsidian/plugins/agentic-vault/secrets.json', 'secret');
       
       const res = await syncVault(git, opts(dir, { commitMessage: 't', autoPush: false }));
       expect(res.status).toBe('ok');
       
       const status = await git.status();
       // README should be committed, so not in status
-      // data.json should be untracked because it was excluded from 'git add'
-      expect(status.not_added).toContain('.obsidian/plugins/agentic-vault/data.json');
+      // secrets.json should be untracked because it was excluded from 'git add'
+      expect(status.not_added).toContain('.obsidian/plugins/agentic-vault/secrets.json');
     });
 
-    it('excludes plugin data.json when the repo is at .obsidian root', async () => {
+    it('excludes plugin secrets.json when the repo is at .obsidian root', async () => {
       const remote = await makeRemote();
       const { dir, git } = await makeVault('obsidian', remote); // simulating .obsidian as the git repo
-      write(dir, 'plugins/agentic-vault/data.json', 'secret');
+      write(dir, 'plugins/agentic-vault/secrets.json', 'secret');
       
       const res = await syncVault(git, opts(dir, { commitMessage: 't', autoPush: false }));
       // It might say 'Nothing to commit' if no other files exist
       const status = await git.status();
-      expect(status.not_added).toContain('plugins/agentic-vault/data.json');
+      expect(status.not_added).toContain('plugins/agentic-vault/secrets.json');
     });
   });
 });
