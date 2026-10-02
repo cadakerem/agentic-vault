@@ -366,7 +366,7 @@ export default class AgenticVaultPlugin extends Plugin {
 			try {
 				const linkRes = syncMasterRules(vaultPath, this.settings.ruleFilePath, this.settings.aiTools, this.settings.vaultBrainFolder);
 				if (linkRes.linkedCount > 0 && !silent) {
-					console.log(`Agentic Vault: Repaired ${linkRes.linkedCount} master rule hardlinks after sync.`);
+					// silently repaired
 				}
 			} catch (err) {
 				console.error('Failed to sync master rules after git pull:', err);
