@@ -8,6 +8,7 @@ import * as os from 'os';
 import { syncVault } from './src/sync';
 import { initialSyncState, shouldRun, nextSyncState } from './src/syncState';
 import { filterConflictCopies } from './src/conflict';
+import { syncMasterRules } from './src/link';
 import { SetupWizardModal } from './src/modals/SetupWizardModal';
 import { BrainManagerModal } from './src/modals/BrainManagerModal';
 import { CreateIssueModal } from './src/modals/CreateIssueModal';
@@ -154,6 +155,10 @@ export default class AgenticVaultPlugin extends Plugin {
 			// ZERO-TRUST ARCHITECTURE FOR AI-BRAIN
 			`${brain}/**/*`,
 			`!${brain}/**/`,
+			// ZERO-TRUST ARCHITECTURE FOR SKILLS FOLDER
+			`${this.settings.skillsFolder}/**/*`,
+			`!${this.settings.skillsFolder}/**/`,
+			`!${this.settings.skillsFolder}/**/*.md`,
 			// AUTOMATIC WHITELIST (Pure text, safe instructions)
 			`!/${this.settings.ruleFilePath}`,
 			`!${brain}/**/skills/**`,
@@ -356,6 +361,16 @@ export default class AgenticVaultPlugin extends Plugin {
 
 			const transition = nextSyncState(this.localState.syncState, result, { manual });
 			this.localState.syncState = transition.state;
+			
+			// Repair hardlinks after sync
+			try {
+				const linkRes = syncMasterRules(vaultPath, this.settings.ruleFilePath, this.settings.aiTools, this.settings.vaultBrainFolder);
+				if (linkRes.linkedCount > 0 && !silent) {
+					console.log(`Agentic Vault: Repaired ${linkRes.linkedCount} master rule hardlinks after sync.`);
+				}
+			} catch (err) {
+				console.error('Failed to sync master rules after git pull:', err);
+			}
 			await this.saveSettings();
 
 			if (result.status === 'secrets-found' && 'findings' in result) {
