@@ -79,3 +79,61 @@ export function applyLink(source: string, target: string, plan: LinkPlan, platfo
   fs.symlinkSync(s, t, platform === 'win32' ? 'junction' : 'dir');
   return { backup };
 }
+export function syncMasterRules(vaultPath: string, ruleFilePath: string, aiTools: { id: string, enabled: boolean }[], brainFolder: string): { linkedCount: number, error?: string } {
+  if (!ruleFilePath) return { linkedCount: 0 };
+  const masterRuleSrc = path.join(vaultPath, ruleFilePath);
+  if (!fs.existsSync(masterRuleSrc)) return { linkedCount: 0, error: 'Master rule file not found' };
+
+  const brain = brainFolder || 'AI-Brain';
+  const toolRules: Record<string, string> = {
+    'gemini': `${brain}/gemini/GEMINI.md`,
+    'claude': `${brain}/claude/CLAUDE.md`,
+    'cursor': `${brain}/cursor/.cursorrules`,
+    'windsurf': `${brain}/windsurf/.windsurfrules`,
+    'vscode': `${brain}/vscode/copilot-instructions.md`
+  };
+
+  let linkedCount = 0;
+  for (const tool of aiTools) {
+    if (!tool.enabled) continue;
+    const relPath = toolRules[tool.id];
+    if (!relPath) continue;
+
+    const targetPath = path.join(vaultPath, relPath);
+    if (path.resolve(masterRuleSrc) === path.resolve(targetPath)) continue;
+
+    if (fs.existsSync(targetPath)) {
+      const statMaster = fs.statSync(masterRuleSrc);
+      const statTarget = fs.statSync(targetPath);
+      // Already hardlinked and same inode
+      if (statMaster.ino === statTarget.ino && statTarget.ino !== 0 && statMaster.dev === statTarget.dev) {
+        linkedCount++;
+        continue;
+      }
+      // Backup the existing file if it's different and not a symlink/hardlink to master
+      if (statTarget.isFile()) {
+        try {
+           const backupPath = targetPath + '.bak';
+           fs.copyFileSync(targetPath, backupPath);
+        } catch (e) {}
+      }
+      try { fs.unlinkSync(targetPath); } catch (e) { console.error('Failed to unlink target', e); continue; }
+    } else {
+      fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+    }
+
+    try {
+      fs.linkSync(masterRuleSrc, targetPath);
+    } catch (e: any) {
+      if (e.code === 'EXDEV' || e.code === 'EPERM') {
+        // Fallback to copy if hardlink fails (cross-device or permission issue)
+        fs.copyFileSync(masterRuleSrc, targetPath);
+      } else {
+        console.error('Failed to hardlink', e);
+        continue;
+      }
+    }
+    linkedCount++;
+  }
+  return { linkedCount };
+}
