@@ -1,6 +1,11 @@
-# Changelog
+﻿# Changelog
 
 All notable changes to this project will be documented in this file.
+
+## [2.2.2] - 2026-10-02
+### Fixed
+- **Obsidian Store Release Fix**: Untracked \main.js\ from the repository and added release assets packaging to meet community directory guidelines.
+- **Linter Cleanup**: Resolved unused variable and \ny\ typings in state migration logic.
 
 ## [2.2.1] - 2026-10-02
 ### Fixed

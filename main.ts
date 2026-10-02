@@ -282,9 +282,9 @@ export default class AgenticVaultPlugin extends Plugin {
 				const data = await this.app.vault.adapter.read(localStatePath);
 				const parsed = JSON.parse(data) as Record<string, unknown>;
 				if (typeof parsed.deviceName === 'string') this.localState.deviceName = parsed.deviceName;
-				if (parsed.syncState && typeof parsed.syncState === 'object') this.localState.syncState = parsed.syncState as any;
+				if (parsed.syncState && typeof parsed.syncState === 'object') this.localState.syncState = parsed.syncState as import('./src/syncState').SyncState;
 			}
-		} catch (e) {
+		} catch {
 			// ignore
 		}
 
@@ -297,7 +297,7 @@ export default class AgenticVaultPlugin extends Plugin {
 				migratedState = true;
 			}
 			if (savedRecord.syncState !== undefined) {
-				this.localState.syncState = savedRecord.syncState as any;
+				this.localState.syncState = savedRecord.syncState as import('./src/syncState').SyncState;
 				delete savedRecord.syncState;
 				migratedState = true;
 			}
