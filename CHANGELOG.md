@@ -1,7 +1,13 @@
-# Changelog
+﻿# Changelog
 
 All notable changes to this project will be documented in this file.
 
+
+## [2.1.7] - 2026-10-02
+### Fixed
+- **Sync Stabilization:** Fixed an issue where the plugin's auto-sync would fail with "cannot pull with rebase: You have unstaged changes" because data.json was hardcoded to be excluded from git add.
+- **Gitignore Generation:** Changed ensureGitignore to append .obsidian/* instead of .obsidian/. This prevents the plugin from accidentally overriding users' manual un-ignores (like !.obsidian/plugins/) and resolves the "Ignored files are still tracked" error.
+- Updated automated tests to assert the exclusion of secrets.json instead of data.json.
 ## [2.1.4] - 2026-10-01
 ### Fixed
 - **UI UX Improvements:**
@@ -46,7 +52,7 @@ All notable changes to this project will be documented in this file.
 - **Anchored GitHub URL regex** (`src/sync.ts`): The public-remote check regex had no start
   anchor, allowing spoofed hosts like `evilgithub.com/user/repo` or `github.com.evil.com` to
   match and bypass the protection. Fixed by adding a strict host anchor.
-- **Repo names with dots** (`[^/.]+?` → `[^/]+?`): Repos named `my.repo` or `foo.js` were
+- **Repo names with dots** (`[^/.]+?` â†’ `[^/]+?`): Repos named `my.repo` or `foo.js` were
   incorrectly rejected as "not a recognized GitHub URL". Now accepted.
 - Added 9 URL boundary tests covering evil host bypass, subdomain spoof, ssh://, token@,
   dot in repo name, trailing slash, and GitHub Enterprise rejection.
@@ -57,7 +63,7 @@ All notable changes to this project will be documented in this file.
 - **Unborn HEAD / first-ever commit** (`src/sync.ts`): `hasStaged` no longer throws on a
   brand-new `git init` with no commits. Replaced `git diff --cached --quiet` (which throws
   on unborn HEAD) with `git diff --cached --name-only -z` and a `git ls-files -z` fallback.
-- **Dynamic branch name in push warning**: Security warning no longer hardcodes "main" —
+- **Dynamic branch name in push warning**: Security warning no longer hardcodes "main" â€”
   now uses the actual current branch name.
 - **URL unreachable vs. not GitHub**: Split into two distinct error messages for clarity.
 
@@ -111,18 +117,18 @@ All notable changes to this project will be documented in this file.
 
 ## [1.4.6] - 2026-09-25
 ### Fixed
-- **Type safety:** Fixed `@typescript-eslint/no-unsafe-member-access` on `err.message` in `main.ts` — now uses `instanceof Error` guard.
-- **Type safety:** Fixed `@typescript-eslint/no-unsafe-assignment` on `JSON.parse()` result in `src/sync.ts` — cast to `{ isPrivate?: boolean } | null`.
-- **Type safety:** Fixed `@typescript-eslint/no-unsafe-assignment` and `no-unsafe-argument` on `binaryCatFile()` result in `src/conflict.ts` — cast to `Buffer`.
-- **Lint:** Fixed unused `catch (e)` → `catch {}` in `src/sync.ts`.
+- **Type safety:** Fixed `@typescript-eslint/no-unsafe-member-access` on `err.message` in `main.ts` â€” now uses `instanceof Error` guard.
+- **Type safety:** Fixed `@typescript-eslint/no-unsafe-assignment` on `JSON.parse()` result in `src/sync.ts` â€” cast to `{ isPrivate?: boolean } | null`.
+- **Type safety:** Fixed `@typescript-eslint/no-unsafe-assignment` and `no-unsafe-argument` on `binaryCatFile()` result in `src/conflict.ts` â€” cast to `Buffer`.
+- **Lint:** Fixed unused `catch (e)` â†’ `catch {}` in `src/sync.ts`.
 
 ## [1.4.5] - 2026-09-25
 ### Fixed
-- **Critical init bug:** Ribbon icons, commands, settings tab, and auto-sync were accidentally placed inside `clearPause()` instead of `initialize()`. On a fresh install where `syncState.paused = false`, `clearPause()` is never called — making the entire plugin UI invisible to the user. Moved all registration to `initialize()`.
+- **Critical init bug:** Ribbon icons, commands, settings tab, and auto-sync were accidentally placed inside `clearPause()` instead of `initialize()`. On a fresh install where `syncState.paused = false`, `clearPause()` is never called â€” making the entire plugin UI invisible to the user. Moved all registration to `initialize()`.
 - **Dead code removal:** Removed unused `resolvePath()` function from `main.ts`.
-- **Lint:** Fixed unused `catch (e)` → `catch {}` where the error variable was never read.
+- **Lint:** Fixed unused `catch (e)` â†’ `catch {}` where the error variable was never read.
 - **Lint:** Converted `require()` style imports in `src/sync.ts` to proper ES6 `import` statements.
-- **Type safety:** Fixed `syncState: Record<string, unknown>` regression in `src/types.ts` — restored to `syncState: SyncState`.
+- **Type safety:** Fixed `syncState: Record<string, unknown>` regression in `src/types.ts` â€” restored to `syncState: SyncState`.
 
 ## [1.4.4] - 2026-09-24
 ### Refactored
