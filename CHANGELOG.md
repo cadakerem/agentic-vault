@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.2] - 2026-10-02
+
+### Fixed
+- **Canonical Master Rule Migration:** Legacy per-tool rule settings now migrate correctly for custom brain folders.
+- **New Machine Setup:** Gemini and Claude are linked through `GEMINI.md` and `CLAUDE.md` file targets without recreating legacy AI tool directories.
+- **Whitelist Cleanup:** Empty `includedSyncPaths` remains empty and no longer suggests the obsolete `AI-Brain/gemini/plugins/` path.
+
 ## [2.4.1] - 2026-10-02
 
 ### Fixed
