@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.4.1] - 2026-10-02
+
+### Fixed
+- **Gemini Hardlink Path:** Fixed a typo where the target hardlink for Gemini was erroneously named Rules.md instead of GEMINI.md.
+
+
 ## [2.4.0] - 2026-10-02
 
 ### Added
@@ -13,7 +19,6 @@
 - **Removed Directory Symlinks for AI Tools:** To support the new Direct Hardlink Architecture, the Setup Wizard no longer symlinks the entire `~/.claude` or `~/.gemini/config` directories to the vault.
 
 
-# Changelog
 
 All notable changes to this project will be documented in this file.
 
