@@ -545,7 +545,7 @@ describe('hasStaged on unborn repo (regression)', () => {
     });
 
     // When there's no remote, status is 'no-remote' (same as test (d)).
-    // The key regression check: 'committed' must be true — the old bug caused
+    // The key regression check: 'committed' must be true Ã¢â‚¬â€ the old bug caused
     // "git diff --cached --quiet" to throw on unborn HEAD, so nothing was committed.
     expect(res.status).toBe('no-remote');
     expect(res.committed).toBe(true);
@@ -604,7 +604,7 @@ describe('scanSecrets independence (v2.0.0 upgrade regression)', () => {
     const res = await syncVault(git, {
       vaultPath: dir,
       allowPublicRemote: true,
-      scanSecrets: undefined,   // missing from old data.json → should default to true (scan ON)
+      scanSecrets: undefined,   // missing from old data.json Ã¢â€ â€™ should default to true (scan ON)
       commitMessage: 'add env',
       autoPush: true,
     });
@@ -615,7 +615,7 @@ describe('scanSecrets independence (v2.0.0 upgrade regression)', () => {
   });
 });
 
-describe('inbound sync (ters yön) - Known Limitations', () => {
+describe('inbound sync (ters yÃƒÂ¶n) - Known Limitations', () => {
   it('KNOWN LIMITATION: does not scan secrets pulled from the remote', async () => {
     const remote = await makeRemote();
     await seedRemote(remote, { 'README.md': 'init' });

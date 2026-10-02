@@ -101,7 +101,15 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
     
     // 0. check for tracked ignored files (fail securely before doing anything)
     const trackedStr = await git.raw(['ls-files', '-ci', '--exclude-standard', '-z']); // removed .catch() so it fails closed
-    const tracked = trackedStr.split('\0').filter(Boolean);
+    let tracked = trackedStr.split('\0').filter(Boolean);
+    
+    // Auto-fix for 2.1.6/2.1.7 migration: if only harmless plugin JSON files are tracked-ignored, untrack them automatically
+    const pluginJsonFiles = tracked.filter(f => f.match(/^(\.obsidian\/)?plugins\/agentic-vault\/(data|manifest)\.json$/));
+    if (pluginJsonFiles.length > 0) {
+      await git.raw(['rm', '--cached', '--ignore-unmatch', ...pluginJsonFiles]);
+      tracked = tracked.filter(f => !f.match(/^(\.obsidian\/)?plugins\/agentic-vault\/(data|manifest)\.json$/));
+    }
+
     if (tracked.length > 0) {
       return {
         ...result,
@@ -190,10 +198,10 @@ export async function syncVault(git: SimpleGit, opts: SyncOptions): Promise<Sync
     let conflictCopies: string[] = [];
     try {
       if (hasUpstream) {
-        await git.pull(['--rebase']);
+        await git.pull(['--rebase', '--autostash']);
       } else {
         const heads = await git.listRemote(['--heads', remote, branch]);
-        if (heads.trim() !== '') await git.pull(remote, branch, ['--rebase']);
+        if (heads.trim() !== '') await git.pull(remote, branch, ['--rebase', '--autostash']);
       }
     } catch (e) {
       if (!isMidRebase(opts.vaultPath)) throw e;
