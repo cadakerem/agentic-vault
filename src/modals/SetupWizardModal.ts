@@ -1,4 +1,4 @@
-﻿import { App, Modal, Notice } from 'obsidian';
+import { App, Modal, Notice } from 'obsidian';
 import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
