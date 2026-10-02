@@ -86,13 +86,12 @@ export function applyLink(source: string, target: string, plan: LinkPlan, platfo
   fs.symlinkSync(s, t, platform === 'win32' ? 'junction' : 'dir');
   return { backup };
 }
-export function syncMasterRules(vaultPath: string, ruleFilePath: string, aiTools: { id: string, enabled: boolean }[], brainFolder: string): { linkedCount: number, error?: string } {
+export function syncMasterRules(vaultPath: string, ruleFilePath: string, aiTools: { id: string, enabled: boolean }[], brainFolder: string, home: string = os.homedir()): { linkedCount: number, error?: string } {
   if (!ruleFilePath) return { linkedCount: 0 };
   const masterRuleSrc = path.resolve(vaultPath, ruleFilePath);
   if (!isPathInsideVault(vaultPath, masterRuleSrc)) return { linkedCount: 0, error: 'Path traversal detected' };
   if (!fs.existsSync(masterRuleSrc)) return { linkedCount: 0, error: 'Master rule file not found' };
 
-const home = os.homedir();
   const isWin = os.platform() === 'win32';
   const toolRules: Record<string, string> = {
     'gemini': path.join(home, '.gemini', 'config', 'GEMINI.md'),

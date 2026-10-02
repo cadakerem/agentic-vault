@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { planLink, applyLink } from '../src/link';
+import { planLink, applyLink, syncMasterRules } from '../src/link';
 
 let root: string, home: string, source: string;
 const target = () => path.join(home, '.gemini', 'config');
@@ -153,5 +153,25 @@ describe('planLink / applyLink', () => {
     expect(() => applyLink(source, target(), plan)).not.toThrow();
     // After: target points to source
     expect(fs.realpathSync(target())).toBe(fs.realpathSync(source));
+  });
+
+  it('hardlinks one canonical Rules.md file to Gemini and Claude targets', () => {
+    const vault = path.join(root, 'vault');
+    const master = path.join(vault, 'AI-Brain', 'Rules.md');
+    fs.mkdirSync(path.dirname(master), { recursive: true });
+    fs.writeFileSync(master, '# shared rules');
+
+    const result = syncMasterRules(vault, 'AI-Brain/Rules.md', [
+      { id: 'gemini', enabled: true },
+      { id: 'claude', enabled: true },
+    ], 'AI-Brain', home);
+
+    expect(result).toEqual({ linkedCount: 2 });
+    const gemini = path.join(home, '.gemini', 'config', 'GEMINI.md');
+    const claude = path.join(home, '.claude', 'CLAUDE.md');
+    expect(fs.readFileSync(gemini, 'utf8')).toBe('# shared rules');
+    expect(fs.readFileSync(claude, 'utf8')).toBe('# shared rules');
+    expect(fs.statSync(gemini).ino).toBe(fs.statSync(master).ino);
+    expect(fs.statSync(claude).ino).toBe(fs.statSync(master).ino);
   });
 });
