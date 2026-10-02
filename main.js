@@ -7164,7 +7164,7 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
     this.git = esm_default(vaultPath);
     await this.ensureGitignore(vaultPath);
     this.statusBarEl = this.addStatusBarItem();
-    this.statusBarEl.setText("\xC3\u0192\xC2\xA2\xC3\u2026\xC2\xB8\xC3\u201A\xC2\xB3 Agentic Vault");
+    this.statusBarEl.setText("\u27F3 Agentic Vault");
     this.addRibbonIcon("git-commit-vertical", "Force Git Sync", () => {
       void this.performDynamicCommit(false, true);
     });
@@ -7186,7 +7186,7 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
     } });
     this.addSettingTab(new AgenticVaultSettingTab(this.app, this));
     this.startAutoSync();
-    new import_obsidian6.Notice("\xC3\u0192\xC2\xA2\xC3\u2026\xE2\u20AC\u0153\xC3\xA2\xE2\u201A\xAC\xC2\xA6 Agentic Vault Loaded Successfully!", 5e3);
+    new import_obsidian6.Notice("\u2705 Agentic Vault Loaded Successfully!", 5e3);
     await this.verifyPauseState(vaultPath);
     void this.updateStatusBar();
   }
@@ -7297,23 +7297,23 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
       const behind = status.behind;
       const dirty = status.files.length;
       const copies = filterConflictCopies(status.files.map((f) => f.path));
-      let text = `\xC3\u0192\xC2\xA2\xC3\u2039\xC5\u201C\xC3\u201A\xC2\x81 ${branch}`;
+      let text = `\u2601 ${branch}`;
       if (transitionStatus) {
         text += ` ${transitionStatus}`;
       } else if (this.localState.syncState.paused) {
-        text += ` \xC3\u0192\xC2\xA2\xC3\u201A\xC2\x8F\xC3\u201A\xC2\xB8 paused`;
+        text += ` \u23F8 paused`;
       } else if (this.lastErrorMsg) {
-        text += ` \xC3\u0192\xC2\xA2\xC3\u2026\xC2\xA1\xC3\u201A\xC2\xA0\xC3\u0192\xC2\xAF\xC3\u201A\xC2\xB8\xC3\u201A\xC2\x8F Error`;
+        text += ` \u26A0\uFE0F Error`;
       } else if (copies.length > 0) {
-        text += ` \xC3\u0192\xE2\u20AC\u0161\xC3\u201A\xC2\xB7 ${copies.length} conflict cop${copies.length === 1 ? "y" : "ies"}`;
+        text += ` \xB7 ${copies.length} conflict cop${copies.length === 1 ? "y" : "ies"}`;
       } else {
-        if (ahead) text += ` \xC3\u0192\xC2\xA2\xC3\xA2\xE2\u201A\xAC\xC2\xA0\xC3\xA2\xE2\u201A\xAC\xCB\u0153${ahead}`;
-        if (behind) text += ` \xC3\u0192\xC2\xA2\xC3\xA2\xE2\u201A\xAC\xC2\xA0\xC3\xA2\xE2\u201A\xAC\xC5\u201C${behind}`;
-        if (dirty) text += ` \xC3\u0192\xC2\xA2\xC3\u2026\xE2\u20AC\u0153\xC3\u201A\xC2\x8E${dirty}`;
+        if (ahead) text += ` \u2191${ahead}`;
+        if (behind) text += ` \u2193${behind}`;
+        if (dirty) text += ` \u270E${dirty}`;
       }
       this.statusBarEl.setText(text);
     } catch (e) {
-      this.statusBarEl.setText("\xC3\u0192\xC2\xA2\xC3\u2039\xC5\u201C\xC3\u201A\xC2\x81 git?");
+      this.statusBarEl.setText("\u2601 git?");
     }
   }
   async loadSettings() {
@@ -7341,21 +7341,24 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
       if (await this.app.vault.adapter.exists(localStatePath)) {
         const data = await this.app.vault.adapter.read(localStatePath);
         const parsed = JSON.parse(data);
-        if (parsed.deviceName) this.localState.deviceName = parsed.deviceName;
-        if (parsed.syncState) this.localState.syncState = parsed.syncState;
+        if (typeof parsed.deviceName === "string") this.localState.deviceName = parsed.deviceName;
+        if (parsed.syncState && typeof parsed.syncState === "object") this.localState.syncState = parsed.syncState;
       }
     } catch (e) {
     }
     let migratedState = false;
-    if (saved && saved.deviceName !== void 0) {
-      this.localState.deviceName = saved.deviceName;
-      delete this.settings.deviceName;
-      migratedState = true;
-    }
-    if (saved && saved.syncState !== void 0) {
-      this.localState.syncState = saved.syncState;
-      delete this.settings.syncState;
-      migratedState = true;
+    if (saved) {
+      const savedRecord = saved;
+      if (savedRecord.deviceName !== void 0) {
+        this.localState.deviceName = savedRecord.deviceName;
+        delete savedRecord.deviceName;
+        migratedState = true;
+      }
+      if (savedRecord.syncState !== void 0) {
+        this.localState.syncState = savedRecord.syncState;
+        delete savedRecord.syncState;
+        migratedState = true;
+      }
     }
     let migrated = false;
     if (saved) {
@@ -7411,11 +7414,11 @@ var AgenticVaultPlugin = class extends import_obsidian6.Plugin {
         new import_obsidian6.Notice(transition.notice, 15e3);
       }
       if (result.skippedByAllowlist && result.skippedByAllowlist.length > 0) {
-        new import_obsidian6.Notice("\xC3\u0192\xC2\xA2\xC3\u2026\xC2\xA1\xC3\u201A\xC2\xA0\xC3\u0192\xC2\xAF\xC3\u201A\xC2\xB8\xC3\u201A\xC2\x8F Secret Scanner: " + result.skippedByAllowlist.length + " file(s) bypassed via allowlist.", 1e4);
+        new import_obsidian6.Notice("\u26A0\uFE0F Secret Scanner: " + result.skippedByAllowlist.length + " file(s) bypassed via allowlist.", 1e4);
       }
       if (result.status === "ok" && !silent) {
-        if (result.pushed) new import_obsidian6.Notice("\xC3\u201E\xC5\xB8\xC3\u2026\xC2\xB8\xC3\u2026\xC2\xA1\xC3\xA2\xE2\u20AC\u0161\xC2\xAC Pushed to GitHub!");
-        else if (result.committed) new import_obsidian6.Notice("\xC3\u0192\xC2\xA2\xC3\u2026\xE2\u20AC\u0153\xC3\xA2\xE2\u201A\xAC\xC5\u201C Changes committed.");
+        if (result.pushed) new import_obsidian6.Notice("\u{1F680} Pushed to GitHub!");
+        else if (result.committed) new import_obsidian6.Notice("\u2713 Changes committed.");
         else new import_obsidian6.Notice("Agentic Vault: Nothing to commit.");
       }
       void this.updateStatusBar(transition.statusText);
