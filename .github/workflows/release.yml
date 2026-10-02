@@ -24,11 +24,24 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Verify Tag matches Manifest
+      - name: Verify Tag matches Manifest, Package, and Versions
         run: |
           MANIFEST_VERSION=$(node -p "require('./manifest.json').version")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          VERSIONS_VERSION=$(node -p "require('./versions.json')[require('./manifest.json').version]")
+          
           if [ "$GITHUB_REF_NAME" != "$MANIFEST_VERSION" ]; then
             echo "Tag $GITHUB_REF_NAME does not match manifest.json version $MANIFEST_VERSION"
+            exit 1
+          fi
+          
+          if [ "$GITHUB_REF_NAME" != "$PACKAGE_VERSION" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $PACKAGE_VERSION"
+            exit 1
+          fi
+          
+          if [ -z "$VERSIONS_VERSION" ]; then
+            echo "Version $GITHUB_REF_NAME not found in versions.json"
             exit 1
           fi
 

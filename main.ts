@@ -187,6 +187,12 @@ export default class AgenticVaultPlugin extends Plugin {
 			if (fs.existsSync(gitignorePath)) {
 				content = fs.readFileSync(gitignorePath, 'utf8');
 			}
+			
+        const includedPaths = this.settings.includedSyncPaths.split('\n').map(p => p.trim()).filter(Boolean);
+        for (const p of includedPaths) {
+            rules.push(`!${p}`);
+        }
+
 			const existingLines = new Set(content.split(/\r?\n/).map(l => l.trim()));
 			let changed = false;
 			for (const rule of rules) {
