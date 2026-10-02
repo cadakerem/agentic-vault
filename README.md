@@ -86,7 +86,7 @@ Agentic Vault is built for local-first automation. Because it creates symlinks a
 3. **Content-based Defense (Secret Scanner):** Before every commit, a built-in scanner reads the actual content of the changed files. If it detects AWS keys, Slack tokens, private keys, or generic secret patterns, it blocks the commit.
 
 *(Disclaimer: While the Best-Effort Secret-Leak Prevention architecture blocks unknown files and we now block `.obsidian/` by default to prevent other plugins from leaking API keys in their `data.json` files, we still **STRONGLY** recommend keeping your GitHub repository Private.)*
-*(Note: The Secret Scanner cannot be disabled if you have 'Allow Public Remote' toggled off, ensuring 100% protection for private environments).*
+*(Note: The Secret Scanner cannot be disabled if you have 'Allow Public Remote' toggled off, which significantly reduces the risk of accidental secret exposure in private environments).*
 
 ---
 
@@ -103,7 +103,7 @@ Agentic Vault is built for local-first automation. Because it creates symlinks a
 ## 🧑‍💻 Developer & Contributions
 Developed by Kerem Barbaros Karnabat ([@cadakerem](https://github.com/cadakerem)).
 
-> **Note on Repository Structure:** The core logic for this autonomous AI agent framework resides in the `src/` directory, while configuration and prompt schemas are maintained at the root level. All build artifacts and distribution files are generated in the `dist/` directory.
+> **Note on Repository Structure:** The core logic for this autonomous AI agent framework resides in the `src/` directory, while configuration and prompt schemas are maintained at the root level. All build artifacts and distribution files (`main.js`, `styles.css`) are generated in the root directory.
 
 Contributions, issues, and feature requests are welcome! Feel free to check the [Issues page](../../issues).
 
