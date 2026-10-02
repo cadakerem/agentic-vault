@@ -6110,7 +6110,12 @@ async function syncVault(git, opts) {
       };
     }
     const trackedStr = await git.raw(["ls-files", "-ci", "--exclude-standard", "-z"]);
-    const tracked = trackedStr.split("\0").filter(Boolean);
+    let tracked = trackedStr.split("\0").filter(Boolean);
+    const pluginJsonFiles = tracked.filter((f) => f.match(/^(\.obsidian\/)?plugins\/agentic-vault\/.*\.json$/));
+    if (pluginJsonFiles.length > 0) {
+      await git.raw(["rm", "--cached", "--ignore-unmatch", ...pluginJsonFiles]);
+      tracked = tracked.filter((f) => !f.match(/^(\.obsidian\/)?plugins\/agentic-vault\/.*\.json$/));
+    }
     if (tracked.length > 0) {
       return {
         ...result,
