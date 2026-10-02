@@ -95,7 +95,7 @@ export function syncMasterRules(vaultPath: string, ruleFilePath: string, aiTools
 const home = os.homedir();
   const isWin = os.platform() === 'win32';
   const toolRules: Record<string, string> = {
-    'gemini': path.join(home, '.gemini', 'config', 'Rules.md'),
+    'gemini': path.join(home, '.gemini', 'config', 'GEMINI.md'),
     'claude': path.join(home, '.claude', 'CLAUDE.md'),
     'cursor': path.join(home, isWin ? 'AppData/Roaming/Cursor/User' : '.cursor', '.cursorrules'),
     'windsurf': path.join(home, isWin ? 'AppData/Roaming/Windsurf/User' : '.windsurf', '.windsurfrules'),
